@@ -1,0 +1,39 @@
+-- DEBUG: Kör dessa queries i Supabase SQL Editor för att debugga
+
+-- 1. Kolla om kolumnen finns
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns 
+WHERE table_name = 'organizations' 
+AND column_name LIKE '%vapi%'
+ORDER BY column_name;
+
+-- 2. Kolla nuvarande värden för en specifik organisation
+-- Byt ut 'DIN_ORG_ID' med din faktiska organization ID
+SELECT 
+  id,
+  name,
+  vapi_enabled,
+  vapi_api_key IS NOT NULL as has_private_key,
+  vapi_public_api_key IS NOT NULL as has_public_key,
+  LENGTH(vapi_api_key) as private_key_length,
+  LENGTH(vapi_public_api_key) as public_key_length,
+  vapi_base_url,
+  vapi_org_id
+FROM organizations
+WHERE id = 'DIN_ORG_ID';
+
+-- 3. Lista alla organisationer och deras Vapi-status
+SELECT 
+  id,
+  name,
+  vapi_enabled,
+  CASE 
+    WHEN vapi_api_key IS NOT NULL THEN 'YES (' || LEFT(vapi_api_key, 10) || '...)'
+    ELSE 'NO'
+  END as private_key,
+  CASE 
+    WHEN vapi_public_api_key IS NOT NULL THEN 'YES (' || LEFT(vapi_public_api_key, 10) || '...)'
+    ELSE 'NO'
+  END as public_key
+FROM organizations
+ORDER BY name;

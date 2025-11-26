@@ -1,0 +1,26 @@
+import { Skeleton } from "@/components/ui/skeleton";
+
+export default function LeadsLoading() {
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="h-10 w-32" />
+      </div>
+      <div className="grid gap-4 md:grid-cols-4">
+        {[1, 2, 3, 4].map((col) => (
+          <div key={col} className="space-y-3">
+            <Skeleton className="h-6 w-24" />
+            {[1, 2, 3].map((card) => (
+              <div key={card} className="rounded-lg border bg-card p-4 space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-6 w-16" />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

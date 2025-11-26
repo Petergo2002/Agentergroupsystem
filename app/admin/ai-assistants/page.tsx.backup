@@ -1,0 +1,655 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+
+interface VapiAssistant {
+  id: string;
+  name: string;
+  description?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface Organization {
+  id: string;
+  name: string;
+  default_chat_assistant_id: string | null;
+  default_call_assistant_id: string | null;
+}
+
+export default function AIAssistantsAdminPage() {
+  const [assistants, setAssistants] = useState<VapiAssistant[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [testDialogOpen, setTestDialogOpen] = useState(false);
+  const [activeAssistant, setActiveAssistant] = useState<VapiAssistant | null>(
+    null,
+  );
+  const [testMessages, setTestMessages] = useState<
+    Array<{ id: string; role: "user" | "assistant"; content: string }>
+  >([]);
+  const [testInput, setTestInput] = useState("");
+  const [testLoading, setTestLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | undefined>();
+  const [testError, setTestError] = useState<string | null>(null);
+  const [vapiDialogOpen, setVapiDialogOpen] = useState(false);
+  const [selectedOrgForVapi, setSelectedOrgForVapi] = useState<Organization | null>(null);
+  const [vapiApiKeyInput, setVapiApiKeyInput] = useState("");
+  const [fetchingAssistants, setFetchingAssistants] = useState(false);
+  const [customAssistants, setCustomAssistants] = useState<VapiAssistant[]>([]);
+  const [selectedChatAssistant, setSelectedChatAssistant] = useState<string>("");
+  const [selectedCallAssistant, setSelectedCallAssistant] = useState<string>("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [testMessages]);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/vapi/assistants");
+      if (!response.ok) {
+        throw new Error("Failed to load AI assistants");
+      }
+      const data = await response.json();
+      setAssistants(data.assistants || []);
+      setOrganizations(data.organizations || []);
+    } catch (err: any) {
+      setError(err.message);
+      toast.error(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetTestSession = () => {
+    setTestMessages([]);
+    setConversationId(undefined);
+    setTestInput("");
+    setTestError(null);
+  };
+
+  const openTestDialog = (assistant: VapiAssistant) => {
+    setActiveAssistant(assistant);
+    resetTestSession();
+    setTestDialogOpen(true);
+  };
+
+  const closeTestDialog = () => {
+    setTestDialogOpen(false);
+    setActiveAssistant(null);
+    resetTestSession();
+  };
+
+  const handleSendTestMessage = async () => {
+    if (!activeAssistant) return;
+    const trimmed = testInput.trim();
+    if (!trimmed) {
+      setTestError("Skriv ett meddelande först");
+      return;
+    }
+
+    const outgoingMessage = {
+      id: `${Date.now()}-user`,
+      role: "user" as const,
+      content: trimmed,
+    };
+
+    setTestMessages((prev) => [...prev, outgoingMessage]);
+    setTestInput("");
+    setTestLoading(true);
+    setTestError(null);
+
+    try {
+      const response = await fetch(
+        `/api/admin/vapi/assistants/${encodeURIComponent(activeAssistant.id)}/chat-test`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: trimmed,
+            conversationId,
+          }),
+        },
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || "Misslyckades med att testa assistenten");
+      }
+
+      if (data.sessionId) {
+        setConversationId(data.sessionId);
+      }
+      if (data.reply) {
+        setTestMessages((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-assistant`,
+            role: "assistant" as const,
+            content: data.reply,
+          },
+        ]);
+      } else {
+        toast.info("Assistenten svarade inte med ett meddelande");
+      }
+    } catch (err: any) {
+      setTestError(err.message || "Ett fel uppstod");
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
+  const openVapiDialog = (org: Organization) => {
+    setSelectedOrgForVapi(org);
+    setVapiApiKeyInput("");
+    setCustomAssistants([]);
+    setSelectedChatAssistant("");
+    setSelectedCallAssistant("");
+    setVapiDialogOpen(true);
+  };
+
+  const closeVapiDialog = () => {
+    setVapiDialogOpen(false);
+    setSelectedOrgForVapi(null);
+    setVapiApiKeyInput("");
+    setCustomAssistants([]);
+    setSelectedChatAssistant("");
+    setSelectedCallAssistant("");
+  };
+
+  const fetchAssistantsFromKey = async () => {
+    if (!vapiApiKeyInput.trim()) {
+      toast.error("Ange en VAPI API-nyckel först");
+      return;
+    }
+
+    setFetchingAssistants(true);
+    try {
+      const response = await fetch("/api/admin/vapi/assistants", {
+        headers: {
+          "X-VAPI-API-KEY": vapiApiKeyInput.trim(),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Kunde inte hämta assistenter. Kontrollera API-nyckeln.");
+      }
+
+      const data = await response.json();
+      setCustomAssistants(data.assistants || []);
+      toast.success(`Hittade ${data.assistants?.length || 0} assistenter! 🎉`);
+    } catch (err: any) {
+      console.error("Error fetching assistants:", err);
+      toast.error(err.message);
+      setCustomAssistants([]);
+    } finally {
+      setFetchingAssistants(false);
+    }
+  };
+
+  const enableVapiForOrg = async () => {
+    if (!selectedOrgForVapi || !vapiApiKeyInput.trim()) {
+      toast.error("VAPI API-nyckel krävs");
+      return;
+    }
+
+    try {
+      const payload: any = {
+        vapi_enabled: true,
+        vapi_api_key: vapiApiKeyInput.trim(),
+      };
+
+      // Add selected assistants if any
+      if (selectedChatAssistant) {
+        payload.default_chat_assistant_id = selectedChatAssistant;
+      }
+      if (selectedCallAssistant) {
+        payload.default_call_assistant_id = selectedCallAssistant;
+      }
+
+      const response = await fetch(`/api/admin/organizations/${selectedOrgForVapi.id}/vapi-config`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to enable VAPI");
+      }
+
+      toast.success(`VAPI aktiverat för ${selectedOrgForVapi.name}! 🎉`);
+      closeVapiDialog();
+      loadData(); // Reload to get updated data
+    } catch (err: any) {
+      console.error("Error enabling VAPI:", err);
+      toast.error(err.message);
+    }
+  };
+
+  const assignAssistantToOrg = async (
+    orgId: string,
+    assistantId: string,
+    type: "chat" | "call"
+  ) => {
+    try {
+      const field = type === "chat" ? "default_chat_assistant_id" : "default_call_assistant_id";
+      // Convert "none" to null/empty string
+      const actualAssistantId = assistantId === "none" ? null : assistantId;
+      
+      const response = await fetch(`/api/admin/organizations/${orgId}/vapi-config`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: actualAssistantId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data?.error || "Failed to assign assistant");
+      }
+
+      // Update local state
+      setOrganizations((prev) =>
+        prev.map((org) =>
+          org.id === orgId ? { ...org, [field]: actualAssistantId } : org
+        )
+      );
+
+      const orgName = organizations.find(o => o.id === orgId)?.name;
+      if (actualAssistantId) {
+        toast.success(`Assistant tilldelad till ${orgName}`);
+      } else {
+        toast.success(`Assistant borttagen från ${orgName}`);
+      }
+    } catch (err: any) {
+      console.error("Error assigning assistant:", err);
+      toast.error(err.message);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <Skeleton className="h-8 w-48 mb-4" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-lg" />
+            ))}
+          </div>
+        </div>
+        <div>
+          <Skeleton className="h-8 w-48 mb-4" />
+          <div className="space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="rounded-md bg-red-50 p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error loading AI assistants</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+              <Button onClick={loadData} className="mt-4" variant="outline">
+                Retry
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold mb-4">AI assistenter</h1>
+        <p className="text-gray-600 mb-6">
+          Hantera dina Vapi-assistenter och tilldela dem till kunder.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Tillgängliga assistenter ({assistants.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {assistants.map((assistant) => (
+              <Card key={assistant.id} className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold">{assistant.name || assistant.id}</h3>
+                    <Badge variant={assistant.status === "active" ? "default" : "secondary"}>
+                      {assistant.status || "unknown"}
+                    </Badge>
+                  </div>
+                  {assistant.description && (
+                    <p className="text-sm text-gray-600">{assistant.description}</p>
+                  )}
+                  <div className="text-xs text-gray-500">
+                    ID: {assistant.id}
+                  </div>
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openTestDialog(assistant)}
+                      className="w-full"
+                    >
+                      Testa assistent
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+          {assistants.length === 0 && (
+            <p className="text-gray-500 text-center py-8">
+              Inga assistenter hittades. Kontrollera din VAPI_API_KEY i .env.local
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Kunder och deras assistenter</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {organizations.map((org) => (
+              <Card key={org.id} className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold">{org.name}</h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openVapiDialog(org)}
+                  >
+                    ⚡ Aktivera VAPI
+                  </Button>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium">Chat-assistent</label>
+                    <Select
+                      value={org.default_chat_assistant_id || ""}
+                      onValueChange={(value) =>
+                        assignAssistantToOrg(org.id, value === "none" ? "" : value, "chat")
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Välj chat-assistent" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Ingen</SelectItem>
+                        {assistants.map((assistant) => (
+                          <SelectItem key={assistant.id} value={assistant.id}>
+                            {assistant.name || assistant.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Call-assistent</label>
+                    <Select
+                      value={org.default_call_assistant_id || ""}
+                      onValueChange={(value) =>
+                        assignAssistantToOrg(org.id, value === "none" ? "" : value, "call")
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Välj call-assistent" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Ingen</SelectItem>
+                        {assistants.map((assistant) => (
+                          <SelectItem key={assistant.id} value={assistant.id}>
+                            {assistant.name || assistant.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+          {organizations.length === 0 && (
+            <p className="text-gray-500 text-center py-8">Inga kunder hittades</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={vapiDialogOpen} onOpenChange={(open) => (open ? setVapiDialogOpen(true) : closeVapiDialog())}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Aktivera VAPI för {selectedOrgForVapi?.name}</DialogTitle>
+            <DialogDescription>
+              Klistra in VAPI API-nyckeln från kundens VAPI-organisation och välj assistenter.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">VAPI API-nyckel</label>
+              <div className="flex gap-2">
+                <Textarea
+                  value={vapiApiKeyInput}
+                  onChange={(e) => setVapiApiKeyInput(e.target.value)}
+                  placeholder="Klistra in VAPI API-nyckel här..."
+                  rows={2}
+                  className="font-mono text-sm flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={fetchAssistantsFromKey}
+                  disabled={!vapiApiKeyInput.trim() || fetchingAssistants}
+                  className="self-start"
+                >
+                  {fetchingAssistants ? "Hämtar..." : "Hämta assistenter"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 Skapa en organisation för kunden på vapi.ai och kopiera API-nyckeln därifrån
+              </p>
+            </div>
+
+            {customAssistants.length > 0 && (
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-medium">Välj assistenter att tilldela</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium">Chat-assistent</label>
+                    <Select
+                      value={selectedChatAssistant}
+                      onValueChange={setSelectedChatAssistant}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Välj chat-assistent (valfritt)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Ingen</SelectItem>
+                        {customAssistants.map((assistant) => (
+                          <SelectItem key={assistant.id} value={assistant.id}>
+                            {assistant.name || assistant.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Call-assistent</label>
+                    <Select
+                      value={selectedCallAssistant}
+                      onValueChange={setSelectedCallAssistant}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Välj call-assistent (valfritt)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Ingen</SelectItem>
+                        {customAssistants.map((assistant) => (
+                          <SelectItem key={assistant.id} value={assistant.id}>
+                            {assistant.name || assistant.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={closeVapiDialog}>
+              Avbryt
+            </Button>
+            <Button
+              type="button"
+              onClick={enableVapiForOrg}
+              disabled={!vapiApiKeyInput.trim()}
+            >
+              {customAssistants.length > 0 ? "Spara & Aktivera" : "Aktivera VAPI"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={testDialogOpen}
+        onOpenChange={(open) => (open ? setTestDialogOpen(true) : closeTestDialog())}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Testa {activeAssistant?.name || activeAssistant?.id || "assistent"}
+            </DialogTitle>
+            <DialogDescription>
+              Skicka ett meddelande för att se hur agenten svarar innan du tilldelar den till en kund.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="h-72 overflow-y-auto rounded-lg border border-border/40 bg-muted/5 p-4 space-y-3">
+              {testMessages.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center">
+                  Börja testen genom att skriva ett meddelande nedan.
+                </p>
+              ) : (
+                testMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm shadow-sm ${
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-foreground"
+                      }`}
+                    >
+                      <p>{message.content}</p>
+                      <p className="mt-1 text-[10px] uppercase tracking-wide opacity-60">
+                        {message.role === "user" ? "Du" : activeAssistant?.name || "Assistent"}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+            {testError && (
+              <p className="text-sm text-red-500" role="alert">
+                {testError}
+              </p>
+            )}
+            <Textarea
+              value={testInput}
+              onChange={(e) => setTestInput(e.target.value)}
+              placeholder="Skriv ett testmeddelande..."
+              disabled={!activeAssistant || testLoading}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  handleSendTestMessage();
+                }
+              }}
+            />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {conversationId ? `Session: ${conversationId}` : "Ingen aktiv session"}
+              </span>
+              {testMessages.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetTestSession}
+                  disabled={testLoading}
+                >
+                  Starta om
+                </Button>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={closeTestDialog}>
+              Stäng
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSendTestMessage}
+              disabled={!activeAssistant || testLoading || !testInput.trim()}
+            >
+              {testLoading ? "Skickar..." : "Skicka meddelande"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

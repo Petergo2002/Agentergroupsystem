@@ -1,0 +1,13 @@
+-- Run this SQL in your Supabase SQL Editor
+-- This adds the vapi_public_api_key column to organizations table
+
+ALTER TABLE organizations
+ADD COLUMN IF NOT EXISTS vapi_public_api_key TEXT;
+
+COMMENT ON COLUMN organizations.vapi_public_api_key IS 'Vapi public API key (client-side widgets) for this organization';
+
+-- Verify the column was added
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'organizations' 
+AND column_name = 'vapi_public_api_key';
