@@ -209,12 +209,12 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
 
   const goToPreviousSection = useCallback(() => {
     if (!report || activeSectionIndex <= 0) return;
-    setActiveSectionId(report.sections[activeSectionIndex - 1]?.id);
+    setActiveSectionId(report.sections[activeSectionIndex - 1]?.id ?? null);
   }, [report, activeSectionIndex]);
 
   const goToNextSection = useCallback(() => {
     if (!report || activeSectionIndex >= report.sections.length - 1) return;
-    setActiveSectionId(report.sections[activeSectionIndex + 1]?.id);
+    setActiveSectionId(report.sections[activeSectionIndex + 1]?.id ?? null);
   }, [report, activeSectionIndex]);
 
   const toggleSectionComplete = useCallback(() => {

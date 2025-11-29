@@ -258,7 +258,7 @@ export function RapportContainer({ mode = "new" }: RapportContainerProps) {
 
   useEffect(() => {
     if (!createForm.templateId && templates.length > 0 && templates[0]) {
-      setCreateForm((prev) => ({ ...prev, templateId: templates[0]?.id }));
+      setCreateForm((prev) => ({ ...prev, templateId: templates[0]?.id ?? "" }));
     }
   }, [createForm.templateId, templates]);
 
@@ -2334,7 +2334,7 @@ export function buildPrintableHtml(
                 style="max-width:100%;height:auto;border:1px solid #e2e8f0;border-radius:8px;"
               />
               ${asset?.label ? `<p style="margin-top:4px;font-size:12px;color:#64748b;">${asset?.label}</p>` : ""}
-              ${asset?.tags.length > 0 ? `<p style="margin-top:2px;font-size:11px;color:#94a3b8;">Taggar: ${asset?.tags.join(", ")}</p>` : ""}
+              ${asset?.tags && asset.tags.length > 0 ? `<p style="margin-top:2px;font-size:11px;color:#94a3b8;">Taggar: ${asset.tags.join(", ")}</p>` : ""}
             </div>
           `,
           )

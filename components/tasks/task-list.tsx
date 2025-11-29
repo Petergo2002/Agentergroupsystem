@@ -83,10 +83,10 @@ export function TaskList({ onAddTask, onEditTask }: TaskListProps) {
                 </div>
                 <Badge
                   className={
-                    STATUS_BADGES[task.status] ?? "bg-slate-100 text-slate-700"
+                    task.status ? STATUS_BADGES[task.status] ?? "bg-slate-100 text-slate-700" : "bg-slate-100 text-slate-700"
                   }
                 >
-                  {STATUS_LABEL[task.status] ?? task.status}
+                  {task.status ? STATUS_LABEL[task.status] ?? task.status : "Okänd status"}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">

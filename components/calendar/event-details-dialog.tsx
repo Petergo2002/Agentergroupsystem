@@ -107,7 +107,7 @@ export function EventDetailsDialog({
                     event.status === "busy" ? "destructive" : "secondary"
                   }
                 >
-                  {STATUS_LABEL[event.status] ?? event.status}
+                  {event.status ? STATUS_LABEL[event.status] ?? event.status : "Okänd status"}
                 </Badge>
               )}
             </DialogTitle>
