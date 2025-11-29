@@ -79,15 +79,52 @@ class Logger {
 
   /**
    * Send to external logging service (Sentry, LogRocket, etc.)
+   *
+   * To enable Sentry integration:
+   * 1. Install @sentry/nextjs: npm install @sentry/nextjs
+   * 2. Run: npx @sentry/wizard@latest -i nextjs
+   * 3. Uncomment the Sentry code below
+   *
+   * The logger API will remain stable - just uncomment to enable.
    */
-  private async sendToExternalService(_entry: LogEntry): Promise<void> {
-    // TODO: Integrate with Sentry or other logging service
-    // Example:
-    // if (entry.level === 'error' && entry.error) {
-    //   Sentry.captureException(entry.error, {
-    //     contexts: { custom: entry.context }
-    //   });
+  private async sendToExternalService(entry: LogEntry): Promise<void> {
+    // Sentry integration (uncomment when ready):
+    // try {
+    //   const Sentry = await import("@sentry/nextjs");
+    //
+    //   if (entry.level === "error") {
+    //     if (entry.error) {
+    //       Sentry.captureException(entry.error, {
+    //         level: "error",
+    //         contexts: {
+    //           custom: this.sanitize(entry.context || {}),
+    //         },
+    //         tags: {
+    //           source: "logger",
+    //         },
+    //       });
+    //     } else {
+    //       Sentry.captureMessage(entry.message, {
+    //         level: "error",
+    //         contexts: {
+    //           custom: this.sanitize(entry.context || {}),
+    //         },
+    //       });
+    //     }
+    //   } else if (entry.level === "warn") {
+    //     Sentry.captureMessage(entry.message, {
+    //       level: "warning",
+    //       contexts: {
+    //         custom: this.sanitize(entry.context || {}),
+    //       },
+    //     });
+    //   }
+    // } catch {
+    //   // Sentry not available, silently ignore
     // }
+
+    // For now, just ensure the entry is used to avoid unused variable warning
+    void entry;
   }
 
   /**
@@ -131,10 +168,15 @@ class Logger {
   /**
    * Log error message
    */
-  error(message: string, error?: Error | Record<string, any>, context?: Record<string, any>): void {
+  error(
+    message: string,
+    error?: Error | Record<string, any>,
+    context?: Record<string, any>,
+  ): void {
     // Handle both (message, Error) and (message, context) signatures
     const actualError = error instanceof Error ? error : undefined;
-    const actualContext = error instanceof Error ? context : (error as Record<string, any>);
+    const actualContext =
+      error instanceof Error ? context : (error as Record<string, any>);
 
     const entry: LogEntry = {
       level: "error",
@@ -147,7 +189,11 @@ class Logger {
     if (this.isProduction) {
       console.error(this.formatEntry(entry));
     } else {
-      console.error(`[ERROR] ${message}`, actualError || "", actualContext || "");
+      console.error(
+        `[ERROR] ${message}`,
+        actualError || "",
+        actualContext || "",
+      );
     }
 
     this.sendToExternalService(entry).catch(() => {});

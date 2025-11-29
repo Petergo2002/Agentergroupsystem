@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { IconPhoto, IconTrash, IconUpload, IconX } from "@tabler/icons-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import type { ReportAsset } from "@/lib/types/rapport";
-import { cn } from "@/lib/utils";
 
 interface ImageGallerySectionProps {
   assets: ReportAsset[];
@@ -39,15 +37,15 @@ export function ImageGallerySection({
 
     try {
       const newAssets: ReportAsset[] = [];
-      
+
       for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
         const file = files[i];
         if (!file) continue;
-        
+
         // Här skulle du normalt ladda upp till Supabase Storage
         // För nu skapar vi en lokal URL
         const url = URL.createObjectURL(file);
-        
+
         const asset: ReportAsset = {
           id: `asset-${Date.now()}-${i}`,
           label: file.name,
@@ -56,7 +54,7 @@ export function ImageGallerySection({
           capturedBy: "Användare", // Skulle komma från auth
           tags: [],
         };
-        
+
         newAssets.push(asset);
       }
 
@@ -75,7 +73,7 @@ export function ImageGallerySection({
 
   const handleUpdateLabel = (assetId: string, newLabel: string) => {
     onAssetsChange(
-      assets.map((a) => (a.id === assetId ? { ...a, label: newLabel } : a))
+      assets.map((a) => (a.id === assetId ? { ...a, label: newLabel } : a)),
     );
   };
 
@@ -83,8 +81,8 @@ export function ImageGallerySection({
     if (!tag.trim()) return;
     onAssetsChange(
       assets.map((a) =>
-        a.id === assetId ? { ...a, tags: [...a.tags, tag.trim()] } : a
-      )
+        a.id === assetId ? { ...a, tags: [...a.tags, tag.trim()] } : a,
+      ),
     );
   };
 
@@ -93,8 +91,8 @@ export function ImageGallerySection({
       assets.map((a) =>
         a.id === assetId
           ? { ...a, tags: a.tags.filter((_, i) => i !== tagIndex) }
-          : a
-      )
+          : a,
+      ),
     );
   };
 
@@ -136,7 +134,9 @@ export function ImageGallerySection({
           <div className="text-center">
             <IconPhoto className="mx-auto size-12 text-muted-foreground" />
             <p className="mt-2 text-sm text-muted-foreground">
-              {readOnly ? "Inga bilder uppladdade" : "Inga bilder ännu. Klicka på 'Ladda upp bilder' för att börja."}
+              {readOnly
+                ? "Inga bilder uppladdade"
+                : "Inga bilder ännu. Klicka på 'Ladda upp bilder' för att börja."}
             </p>
           </div>
         </div>
@@ -160,7 +160,7 @@ export function ImageGallerySection({
                   </div>
                 )}
               </div>
-              
+
               {!readOnly && (
                 <button
                   type="button"
@@ -177,7 +177,9 @@ export function ImageGallerySection({
                 ) : (
                   <Input
                     value={asset.label}
-                    onChange={(e) => handleUpdateLabel(asset.id, e.target.value)}
+                    onChange={(e) =>
+                      handleUpdateLabel(asset.id, e.target.value)
+                    }
                     placeholder="Bildtext..."
                     className="h-8 text-sm"
                   />

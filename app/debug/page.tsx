@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { IS_DEMO_MODE } from "@/lib/supabase";
 
 export default function DebugPage() {

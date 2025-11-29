@@ -1,31 +1,31 @@
 "use client";
 
 import {
+  Bot,
   Calendar,
   CheckCircle,
+  ChevronRight,
   Clock,
   Filter,
+  Lock,
   MessageCircle,
   TrendingDown,
   TrendingUp,
-  X,
   User,
-  Bot,
-  ChevronRight,
-  Lock,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { SiteHeader } from "@/components/site-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   useVapiAssistants,
   useVapiChatAnalytics,
 } from "@/lib/analytics/useVapi";
-import type { VapiChatSession, VapiChatMessage } from "@/lib/analytics/vapi";
+import type { VapiChatMessage, VapiChatSession } from "@/lib/analytics/vapi";
 import { useFeatureFlags } from "@/lib/hooks/use-feature-flags";
-import { SiteHeader } from "@/components/site-header";
 
 export default function ChatAnalyticsPage() {
   const { flags, loading: flagsLoading } = useFeatureFlags();
@@ -33,24 +33,10 @@ export default function ChatAnalyticsPage() {
   const [startDate, setStartDate] = useState<string>();
   const [endDate, setEndDate] = useState<string>();
   const [assistantFilter, setAssistantFilter] = useState("default");
-  const [selectedSession, setSelectedSession] = useState<VapiChatSession | null>(null);
+  const [selectedSession, setSelectedSession] =
+    useState<VapiChatSession | null>(null);
 
-  if (!flagsLoading && !flags?.chat_analytics_enabled) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <SiteHeader title="AI Analytics – Chat" showAddButton={false} />
-        <div className="flex-1 flex items-center justify-center p-8">
-          <Alert className="max-w-md">
-            <Lock className="h-4 w-4" />
-            <AlertDescription>
-              Denna funktion är inte tillgänglig. Kontakta administratören för att aktivera AI Analytics – Chat.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </div>
-    );
-  }
-
+  // Hooks must be called unconditionally before any early returns
   useEffect(() => {
     const now = new Date();
     const end = now.toISOString();
@@ -95,6 +81,24 @@ export default function ChatAnalyticsPage() {
     assistantId: selectedAssistantId,
   });
 
+  // Feature flag check after all hooks
+  if (!flagsLoading && !flags?.chat_analytics_enabled) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <SiteHeader title="AI Analytics – Chat" showAddButton={false} />
+        <div className="flex-1 flex items-center justify-center p-8">
+          <Alert className="max-w-md">
+            <Lock className="h-4 w-4" />
+            <AlertDescription>
+              Denna funktion är inte tillgänglig. Kontakta administratören för
+              att aktivera AI Analytics – Chat.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -132,13 +136,16 @@ export default function ChatAnalyticsPage() {
                 <div className="mt-3 space-y-2">
                   <p>Möjliga orsaker:</p>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>Vapi-integration är inte konfigurerad för din organisation</li>
+                    <li>
+                      Vapi-integration är inte konfigurerad för din organisation
+                    </li>
                     <li>Vapi API-nyckel saknas eller är ogiltig</li>
                     <li>Vapi API svarar inte (timeout)</li>
                     <li>Chat-funktionen är inte aktiverad i Vapi</li>
                   </ul>
                   <p className="mt-3">
-                    Kontakta din administratör för att konfigurera Vapi-integration.
+                    Kontakta din administratör för att konfigurera
+                    Vapi-integration.
                   </p>
                 </div>
               </div>
@@ -373,67 +380,108 @@ export default function ChatAnalyticsPage() {
             {sessions.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground">
                 <MessageCircle className="w-12 h-12 mb-3 opacity-20" />
-                <p className="text-sm">Inga konversationer hittades för denna period.</p>
+                <p className="text-sm">
+                  Inga konversationer hittades för denna period.
+                </p>
               </div>
             ) : (
               <div className="divide-y divide-border/50">
                 {sessions.map((session) => {
-                  const firstUserMessage = session.messages?.find((m: VapiChatMessage) => m.role === "user");
-                  const rawPreview = firstUserMessage?.content || session.metadata?.input || "Ingen förhandsvisning";
-                  const messagePreview = typeof rawPreview === "string" ? rawPreview : String(rawPreview || "Ingen förhandsvisning");
+                  const firstUserMessage = session.messages?.find(
+                    (m: VapiChatMessage) => m.role === "user",
+                  );
+                  const rawPreview =
+                    firstUserMessage?.content ||
+                    session.metadata?.input ||
+                    "Ingen förhandsvisning";
+                  const messagePreview =
+                    typeof rawPreview === "string"
+                      ? rawPreview
+                      : String(rawPreview || "Ingen förhandsvisning");
                   const isSelected = selectedSession?.id === session.id;
-                  
+
                   return (
                     <button
+                      type="button"
                       key={session.id}
                       onClick={() => setSelectedSession(session)}
                       className={`w-full text-left px-4 py-4 hover:bg-muted/50 transition-all flex items-start gap-3 group ${
-                        isSelected ? "bg-muted border-l-2 border-primary pl-[14px]" : "pl-4 border-l-2 border-transparent"
+                        isSelected
+                          ? "bg-muted border-l-2 border-primary pl-[14px]"
+                          : "pl-4 border-l-2 border-transparent"
                       }`}
                     >
-                      <div className={`flex-shrink-0 mt-0.5 w-10 h-10 rounded-full flex items-center justify-center shadow-sm border ${
-                        session.status === "completed" ? "bg-green-50 border-green-100 text-green-600" : 
-                        session.status === "abandoned" ? "bg-red-50 border-red-100 text-red-600" : "bg-gray-50 border-gray-100 text-gray-500"
-                      }`}>
-                        {session.status === "completed" ? <CheckCircle className="w-5 h-5" /> :
-                         session.status === "abandoned" ? <X className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
+                      <div
+                        className={`flex-shrink-0 mt-0.5 w-10 h-10 rounded-full flex items-center justify-center shadow-sm border ${
+                          session.status === "completed"
+                            ? "bg-green-50 border-green-100 text-green-600"
+                            : session.status === "abandoned"
+                              ? "bg-red-50 border-red-100 text-red-600"
+                              : "bg-gray-50 border-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {session.status === "completed" ? (
+                          <CheckCircle className="w-5 h-5" />
+                        ) : session.status === "abandoned" ? (
+                          <X className="w-5 h-5" />
+                        ) : (
+                          <MessageCircle className="w-5 h-5" />
+                        )}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold text-foreground truncate">
-                            {assistants.find((a) => a.id === session.assistantId)?.name || "AI Assistent"}
+                            {assistants.find(
+                              (a) => a.id === session.assistantId,
+                            )?.name || "AI Assistent"}
                           </span>
                           <span className="text-xs text-muted-foreground flex-shrink-0 tabular-nums">
-                            {new Date(session.startTime).toLocaleDateString("sv-SE", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
+                            {new Date(session.startTime).toLocaleDateString(
+                              "sv-SE",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
                           </span>
                         </div>
-                        
-                        <p className={`text-sm truncate line-clamp-1 ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground/80"}`}>
+
+                        <p
+                          className={`text-sm truncate line-clamp-1 ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground/80"}`}
+                        >
                           {messagePreview}
                         </p>
-                        
+
                         <div className="flex items-center gap-2 pt-1">
-                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                            session.status === "completed" ? "bg-green-50 text-green-700 border-green-200" : 
-                            session.status === "abandoned" ? "bg-red-50 text-red-700 border-red-200" : 
-                            "bg-gray-50 text-gray-700 border-gray-200"
-                          }`}>
-                            {session.status === "completed" ? "Slutförd" : 
-                             session.status === "abandoned" ? "Avbruten" : session.status}
+                          <span
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                              session.status === "completed"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : session.status === "abandoned"
+                                  ? "bg-red-50 text-red-700 border-red-200"
+                                  : "bg-gray-50 text-gray-700 border-gray-200"
+                            }`}
+                          >
+                            {session.status === "completed"
+                              ? "Slutförd"
+                              : session.status === "abandoned"
+                                ? "Avbruten"
+                                : session.status}
                           </span>
                           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                             <MessageCircle className="w-3 h-3" />
-                            {session.messageCount || session.messages?.length || 0}
+                            {session.messageCount ||
+                              session.messages?.length ||
+                              0}
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className={`w-4 h-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+                      <ChevronRight
+                        className={`w-4 h-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      />
                     </button>
                   );
                 })}
@@ -451,8 +499,8 @@ export default function ChatAnalyticsPage() {
                 <span className="font-semibold text-base">Konversation</span>
               </div>
               {selectedSession && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   onClick={() => setSelectedSession(null)}
@@ -468,9 +516,12 @@ export default function ChatAnalyticsPage() {
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
                   <MessageCircle className="w-8 h-8 text-muted-foreground/50" />
                 </div>
-                <h3 className="text-lg font-medium text-foreground mb-1">Ingen konversation vald</h3>
+                <h3 className="text-lg font-medium text-foreground mb-1">
+                  Ingen konversation vald
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Välj en konversation från listan till vänster för att se detaljerna
+                  Välj en konversation från listan till vänster för att se
+                  detaljerna
                 </p>
               </div>
             ) : (
@@ -478,38 +529,66 @@ export default function ChatAnalyticsPage() {
                 {/* Session Info Bar */}
                 <div className="bg-muted/30 border-b px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-y-2 gap-x-4 text-xs">
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Assistent</span>
+                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                      Assistent
+                    </span>
                     <span className="font-medium truncate">
-                      {assistants.find((a) => a.id === selectedSession.assistantId)?.name || "Okänd"}
+                      {assistants.find(
+                        (a) => a.id === selectedSession.assistantId,
+                      )?.name || "Okänd"}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Tidpunkt</span>
+                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                      Tidpunkt
+                    </span>
                     <span className="font-medium truncate">
-                      {new Date(selectedSession.startTime).toLocaleString("sv-SE", {
-                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                      })}
+                      {new Date(selectedSession.startTime).toLocaleString(
+                        "sv-SE",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Status</span>
-                    <span className={`font-medium px-1.5 py-0.5 rounded-md inline-flex w-fit items-center gap-1 ${
-                      selectedSession.status === "completed" ? "bg-green-50 text-green-700" : 
-                      selectedSession.status === "abandoned" ? "bg-red-50 text-red-700" : "bg-gray-100"
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${
-                        selectedSession.status === "completed" ? "bg-green-500" : 
-                        selectedSession.status === "abandoned" ? "bg-red-500" : "bg-gray-500"
-                      }`} />
-                      {selectedSession.status === "completed" ? "Slutförd" : 
-                       selectedSession.status === "abandoned" ? "Avbruten" : selectedSession.status}
+                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                      Status
+                    </span>
+                    <span
+                      className={`font-medium px-1.5 py-0.5 rounded-md inline-flex w-fit items-center gap-1 ${
+                        selectedSession.status === "completed"
+                          ? "bg-green-50 text-green-700"
+                          : selectedSession.status === "abandoned"
+                            ? "bg-red-50 text-red-700"
+                            : "bg-gray-100"
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          selectedSession.status === "completed"
+                            ? "bg-green-500"
+                            : selectedSession.status === "abandoned"
+                              ? "bg-red-500"
+                              : "bg-gray-500"
+                        }`}
+                      />
+                      {selectedSession.status === "completed"
+                        ? "Slutförd"
+                        : selectedSession.status === "abandoned"
+                          ? "Avbruten"
+                          : selectedSession.status}
                     </span>
                   </div>
                 </div>
 
                 {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-muted/20">
-                  {selectedSession.messages && selectedSession.messages.length > 0 ? (
+                  {selectedSession.messages &&
+                  selectedSession.messages.length > 0 ? (
                     selectedSession.messages.map((message, idx) => {
                       const isUser = message.role === "user";
                       return (
@@ -522,14 +601,20 @@ export default function ChatAnalyticsPage() {
                               <Bot className="w-4 h-4 text-primary" />
                             </div>
                           )}
-                          
-                          <div className={`flex flex-col max-w-[80%] ${isUser ? "items-end" : "items-start"}`}>
-                            <div className={`relative px-4 py-2.5 shadow-sm text-sm ${
-                              isUser 
-                                ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" 
-                                : "bg-background border text-foreground rounded-2xl rounded-tl-sm"
-                            }`}>
-                              <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+
+                          <div
+                            className={`flex flex-col max-w-[80%] ${isUser ? "items-end" : "items-start"}`}
+                          >
+                            <div
+                              className={`relative px-4 py-2.5 shadow-sm text-sm ${
+                                isUser
+                                  ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
+                                  : "bg-background border text-foreground rounded-2xl rounded-tl-sm"
+                              }`}
+                            >
+                              <p className="whitespace-pre-wrap leading-relaxed">
+                                {message.content}
+                              </p>
                             </div>
                             <span className="text-[10px] text-muted-foreground mt-1 px-1">
                               {isUser ? "Användare" : "AI Assistent"}
@@ -552,10 +637,14 @@ export default function ChatAnalyticsPage() {
                       {selectedSession.metadata?.input && (
                         <Card className="w-full max-w-md bg-muted/30">
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">Startad med input</CardTitle>
+                            <CardTitle className="text-xs uppercase tracking-wider text-muted-foreground">
+                              Startad med input
+                            </CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-sm font-medium">{selectedSession.metadata.input}</p>
+                            <p className="text-sm font-medium">
+                              {selectedSession.metadata.input}
+                            </p>
                           </CardContent>
                         </Card>
                       )}

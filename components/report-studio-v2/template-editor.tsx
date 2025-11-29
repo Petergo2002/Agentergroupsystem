@@ -2,24 +2,24 @@
 
 /**
  * Template Editor Component
- * 
+ *
  * Redigera en mall - lägg till/ta bort/ordna sektioner.
  */
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  IconArrowLeft,
+  IconChevronDown,
+  IconChevronUp,
+  IconFileText,
+  IconPencil,
+  IconPhoto,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -28,32 +28,38 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  IconPlus,
-  IconGripVertical,
-  IconTrash,
-  IconPencil,
-  IconFileText,
-  IconPhoto,
-  IconChevronUp,
-  IconChevronDown,
-  IconArrowLeft,
-} from "@tabler/icons-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import type {
+  ReportTrade,
+  SimpleSectionDefinition,
+  SimpleSectionType,
+} from "@/lib/types/rapport";
 import { useSimpleReportStore } from "@/stores/simpleReportStore";
-import type { SimpleSectionDefinition, SimpleSectionType, ReportTrade } from "@/lib/types/rapport";
 
 // Sektionstyp-konfiguration
-const SECTION_TYPES: Record<SimpleSectionType, { icon: typeof IconFileText; label: string; description: string }> = {
-  text: { 
-    icon: IconFileText, 
-    label: "Rubrik + Text", 
-    description: "En rubrik med fritext (markdown)" 
+const SECTION_TYPES: Record<
+  SimpleSectionType,
+  { icon: typeof IconFileText; label: string; description: string }
+> = {
+  text: {
+    icon: IconFileText,
+    label: "Rubrik + Text",
+    description: "En rubrik med fritext (markdown)",
   },
-  images: { 
-    icon: IconPhoto, 
-    label: "Bilder", 
-    description: "Bildgalleri med annoteringar" 
+  images: {
+    icon: IconPhoto,
+    label: "Bilder",
+    description: "Bildgalleri med annoteringar",
   },
 };
 
@@ -62,19 +68,20 @@ interface TemplateEditorProps {
 }
 
 export function TemplateEditor({ onBack }: TemplateEditorProps) {
-  const { 
-    getActiveTemplate, 
-    updateTemplate, 
-    addSection, 
-    updateSection, 
+  const {
+    getActiveTemplate,
+    updateTemplate,
+    addSection,
+    updateSection,
     deleteSection,
     reorderSections,
   } = useSimpleReportStore();
-  
+
   const template = getActiveTemplate();
   const [addSectionDialogOpen, setAddSectionDialogOpen] = useState(false);
   const [editSectionDialogOpen, setEditSectionDialogOpen] = useState(false);
-  const [editingSection, setEditingSection] = useState<SimpleSectionDefinition | null>(null);
+  const [editingSection, setEditingSection] =
+    useState<SimpleSectionDefinition | null>(null);
 
   if (!template) {
     return (
@@ -123,7 +130,9 @@ export function TemplateEditor({ onBack }: TemplateEditorProps) {
             <Label className="text-gray-400">Namn</Label>
             <Input
               value={template.name}
-              onChange={(e) => updateTemplate(template.id, { name: e.target.value })}
+              onChange={(e) =>
+                updateTemplate(template.id, { name: e.target.value })
+              }
               className="mt-1 bg-white/5 border-white/10"
             />
           </div>
@@ -131,7 +140,9 @@ export function TemplateEditor({ onBack }: TemplateEditorProps) {
             <Label className="text-gray-400">Bransch</Label>
             <Select
               value={template.trade}
-              onValueChange={(value) => updateTemplate(template.id, { trade: value as ReportTrade })}
+              onValueChange={(value) =>
+                updateTemplate(template.id, { trade: value as ReportTrade })
+              }
             >
               <SelectTrigger className="mt-1 bg-white/5 border-white/10">
                 <SelectValue />
@@ -147,7 +158,9 @@ export function TemplateEditor({ onBack }: TemplateEditorProps) {
             <Label className="text-gray-400">Beskrivning</Label>
             <Textarea
               value={template.description || ""}
-              onChange={(e) => updateTemplate(template.id, { description: e.target.value })}
+              onChange={(e) =>
+                updateTemplate(template.id, { description: e.target.value })
+              }
               className="mt-1 bg-white/5 border-white/10 resize-none"
               rows={2}
             />
@@ -159,8 +172,8 @@ export function TemplateEditor({ onBack }: TemplateEditorProps) {
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-medium text-white">Sektioner</h3>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             onClick={() => setAddSectionDialogOpen(true)}
             className="bg-emerald-600 hover:bg-emerald-700"
           >
@@ -174,8 +187,8 @@ export function TemplateEditor({ onBack }: TemplateEditorProps) {
             <CardContent className="py-12 text-center">
               <IconFileText className="w-12 h-12 mx-auto text-gray-500 mb-4" />
               <p className="text-gray-400 mb-4">Inga sektioner ännu</p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setAddSectionDialogOpen(true)}
               >
@@ -244,7 +257,15 @@ interface SectionCardProps {
   onMoveDown: () => void;
 }
 
-function SectionCard({ section, index, total, onEdit, onDelete, onMoveUp, onMoveDown }: SectionCardProps) {
+function SectionCard({
+  section,
+  index,
+  total,
+  onEdit,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+}: SectionCardProps) {
   const config = SECTION_TYPES[section.type];
   const Icon = config.icon;
 
@@ -276,34 +297,50 @@ function SectionCard({ section, index, total, onEdit, onDelete, onMoveUp, onMove
           </div>
 
           {/* Icon */}
-          <div className={`p-2 rounded-lg ${section.type === "text" ? "bg-blue-500/20" : "bg-purple-500/20"}`}>
-            <Icon className={`w-4 h-4 ${section.type === "text" ? "text-blue-400" : "text-purple-400"}`} />
+          <div
+            className={`p-2 rounded-lg ${section.type === "text" ? "bg-blue-500/20" : "bg-purple-500/20"}`}
+          >
+            <Icon
+              className={`w-4 h-4 ${section.type === "text" ? "text-blue-400" : "text-purple-400"}`}
+            />
           </div>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-white truncate">{section.title}</span>
+              <span className="font-medium text-white truncate">
+                {section.title}
+              </span>
               {section.required && (
-                <Badge variant="secondary" className="bg-red-500/20 text-red-400 text-xs">
+                <Badge
+                  variant="secondary"
+                  className="bg-red-500/20 text-red-400 text-xs"
+                >
                   Obligatorisk
                 </Badge>
               )}
             </div>
             {section.description && (
-              <p className="text-sm text-gray-400 truncate">{section.description}</p>
+              <p className="text-sm text-gray-400 truncate">
+                {section.description}
+              </p>
             )}
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onEdit}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={onEdit}
+            >
               <IconPencil className="w-4 h-4" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0 text-red-400 hover:text-red-300" 
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
               onClick={onDelete}
             >
               <IconTrash className="w-4 h-4" />
@@ -331,10 +368,18 @@ const AVAILABLE_VARIABLES = [
   { key: "{{adress}}", label: "Adress", description: "Projektets adress" },
   { key: "{{datum}}", label: "Datum", description: "Dagens datum" },
   { key: "{{utredare}}", label: "Utredare", description: "Utredarens namn" },
-  { key: "{{projektreferens}}", label: "Projektreferens", description: "Projekt-ID" },
+  {
+    key: "{{projektreferens}}",
+    label: "Projektreferens",
+    description: "Projekt-ID",
+  },
 ];
 
-function AddSectionDialog({ open, onOpenChange, onAdd }: AddSectionDialogProps) {
+function AddSectionDialog({
+  open,
+  onOpenChange,
+  onAdd,
+}: AddSectionDialogProps) {
   const [type, setType] = useState<SimpleSectionType>("text");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -342,7 +387,7 @@ function AddSectionDialog({ open, onOpenChange, onAdd }: AddSectionDialogProps) 
   const [required, setRequired] = useState(false);
 
   const insertVariable = (variable: string) => {
-    setDefaultContent(prev => prev + variable);
+    setDefaultContent((prev) => prev + variable);
   };
 
   const handleSubmit = () => {
@@ -375,7 +420,12 @@ function AddSectionDialog({ open, onOpenChange, onAdd }: AddSectionDialogProps) 
         <div className="space-y-4 py-4">
           {/* Typ-väljare */}
           <div className="grid grid-cols-2 gap-3">
-            {(Object.entries(SECTION_TYPES) as [SimpleSectionType, typeof SECTION_TYPES["text"]][]).map(([key, config]) => {
+            {(
+              Object.entries(SECTION_TYPES) as [
+                SimpleSectionType,
+                (typeof SECTION_TYPES)["text"],
+              ][]
+            ).map(([key, config]) => {
               const Icon = config.icon;
               return (
                 <Card
@@ -388,9 +438,13 @@ function AddSectionDialog({ open, onOpenChange, onAdd }: AddSectionDialogProps) 
                   onClick={() => setType(key)}
                 >
                   <CardContent className="p-4 text-center">
-                    <Icon className={`w-8 h-8 mx-auto mb-2 ${type === key ? "text-emerald-400" : "text-gray-400"}`} />
+                    <Icon
+                      className={`w-8 h-8 mx-auto mb-2 ${type === key ? "text-emerald-400" : "text-gray-400"}`}
+                    />
                     <p className="font-medium text-white">{config.label}</p>
-                    <p className="text-xs text-gray-400 mt-1">{config.description}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {config.description}
+                    </p>
                   </CardContent>
                 </Card>
               );
@@ -425,7 +479,8 @@ function AddSectionDialog({ open, onOpenChange, onAdd }: AddSectionDialogProps) 
             <div>
               <Label>Förifylld text (valfritt)</Label>
               <p className="text-xs text-gray-400 mb-2">
-                Text som fylls i automatiskt. Använd variabler för dynamiskt innehåll.
+                Text som fylls i automatiskt. Använd variabler för dynamiskt
+                innehåll.
               </p>
               <div className="flex flex-wrap gap-1 mb-2">
                 {AVAILABLE_VARIABLES.map((v) => (
@@ -455,7 +510,9 @@ function AddSectionDialog({ open, onOpenChange, onAdd }: AddSectionDialogProps) 
           <div className="flex items-center justify-between">
             <div>
               <Label>Obligatorisk</Label>
-              <p className="text-xs text-gray-400">Måste fyllas i för att slutföra rapporten</p>
+              <p className="text-xs text-gray-400">
+                Måste fyllas i för att slutföra rapporten
+              </p>
             </div>
             <Switch checked={required} onCheckedChange={setRequired} />
           </div>
@@ -465,8 +522,8 @@ function AddSectionDialog({ open, onOpenChange, onAdd }: AddSectionDialogProps) 
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Avbryt
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={!title.trim()}
             className="bg-emerald-600 hover:bg-emerald-700"
           >
@@ -489,14 +546,21 @@ interface EditSectionDialogProps {
   onSave: (updates: Partial<SimpleSectionDefinition>) => void;
 }
 
-function EditSectionDialog({ open, onOpenChange, section, onSave }: EditSectionDialogProps) {
+function EditSectionDialog({
+  open,
+  onOpenChange,
+  section,
+  onSave,
+}: EditSectionDialogProps) {
   const [title, setTitle] = useState(section.title);
   const [description, setDescription] = useState(section.description || "");
-  const [defaultContent, setDefaultContent] = useState(section.defaultContent || "");
+  const [defaultContent, setDefaultContent] = useState(
+    section.defaultContent || "",
+  );
   const [required, setRequired] = useState(section.required);
 
   const insertVariable = (variable: string) => {
-    setDefaultContent(prev => prev + variable);
+    setDefaultContent((prev) => prev + variable);
   };
 
   const handleSubmit = () => {
@@ -526,7 +590,9 @@ function EditSectionDialog({ open, onOpenChange, section, onSave }: EditSectionD
               ) : (
                 <IconPhoto className="w-5 h-5 text-purple-400" />
               )}
-              <span className="text-white">{SECTION_TYPES[section.type].label}</span>
+              <span className="text-white">
+                {SECTION_TYPES[section.type].label}
+              </span>
             </div>
           </div>
 
@@ -556,7 +622,8 @@ function EditSectionDialog({ open, onOpenChange, section, onSave }: EditSectionD
             <div>
               <Label>Förifylld text</Label>
               <p className="text-xs text-gray-400 mb-2">
-                Text som fylls i automatiskt. Använd variabler för dynamiskt innehåll.
+                Text som fylls i automatiskt. Använd variabler för dynamiskt
+                innehåll.
               </p>
               <div className="flex flex-wrap gap-1 mb-2">
                 {AVAILABLE_VARIABLES.map((v) => (
@@ -586,7 +653,9 @@ function EditSectionDialog({ open, onOpenChange, section, onSave }: EditSectionD
           <div className="flex items-center justify-between">
             <div>
               <Label>Obligatorisk</Label>
-              <p className="text-xs text-gray-400">Måste fyllas i för att slutföra rapporten</p>
+              <p className="text-xs text-gray-400">
+                Måste fyllas i för att slutföra rapporten
+              </p>
             </div>
             <Switch checked={required} onCheckedChange={setRequired} />
           </div>
@@ -596,8 +665,8 @@ function EditSectionDialog({ open, onOpenChange, section, onSave }: EditSectionD
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Avbryt
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={!title.trim()}
             className="bg-emerald-600 hover:bg-emerald-700"
           >

@@ -1,14 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
-import {
-  isUuid,
-  resolveVapiAssistantIdentifiers,
-} from "@/lib/server/vapi-assistant";
 import { createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { VapiConfigSchema, validateInput } from "@/lib/validation";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -78,8 +74,12 @@ export async function GET(
     // Don't expose full API keys to frontend
     const sanitized = {
       ...organization,
-      vapi_api_key: organization.vapi_api_key ? `****${organization.vapi_api_key.slice(-4)}` : null,
-      vapi_public_api_key: organization.vapi_public_api_key ? `****${organization.vapi_public_api_key.slice(-4)}` : null,
+      vapi_api_key: organization.vapi_api_key
+        ? `****${organization.vapi_api_key.slice(-4)}`
+        : null,
+      vapi_public_api_key: organization.vapi_public_api_key
+        ? `****${organization.vapi_public_api_key.slice(-4)}`
+        : null,
     };
 
     return NextResponse.json(sanitized);
@@ -124,14 +124,14 @@ export async function PATCH(
     // Parse and validate request body
     const body = await request.json();
     const validation = validateInput(VapiConfigSchema, body);
-    
+
     if (!validation.success) {
       return NextResponse.json(
         { error: "Invalid input", details: validation.error },
         { status: 400 },
       );
     }
-    
+
     const {
       vapi_enabled,
       vapi_api_key,
@@ -151,10 +151,18 @@ export async function PATCH(
       .single();
 
     // Determine if VAPI should be enabled
-    const shouldEnableVapi = vapi_enabled !== undefined ? Boolean(vapi_enabled) : currentOrg?.vapi_enabled;
+    const shouldEnableVapi =
+      vapi_enabled !== undefined
+        ? Boolean(vapi_enabled)
+        : currentOrg?.vapi_enabled;
 
     // Validate required fields if enabling Vapi
-    if (shouldEnableVapi && vapi_enabled !== undefined && !vapi_api_key && !currentOrg?.vapi_api_key) {
+    if (
+      shouldEnableVapi &&
+      vapi_enabled !== undefined &&
+      !vapi_api_key &&
+      !currentOrg?.vapi_api_key
+    ) {
       return NextResponse.json(
         { error: "API key is required when enabling Vapi integration" },
         { status: 400 },
@@ -173,10 +181,14 @@ export async function PATCH(
       updateData.vapi_api_key = shouldEnableVapi ? vapi_api_key : null;
     }
     if (vapi_public_api_key !== undefined) {
-      updateData.vapi_public_api_key = shouldEnableVapi ? vapi_public_api_key : null;
+      updateData.vapi_public_api_key = shouldEnableVapi
+        ? vapi_public_api_key
+        : null;
     }
     if (vapi_base_url !== undefined) {
-      updateData.vapi_base_url = shouldEnableVapi ? vapi_base_url || "https://api.vapi.ai" : null;
+      updateData.vapi_base_url = shouldEnableVapi
+        ? vapi_base_url || "https://api.vapi.ai"
+        : null;
     }
     if (vapi_org_id !== undefined) {
       updateData.vapi_org_id = shouldEnableVapi ? vapi_org_id : null;
@@ -194,8 +206,12 @@ export async function PATCH(
       },
       updateData: {
         ...updateData,
-        vapi_api_key: updateData.vapi_api_key ? `${updateData.vapi_api_key.substring(0, 10)}...` : null,
-        vapi_public_api_key: updateData.vapi_public_api_key ? `${updateData.vapi_public_api_key.substring(0, 10)}...` : null,
+        vapi_api_key: updateData.vapi_api_key
+          ? `${updateData.vapi_api_key.substring(0, 10)}...`
+          : null,
+        vapi_public_api_key: updateData.vapi_public_api_key
+          ? `${updateData.vapi_public_api_key.substring(0, 10)}...`
+          : null,
       },
     });
 
@@ -233,15 +249,23 @@ export async function PATCH(
       vapi_enabled: updatedOrg.vapi_enabled,
       hasPrivateKey: !!updatedOrg.vapi_api_key,
       hasPublicKey: !!updatedOrg.vapi_public_api_key,
-      privateKeyPreview: updatedOrg.vapi_api_key ? `${updatedOrg.vapi_api_key.substring(0, 10)}...` : null,
-      publicKeyPreview: updatedOrg.vapi_public_api_key ? `${updatedOrg.vapi_public_api_key.substring(0, 10)}...` : null,
+      privateKeyPreview: updatedOrg.vapi_api_key
+        ? `${updatedOrg.vapi_api_key.substring(0, 10)}...`
+        : null,
+      publicKeyPreview: updatedOrg.vapi_public_api_key
+        ? `${updatedOrg.vapi_public_api_key.substring(0, 10)}...`
+        : null,
     });
 
     // Don't expose full API keys to frontend
     const sanitized = {
       ...updatedOrg,
-      vapi_api_key: updatedOrg.vapi_api_key ? `****${updatedOrg.vapi_api_key.slice(-4)}` : null,
-      vapi_public_api_key: updatedOrg.vapi_public_api_key ? `****${updatedOrg.vapi_public_api_key.slice(-4)}` : null,
+      vapi_api_key: updatedOrg.vapi_api_key
+        ? `****${updatedOrg.vapi_api_key.slice(-4)}`
+        : null,
+      vapi_public_api_key: updatedOrg.vapi_public_api_key
+        ? `****${updatedOrg.vapi_public_api_key.slice(-4)}`
+        : null,
     };
 
     return NextResponse.json(sanitized);

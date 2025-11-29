@@ -1,12 +1,30 @@
 import { createBrowserClient } from "@supabase/ssr";
-import type { Database } from "./database.types";
 
+/**
+ * Create a Supabase client for browser/client-side usage.
+ *
+ * Behavior by environment:
+ * - Production: Requires valid Supabase URL and anon key. Throws if missing.
+ * - Development/Test: Falls back to mock client if env vars are missing.
+ */
 export const createSupabaseClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Demo mode: return a mock client so the app can run without Supabase
+    // In production, missing Supabase config is a critical error
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CRITICAL: Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY in production. " +
+          "The application cannot start without valid Supabase configuration."
+      );
+    }
+
+    // Demo mode: return a mock client so the app can run without Supabase in dev/test
+    console.warn(
+      "[Supabase] Running in demo mode - no Supabase connection. " +
+        "Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to connect."
+    );
     return createMockSupabaseClient();
   }
 
@@ -14,10 +32,14 @@ export const createSupabaseClient = () => {
   return createBrowserClient(supabaseUrl, supabaseAnonKey);
 };
 
-// Flag used by the UI to enable demo-mode behaviors (e.g., bypassing auth redirects)
+/**
+ * Flag used by the UI to enable demo-mode behaviors (e.g., bypassing auth redirects).
+ * In production, this should always be false.
+ */
 export const IS_DEMO_MODE =
-  !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  process.env.NODE_ENV !== "production" &&
+  (!process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 // --- Demo/Mock client (no network) ---
 function createMockSupabaseClient(): any {

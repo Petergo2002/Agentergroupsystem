@@ -1,10 +1,22 @@
-# Calendar CRM - Modern Calendar & Contact Management
+# Agenter Group System
 
-A modern, full-featured Calendar + CRM system built with Next.js 15 (App Router), TypeScript, and Supabase. Manage your meetings, contacts, and tasks all in one intuitive interface.
+Modern SaaS-plattform för rapporthantering, CRM och AI-assistenter.
 
-![Calendar CRM](https://img.shields.io/badge/Next.js-15-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue) ![Supabase](https://img.shields.io/badge/Supabase-green) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC)
+![Next.js](https://img.shields.io/badge/Next.js-15-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue) ![Supabase](https://img.shields.io/badge/Supabase-green) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC)
+
+> **📚 Fullständig dokumentation:** Se [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md) och [docs/](docs/)
+
+---
 
 ## ✨ Features
+
+### 📋 **Rapporthantering (V3)**
+- **Report Studio** – Skapa och hantera rapportmallar
+- **Report Editor** – Redigera rapporter med text och bilder
+- **Bildannotering** – Rita pilar och cirklar på bilder
+- **PDF Export** – Generera professionella PDF:er
+- **Publik delning** – Dela rapporter med kunder
+- **Kundgodkännande** – Signatur och godkännande
 
 ### 📅 **Calendar Management**
 - **Multiple Views**: Month, Week, and Day calendar views
@@ -31,11 +43,16 @@ A modern, full-featured Calendar + CRM system built with Next.js 15 (App Router)
 - **Task Summary**: Track pending and completed tasks
 - **Activity Insights**: Understand your productivity patterns
 
+### 🤖 **AI-assistenter**
+- **Vapi Integration** – Röst- och chattassistenter
+- **Samtalsanalys** – Analysera AI-samtal
+- **White-label** – Anpassningsbar för varje organisation
+
 ### 🔐 **Authentication & Security**
 - **Supabase Auth**: Secure email/password and Google OAuth login
 - **Row-Level Security**: Each user only sees their own data
+- **Multi-tenant**: Stöd för flera organisationer
 - **Session Management**: Automatic session handling and refresh
-- **Protected Routes**: Secure access to all application features
 
 ## 🚀 Tech Stack
 

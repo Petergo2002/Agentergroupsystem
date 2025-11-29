@@ -5,7 +5,6 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconEdit,
-  IconEye,
   IconEyeOff,
   IconMessageCircle,
   IconPhoto,
@@ -15,26 +14,37 @@ import {
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import type {
-  Report,
-  ReportTemplate,
-  ReportSectionInstance,
-  ReportChecklistItem,
-  TableData,
-  SignatureData,
   LinkItem,
+  Report,
   ReportAsset,
+  ReportChecklistItem,
+  ReportSectionInstance,
+  ReportTemplate,
+  SignatureData,
 } from "@/lib/types/rapport";
 import { cn } from "@/lib/utils";
-import { SnippetPicker, QuickVariablePicker } from "./SnippetPicker";
-import { ImageAnnotator, type Annotation } from "./ImageAnnotator";
+import { type Annotation, ImageAnnotator } from "./ImageAnnotator";
+import { SnippetPicker } from "./SnippetPicker";
 
 // ============================================================================
 // Types
@@ -71,7 +81,9 @@ export function SectionEditor({
   assets = [],
   onAssetsChange,
 }: SectionEditorProps) {
-  const [showInternalNotes, setShowInternalNotes] = useState(!!section.internalNotes);
+  const [showInternalNotes, setShowInternalNotes] = useState(
+    !!section.internalNotes,
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Insert text at cursor position
@@ -88,7 +100,9 @@ export function SectionEditor({
       const end = textarea.selectionEnd;
       const currentContent = section.content || "";
       const newContent =
-        currentContent.substring(0, start) + text + currentContent.substring(end);
+        currentContent.substring(0, start) +
+        text +
+        currentContent.substring(end);
 
       onChange({ content: newContent });
 
@@ -98,21 +112,21 @@ export function SectionEditor({
         textarea.setSelectionRange(start + text.length, start + text.length);
       }, 0);
     },
-    [section.content, onChange]
+    [section.content, onChange],
   );
 
-  const handleContentChange = useCallback(
+  const _handleContentChange = useCallback(
     (content: string) => {
       onChange({ content });
     },
-    [onChange]
+    [onChange],
   );
 
   const handleInternalNotesChange = useCallback(
     (internalNotes: string) => {
       onChange({ internalNotes });
     },
-    [onChange]
+    [onChange],
   );
 
   const isCompleted = section.status === "completed";
@@ -126,7 +140,10 @@ export function SectionEditor({
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-semibold">{section.title}</h2>
               {section.visibility?.audience === "internal" && (
-                <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                <Badge
+                  variant="outline"
+                  className="border-amber-200 bg-amber-50 text-amber-700"
+                >
                   <IconEyeOff className="mr-1 size-3" />
                   Endast intern
                 </Badge>
@@ -139,7 +156,9 @@ export function SectionEditor({
               )}
             </div>
             {section.hint && (
-              <p className="mt-1 text-sm text-muted-foreground">{section.hint}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {section.hint}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -147,7 +166,9 @@ export function SectionEditor({
               variant="outline"
               size="sm"
               onClick={() => setShowInternalNotes(!showInternalNotes)}
-              className={cn(showInternalNotes && "bg-amber-50 border-amber-200")}
+              className={cn(
+                showInternalNotes && "bg-amber-50 border-amber-200",
+              )}
             >
               <IconMessageCircle className="mr-2 size-4" />
               Intern anteckning
@@ -207,22 +228,16 @@ export function SectionEditor({
       {/* Footer navigation */}
       <div className="border-t bg-card px-6 py-3">
         <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={onPrevious}
-            disabled={!hasPrevious}
-          >
+          <Button variant="ghost" onClick={onPrevious} disabled={!hasPrevious}>
             <IconChevronUp className="mr-2 size-4" />
             Föregående
           </Button>
           <div className="text-sm text-muted-foreground">
-            {isCompleted ? "Sektion markerad som klar" : "Fyll i och markera som klar"}
+            {isCompleted
+              ? "Sektion markerad som klar"
+              : "Fyll i och markera som klar"}
           </div>
-          <Button
-            variant="ghost"
-            onClick={onNext}
-            disabled={!hasNext}
-          >
+          <Button variant="ghost" onClick={onNext} disabled={!hasNext}>
             Nästa
             <IconChevronDown className="ml-2 size-4" />
           </Button>
@@ -259,9 +274,23 @@ function renderSectionContent({
     case "heading":
       return <HeadingEditor section={section} onChange={onChange} />;
     case "summary":
-      return <SummaryEditor section={section} onChange={onChange} onInsertText={onInsertText} report={report} template={template} />;
+      return (
+        <SummaryEditor
+          section={section}
+          onChange={onChange}
+          onInsertText={onInsertText}
+          report={report}
+          template={template}
+        />
+      );
     case "basic_info":
-      return <BasicInfoEditor section={section} onChange={onChange} report={report} />;
+      return (
+        <BasicInfoEditor
+          section={section}
+          onChange={onChange}
+          report={report}
+        />
+      );
     case "checklist":
       return <ChecklistEditor section={section} onChange={onChange} />;
     case "table":
@@ -275,10 +304,24 @@ function renderSectionContent({
     case "image":
     case "image_gallery":
     case "image_annotated":
-      return <ImageEditor section={section} onChange={onChange} assets={assets} onAssetsChange={onAssetsChange} />;
-    case "text":
+      return (
+        <ImageEditor
+          section={section}
+          onChange={onChange}
+          assets={assets}
+          onAssetsChange={onAssetsChange}
+        />
+      );
     default:
-      return <TextEditor section={section} onChange={onChange} onInsertText={onInsertText} report={report} template={template} />;
+      return (
+        <TextEditor
+          section={section}
+          onChange={onChange}
+          onInsertText={onInsertText}
+          report={report}
+          template={template}
+        />
+      );
   }
 }
 
@@ -307,7 +350,9 @@ function TextEditor({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-base">Innehåll</CardTitle>
-            <CardDescription>Skriv rapporttext för denna sektion</CardDescription>
+            <CardDescription>
+              Skriv rapporttext för denna sektion
+            </CardDescription>
           </div>
           {onInsertText && (
             <SnippetPicker
@@ -363,7 +408,9 @@ function HeadingEditor({
           <Label>Rubriknivå</Label>
           <Select
             value={String(section.headingLevel || 1)}
-            onValueChange={(v) => onChange({ headingLevel: Number(v) as 1 | 2 | 3 })}
+            onValueChange={(v) =>
+              onChange({ headingLevel: Number(v) as 1 | 2 | 3 })
+            }
           >
             <SelectTrigger className="mt-1">
               <SelectValue />
@@ -404,8 +451,12 @@ function SummaryEditor({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-base text-blue-800">Sammanfattning</CardTitle>
-            <CardDescription>Kort sammanfattning (TL;DR) av rapporten</CardDescription>
+            <CardTitle className="text-base text-blue-800">
+              Sammanfattning
+            </CardTitle>
+            <CardDescription>
+              Kort sammanfattning (TL;DR) av rapporten
+            </CardDescription>
           </div>
           {onInsertText && (
             <SnippetPicker
@@ -443,11 +494,7 @@ interface BasicInfoEditorProps {
   report?: Report;
 }
 
-function BasicInfoEditor({
-  section,
-  onChange,
-  report,
-}: BasicInfoEditorProps) {
+function BasicInfoEditor({ section, onChange, report }: BasicInfoEditorProps) {
   // Parse content as JSON or use defaults
   const parseContent = () => {
     try {
@@ -458,18 +505,23 @@ function BasicInfoEditor({
   };
 
   const basicInfo = parseContent();
-  
+
   // Use report metadata as fallback
   const getValue = (key: string) => {
     if (basicInfo[key]) return basicInfo[key];
     if (report?.metadata) {
       const metadata = report.metadata;
       switch (key) {
-        case "client": return metadata.client || "";
-        case "location": return metadata.location || "";
-        case "assignedTo": return metadata.assignedTo || "";
-        case "projectReference": return metadata.projectReference || "";
-        default: return "";
+        case "client":
+          return metadata.client || "";
+        case "location":
+          return metadata.location || "";
+        case "assignedTo":
+          return metadata.assignedTo || "";
+        case "projectReference":
+          return metadata.projectReference || "";
+        default:
+          return "";
       }
     }
     return "";
@@ -483,7 +535,9 @@ function BasicInfoEditor({
   return (
     <Card className="border-emerald-200 bg-emerald-50/30">
       <CardHeader>
-        <CardTitle className="text-base text-emerald-800">Grundinformation</CardTitle>
+        <CardTitle className="text-base text-emerald-800">
+          Grundinformation
+        </CardTitle>
         <CardDescription>Grundläggande uppgifter om rapporten</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -601,7 +655,9 @@ function ChecklistEditor({
                 value={item.label}
                 onChange={(e) => updateItem(index, { label: e.target.value })}
                 placeholder="Checklistpunkt..."
-                className={cn(item.completed && "line-through text-muted-foreground")}
+                className={cn(
+                  item.completed && "line-through text-muted-foreground",
+                )}
               />
               {item.notes !== undefined && (
                 <Input
@@ -660,10 +716,7 @@ function TableEditor({
     onChange({
       tableData: {
         ...tableData,
-        rows: [
-          ...tableData.rows,
-          { id: crypto.randomUUID(), values: {} },
-        ],
+        rows: [...tableData.rows, { id: crypto.randomUUID(), values: {} }],
       },
     });
   };
@@ -675,7 +728,7 @@ function TableEditor({
         rows: tableData.rows.map((row) =>
           row.id === rowId
             ? { ...row, values: { ...row.values, [colId]: value } }
-            : row
+            : row,
         ),
       },
     });
@@ -690,7 +743,9 @@ function TableEditor({
       <CardContent>
         {tableData.columns.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">Ingen tabell skapad ännu</p>
+            <p className="text-muted-foreground mb-4">
+              Ingen tabell skapad ännu
+            </p>
             <Button onClick={addColumn}>
               <IconPlus className="mr-2 size-4" />
               Lägg till kolumn
@@ -709,7 +764,9 @@ function TableEditor({
                       >
                         {col.label}
                         {col.unit && (
-                          <span className="text-muted-foreground ml-1">({col.unit})</span>
+                          <span className="text-muted-foreground ml-1">
+                            ({col.unit})
+                          </span>
                         )}
                       </th>
                     ))}
@@ -722,7 +779,9 @@ function TableEditor({
                         <td key={col.id} className="border px-1 py-1">
                           <Input
                             value={String(row.values[col.id] || "")}
-                            onChange={(e) => updateCell(row.id, col.id, e.target.value)}
+                            onChange={(e) =>
+                              updateCell(row.id, col.id, e.target.value)
+                            }
                             className="border-0 h-8"
                           />
                         </td>
@@ -791,7 +850,9 @@ function SignatureEditor({
                 <Label>Namn</Label>
                 <Input
                   value={sig.name}
-                  onChange={(e) => updateSignature(index, { name: e.target.value })}
+                  onChange={(e) =>
+                    updateSignature(index, { name: e.target.value })
+                  }
                   placeholder="Fullständigt namn"
                   className="mt-1"
                 />
@@ -800,7 +861,9 @@ function SignatureEditor({
                 <Label>Roll</Label>
                 <Input
                   value={sig.role}
-                  onChange={(e) => updateSignature(index, { role: e.target.value })}
+                  onChange={(e) =>
+                    updateSignature(index, { role: e.target.value })
+                  }
                   placeholder="T.ex. Projektledare"
                   className="mt-1"
                 />
@@ -812,7 +875,9 @@ function SignatureEditor({
                 <Input
                   type="date"
                   value={sig.date}
-                  onChange={(e) => updateSignature(index, { date: e.target.value })}
+                  onChange={(e) =>
+                    updateSignature(index, { date: e.target.value })
+                  }
                   className="mt-1"
                 />
               </div>
@@ -821,7 +886,9 @@ function SignatureEditor({
                 <Input
                   type="email"
                   value={sig.email || ""}
-                  onChange={(e) => updateSignature(index, { email: e.target.value })}
+                  onChange={(e) =>
+                    updateSignature(index, { email: e.target.value })
+                  }
                   placeholder="email@example.com"
                   className="mt-1"
                 />
@@ -878,7 +945,10 @@ function LinksEditor({
       </CardHeader>
       <CardContent className="space-y-3">
         {links.map((link, index) => (
-          <div key={link.id} className="flex items-start gap-3 p-3 border rounded-lg">
+          <div
+            key={link.id}
+            className="flex items-start gap-3 p-3 border rounded-lg"
+          >
             <div className="flex-1 grid gap-2 sm:grid-cols-2">
               <Input
                 value={link.label}
@@ -945,10 +1015,13 @@ function ImageEditor({
   assets = [],
 }: ImageEditorProps) {
   const [uploading, setUploading] = useState(false);
-  const [annotatingAsset, setAnnotatingAsset] = useState<ReportAsset | null>(null);
+  const [annotatingAsset, setAnnotatingAsset] = useState<ReportAsset | null>(
+    null,
+  );
   const inputId = `image-upload-${section.id}`;
   const sectionType = section.type || "image";
-  const maxImages = sectionType === "image" ? 1 : sectionType === "image_gallery" ? 10 : 1;
+  const maxImages =
+    sectionType === "image" ? 1 : sectionType === "image_gallery" ? 10 : 1;
 
   // Get assets for this section
   const sectionAssets = useMemo(() => {
@@ -1029,7 +1102,9 @@ function ImageEditor({
 
     // Update section reference
     if (sectionType === "image_gallery") {
-      const newAssetIds = (section.assetIds || []).filter((id) => id !== assetId);
+      const newAssetIds = (section.assetIds || []).filter(
+        (id) => id !== assetId,
+      );
       onChange({
         assetIds: newAssetIds,
         status: newAssetIds.length > 0 ? "completed" : "pending",
@@ -1045,21 +1120,28 @@ function ImageEditor({
   const handleUpdateLabel = (assetId: string, newLabel: string) => {
     if (!onAssetsChange) return;
     onAssetsChange(
-      assets.map((a) => (a.id === assetId ? { ...a, label: newLabel } : a))
+      assets.map((a) => (a.id === assetId ? { ...a, label: newLabel } : a)),
     );
   };
 
   // Handle annotation save
-  const handleAnnotationSave = (annotations: Annotation[], annotatedImageUrl: string) => {
+  const handleAnnotationSave = (
+    _annotations: Annotation[],
+    annotatedImageUrl: string,
+  ) => {
     if (!onAssetsChange || !annotatingAsset) return;
-    
+
     // Update the asset with the annotated image URL
     onAssetsChange(
-      assets.map((a) => 
-        a.id === annotatingAsset.id 
-          ? { ...a, url: annotatedImageUrl, tags: [...(a.tags || []), "annotated"] } 
-          : a
-      )
+      assets.map((a) =>
+        a.id === annotatingAsset.id
+          ? {
+              ...a,
+              url: annotatedImageUrl,
+              tags: [...(a.tags || []), "annotated"],
+            }
+          : a,
+      ),
     );
     setAnnotatingAsset(null);
   };
@@ -1115,14 +1197,19 @@ function ImageEditor({
           >
             <IconPhoto className="mx-auto size-12 text-muted-foreground" />
             <p className="mt-2 text-sm text-muted-foreground">
-              Klicka för att välja {sectionType === "image_gallery" ? "bilder" : "en bild"}
+              Klicka för att välja{" "}
+              {sectionType === "image_gallery" ? "bilder" : "en bild"}
             </p>
           </div>
         ) : (
-          <div className={cn(
-            "grid gap-4",
-            sectionType === "image_gallery" ? "sm:grid-cols-2 lg:grid-cols-3" : ""
-          )}>
+          <div
+            className={cn(
+              "grid gap-4",
+              sectionType === "image_gallery"
+                ? "sm:grid-cols-2 lg:grid-cols-3"
+                : "",
+            )}
+          >
             {sectionAssets.map((asset) => (
               <div
                 key={asset.id}
@@ -1157,7 +1244,10 @@ function ImageEditor({
                 {/* Annotated badge */}
                 {asset.tags?.includes("annotated") && (
                   <div className="absolute left-2 top-2">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="bg-blue-100 text-blue-700 text-xs"
+                    >
                       Annoterad
                     </Badge>
                   </div>
@@ -1165,7 +1255,9 @@ function ImageEditor({
                 <div className="p-3">
                   <Input
                     value={asset.label}
-                    onChange={(e) => handleUpdateLabel(asset.id, e.target.value)}
+                    onChange={(e) =>
+                      handleUpdateLabel(asset.id, e.target.value)
+                    }
                     placeholder="Bildtext..."
                     className="h-8 text-sm"
                   />

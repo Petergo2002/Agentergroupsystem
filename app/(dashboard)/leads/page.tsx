@@ -11,10 +11,7 @@ export default function LeadsPage() {
 
   return (
     <>
-      <SiteHeader
-        title="Leads"
-        showAddButton={false}
-      />
+      <SiteHeader title="Leads" showAddButton={false} />
       <div className="space-y-6 p-6">
         <LeadList
           onCreateLead={() => {

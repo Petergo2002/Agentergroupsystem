@@ -217,7 +217,7 @@ export class Vapi {
       throw lastThrownError;
     }
 
-    const triedUrls = attempts.map(a => a.url).join(", ");
+    const triedUrls = attempts.map((a) => a.url).join(", ");
     const fallback: any = new Error(
       lastErrorDetails
         ? `VAPI API error: ${lastErrorDetails.status || "unknown"} ${
@@ -238,9 +238,9 @@ export class Vapi {
     limit?: number;
   }): Promise<VapiCallLog[]> {
     const query = new URLSearchParams();
-    
+
     // Vapi List Calls API supports assistantId and limit
-    if (params?.assistantId && params.assistantId.trim()) {
+    if (params?.assistantId?.trim()) {
       query.append("assistantId", params.assistantId);
     }
     if (params?.limit) query.append("limit", params.limit.toString());
@@ -257,7 +257,7 @@ export class Vapi {
     for (const endpoint of endpoints) {
       try {
         console.log(`📞 Trying Vapi call endpoint: ${this.baseUrl}${endpoint}`);
-        
+
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
           headers: this.headers(),
         });
@@ -267,10 +267,11 @@ export class Vapi {
           console.log(`✅ Vapi ${endpoint} response:`, {
             isArray: Array.isArray(data),
             hasResults: !!data.results,
-            resultsCount: data.results?.length || (Array.isArray(data) ? data.length : 0),
+            resultsCount:
+              data.results?.length || (Array.isArray(data) ? data.length : 0),
             rawKeys: Object.keys(data),
           });
-          
+
           // Vapi List Calls returns array or { results: [...], metadata: {...} }
           const rawLogs = Array.isArray(data)
             ? data
@@ -280,11 +281,13 @@ export class Vapi {
           return rawLogs;
         } else {
           const errorText = await response.text().catch(() => "");
-          console.log(`❌ Vapi ${endpoint} failed: ${response.status} ${errorText}`);
-          
+          console.log(
+            `❌ Vapi ${endpoint} failed: ${response.status} ${errorText}`,
+          );
+
           if (response.status !== 404) {
             lastError = new Error(
-              `VAPI API error: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`
+              `VAPI API error: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
             );
           }
         }
@@ -298,7 +301,9 @@ export class Vapi {
       throw lastError;
     }
 
-    console.warn("📞 Could not fetch call logs from Vapi - no working endpoint found");
+    console.warn(
+      "📞 Could not fetch call logs from Vapi - no working endpoint found",
+    );
     return [];
   }
 
@@ -312,22 +317,24 @@ export class Vapi {
 
     try {
       const response = await fetch(url, { headers: this.headers() });
-      
+
       if (!response.ok) {
         const text = await response.text().catch(() => "");
         throw new Error(
           `VAPI API error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ""} (URL: ${url})`,
         );
       }
-      
+
       const data = await response.json();
-      const assistants = Array.isArray(data) ? data : (data.assistants ?? data.agents ?? []);
-      
+      const assistants = Array.isArray(data)
+        ? data
+        : (data.assistants ?? data.agents ?? []);
+
       this.assistantsCache = {
         data: assistants,
         expires: Date.now() + 60 * 1000,
       };
-      
+
       return assistants;
     } catch (error: any) {
       console.error(`Failed to fetch assistants from ${url}:`, error);
@@ -416,9 +423,9 @@ export class Vapi {
     limit?: number;
   }): Promise<VapiChatSession[]> {
     const query = new URLSearchParams();
-    
+
     // Vapi List Chats API supports assistantId and limit
-    if (params?.assistantId && params.assistantId.trim()) {
+    if (params?.assistantId?.trim()) {
       query.append("assistantId", params.assistantId);
     }
     if (params?.limit) query.append("limit", params.limit.toString());
@@ -436,7 +443,7 @@ export class Vapi {
     for (const endpoint of endpoints) {
       try {
         console.log(`🔍 Trying Vapi endpoint: ${this.baseUrl}${endpoint}`);
-        
+
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
           headers: this.headers(),
         });
@@ -449,7 +456,7 @@ export class Vapi {
             hasMetadata: !!data.metadata,
             rawKeys: Object.keys(data),
           });
-          
+
           // Vapi List Chats returns { results: [...], metadata: {...} }
           const rawSessions = Array.isArray(data)
             ? data
@@ -459,7 +466,7 @@ export class Vapi {
           const sessions: VapiChatSession[] = rawSessions.map((chat: any) => {
             // Combine messages and output arrays for full conversation
             const allMessages: VapiChatMessage[] = [];
-            
+
             // Add input messages (user messages)
             if (Array.isArray(chat.messages)) {
               chat.messages.forEach((msg: any, idx: number) => {
@@ -472,7 +479,7 @@ export class Vapi {
                 });
               });
             }
-            
+
             // Add output messages (assistant responses)
             if (Array.isArray(chat.output)) {
               chat.output.forEach((msg: any, idx: number) => {
@@ -480,7 +487,10 @@ export class Vapi {
                   id: `${chat.id}-out-${idx}`,
                   role: msg.role === "user" ? "user" : "assistant",
                   content: msg.message || msg.content || "",
-                  timestamp: chat.updatedAt || chat.createdAt || new Date().toISOString(),
+                  timestamp:
+                    chat.updatedAt ||
+                    chat.createdAt ||
+                    new Date().toISOString(),
                   sessionId: chat.id,
                 });
               });
@@ -518,7 +528,9 @@ export class Vapi {
           return sessions;
         } else {
           const errorText = await response.text().catch(() => "");
-          console.log(`❌ Vapi ${endpoint} failed: ${response.status} ${errorText}`);
+          console.log(
+            `❌ Vapi ${endpoint} failed: ${response.status} ${errorText}`,
+          );
         }
       } catch (e) {
         lastError = e as Error;

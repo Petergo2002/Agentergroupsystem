@@ -2,22 +2,23 @@
 
 /**
  * Template List Component
- * 
+ *
  * Visar alla mallar i en snygg lista med kort.
  */
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  IconBolt,
+  IconCopy,
+  IconDotsVertical,
+  IconDroplet,
+  IconFileText,
+  IconHammer,
+  IconPencil,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+} from "@tabler/icons-react";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,23 +29,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  IconPlus, 
-  IconDotsVertical, 
-  IconPencil, 
-  IconCopy, 
-  IconTrash,
-  IconFileText,
-  IconDroplet,
-  IconHammer,
-  IconBolt,
-  IconSearch,
-} from "@tabler/icons-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import type { ReportTrade, SimpleReportTemplate } from "@/lib/types/rapport";
 import { useSimpleReportStore } from "@/stores/simpleReportStore";
-import type { SimpleReportTemplate, ReportTrade } from "@/lib/types/rapport";
 
 // Trade icons och färger
-const TRADE_CONFIG: Record<ReportTrade, { icon: typeof IconFileText; color: string; label: string }> = {
+const TRADE_CONFIG: Record<
+  ReportTrade,
+  { icon: typeof IconFileText; color: string; label: string }
+> = {
   läckage: { icon: IconDroplet, color: "bg-emerald-500", label: "Läckage" },
   bygg: { icon: IconHammer, color: "bg-orange-500", label: "Bygg" },
   elektriker: { icon: IconBolt, color: "bg-yellow-500", label: "Elektriker" },
@@ -56,15 +59,17 @@ interface TemplateListProps {
 }
 
 export function TemplateList({ onCreateNew, onSelect }: TemplateListProps) {
-  const { templates, activeTemplateId, deleteTemplate, duplicateTemplate } = useSimpleReportStore();
+  const { templates, activeTemplateId, deleteTemplate, duplicateTemplate } =
+    useSimpleReportStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
 
   // Filtrera mallar baserat på sökning
-  const filteredTemplates = templates.filter((t) =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTemplates = templates.filter(
+    (t) =>
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.description?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleDelete = (id: string) => {
@@ -89,7 +94,11 @@ export function TemplateList({ onCreateNew, onSelect }: TemplateListProps) {
             <h2 className="text-lg font-semibold text-white">Rapportmallar</h2>
             <p className="text-sm text-gray-400">{templates.length} mallar</p>
           </div>
-          <Button onClick={onCreateNew} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+          <Button
+            onClick={onCreateNew}
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-700"
+          >
             <IconPlus className="w-4 h-4 mr-2" />
             Ny mall
           </Button>
@@ -113,7 +122,12 @@ export function TemplateList({ onCreateNew, onSelect }: TemplateListProps) {
           <div className="text-center py-12">
             <IconFileText className="w-12 h-12 mx-auto text-gray-500 mb-4" />
             <p className="text-gray-400">Inga mallar hittades</p>
-            <Button onClick={onCreateNew} variant="outline" size="sm" className="mt-4">
+            <Button
+              onClick={onCreateNew}
+              variant="outline"
+              size="sm"
+              className="mt-4"
+            >
               Skapa din första mall
             </Button>
           </div>
@@ -137,7 +151,8 @@ export function TemplateList({ onCreateNew, onSelect }: TemplateListProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Ta bort mall?</AlertDialogTitle>
             <AlertDialogDescription>
-              Denna åtgärd kan inte ångras. Mallen kommer att tas bort permanent.
+              Denna åtgärd kan inte ångras. Mallen kommer att tas bort
+              permanent.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -169,20 +184,31 @@ interface TemplateCardProps {
   onDelete: () => void;
 }
 
-function TemplateCard({ template, isActive, onSelect, onDuplicate, onDelete }: TemplateCardProps) {
+function TemplateCard({
+  template,
+  isActive,
+  onSelect,
+  onDuplicate,
+  onDelete,
+}: TemplateCardProps) {
   const config = TRADE_CONFIG[template.trade];
   const Icon = config.icon;
 
-  const textSections = template.sections.filter((s) => s.type === "text").length;
-  const imageSections = template.sections.filter((s) => s.type === "images").length;
+  const textSections = template.sections.filter(
+    (s) => s.type === "text",
+  ).length;
+  const imageSections = template.sections.filter(
+    (s) => s.type === "images",
+  ).length;
 
   return (
     <Card
       className={`
         cursor-pointer transition-all duration-200 border
-        ${isActive 
-          ? "bg-white/10 border-emerald-500/50 ring-1 ring-emerald-500/30" 
-          : "bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/20"
+        ${
+          isActive
+            ? "bg-white/10 border-emerald-500/50 ring-1 ring-emerald-500/30"
+            : "bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/20"
         }
       `}
       onClick={onSelect}
@@ -197,14 +223,21 @@ function TemplateCard({ template, isActive, onSelect, onDuplicate, onDelete }: T
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-white truncate">{template.name}</h3>
+              <h3 className="font-medium text-white truncate">
+                {template.name}
+              </h3>
               {template.description && (
-                <p className="text-sm text-gray-400 truncate mt-0.5">{template.description}</p>
+                <p className="text-sm text-gray-400 truncate mt-0.5">
+                  {template.description}
+                </p>
               )}
-              
+
               {/* Stats */}
               <div className="flex items-center gap-3 mt-2">
-                <Badge variant="secondary" className="bg-white/10 text-gray-300 text-xs">
+                <Badge
+                  variant="secondary"
+                  className="bg-white/10 text-gray-300 text-xs"
+                >
                   {template.sections.length} sektioner
                 </Badge>
                 <span className="text-xs text-gray-500">
@@ -221,18 +254,34 @@ function TemplateCard({ template, isActive, onSelect, onDuplicate, onDelete }: T
                 <IconDotsVertical className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10">
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onSelect(); }}>
+            <DropdownMenuContent
+              align="end"
+              className="bg-[#1a1a1a] border-white/10"
+            >
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect();
+                }}
+              >
                 <IconPencil className="w-4 h-4 mr-2" />
                 Redigera
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(); }}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate();
+                }}
+              >
                 <IconCopy className="w-4 h-4 mr-2" />
                 Duplicera
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-white/10" />
-              <DropdownMenuItem 
-                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
                 className="text-red-400 focus:text-red-400"
               >
                 <IconTrash className="w-4 h-4 mr-2" />

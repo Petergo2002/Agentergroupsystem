@@ -29,10 +29,22 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import {
+  generatePdfHtml,
+  type PdfProfile,
+  type PdfViewMode,
+} from "@/lib/rapport/pdfGenerator";
+import {
+  getProfile,
+  getProfileForTrade,
+  type PdfProfileKey,
+} from "@/lib/rapport/pdfProfiles";
 import { rapportApi } from "@/lib/rapport/rapportApi";
-import { generatePdfHtml, type PdfProfile, type PdfViewMode } from "@/lib/rapport/pdfGenerator";
-import { PROFILE_OPTIONS, getProfile, getProfileForTrade, type PdfProfileKey } from "@/lib/rapport/pdfProfiles";
-import type { Report, ReportTemplate, ReportSectionDefinition } from "@/lib/types/rapport";
+import type {
+  Report,
+  ReportSectionDefinition,
+  ReportTemplate,
+} from "@/lib/types/rapport";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -92,7 +104,9 @@ export function ExportDialog({
 }: ExportDialogProps) {
   const router = useRouter();
   const [selectedViewMode, setSelectedViewMode] = useState<string>("customer");
-  const [selectedStyleProfile, setSelectedStyleProfile] = useState<PdfProfileKey | "auto">("auto");
+  const [selectedStyleProfile, _setSelectedStyleProfile] = useState<
+    PdfProfileKey | "auto"
+  >("auto");
   const [isExporting, setIsExporting] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -111,7 +125,9 @@ export function ExportDialog({
     const issues: ValidationIssue[] = [];
 
     // Check required sections
-    const incompleteSections = report.sections.filter((s) => s.status !== "completed");
+    const incompleteSections = report.sections.filter(
+      (s) => s.status !== "completed",
+    );
     if (incompleteSections.length > 0) {
       incompleteSections.forEach((section) => {
         issues.push({
@@ -124,7 +140,9 @@ export function ExportDialog({
     }
 
     // Check required checklist items
-    const incompleteRequired = report.checklist.filter((c) => c.required && !c.completed);
+    const incompleteRequired = report.checklist.filter(
+      (c) => c.required && !c.completed,
+    );
     if (incompleteRequired.length > 0) {
       incompleteRequired.forEach((item) => {
         issues.push({
@@ -145,7 +163,10 @@ export function ExportDialog({
     // Check if report has content
     const hasContent = report.sections.some((s) => s.content?.trim());
     if (!hasContent) {
-      issues.push({ type: "warning", message: "Rapporten har inget innehåll i någon sektion" });
+      issues.push({
+        type: "warning",
+        message: "Rapporten har inget innehåll i någon sektion",
+      });
     }
 
     const errors = issues.filter((i) => i.type === "error");
@@ -163,7 +184,9 @@ export function ExportDialog({
   // Calculate progress
   const progress = useMemo(() => {
     const total = report.sections.length;
-    const completed = report.sections.filter((s) => s.status === "completed").length;
+    const completed = report.sections.filter(
+      (s) => s.status === "completed",
+    ).length;
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   }, [report.sections]);
 
@@ -213,7 +236,9 @@ export function ExportDialog({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const safeName = report.title.replace(/[^a-zA-Z0-9åäöÅÄÖ\s-]/g, "").trim();
+      const safeName = report.title
+        .replace(/[^a-zA-Z0-9åäöÅÄÖ\s-]/g, "")
+        .trim();
       a.download = `${safeName}_${new Date().toISOString().split("T")[0]}.html`;
       document.body.appendChild(a);
       a.click();
@@ -266,7 +291,7 @@ export function ExportDialog({
       toast.success("Rapport exporterad och arkiverad!");
       onOpenChange(false);
       onExported?.();
-      
+
       // Navigera till arkiv efter kort fördröjning
       setTimeout(() => {
         router.push("/rapport?tab=saved");
@@ -317,20 +342,24 @@ export function ExportDialog({
                       "flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-colors",
                       isSelected
                         ? "border-primary bg-primary/5"
-                        : "border-muted hover:border-primary/30"
+                        : "border-muted hover:border-primary/30",
                     )}
                   >
                     <div
                       className={cn(
                         "flex size-10 shrink-0 items-center justify-center rounded-lg",
-                        isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted",
                       )}
                     >
                       <Icon className="size-5" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{profile.label}</p>
-                      <p className="text-sm text-muted-foreground">{profile.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {profile.description}
+                      </p>
                     </div>
                     {isSelected && (
                       <IconCheck className="size-5 text-primary shrink-0" />
@@ -353,7 +382,10 @@ export function ExportDialog({
                   Redo för export
                 </Badge>
               ) : validation.canExport ? (
-                <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                <Badge
+                  variant="outline"
+                  className="border-amber-200 bg-amber-50 text-amber-700"
+                >
                   <IconAlertCircle className="mr-1 size-3" />
                   {validation.warnings.length} varningar
                 </Badge>
@@ -373,7 +405,9 @@ export function ExportDialog({
                       key={index}
                       className={cn(
                         "flex items-start gap-2 text-sm",
-                        issue.type === "error" ? "text-destructive" : "text-amber-600"
+                        issue.type === "error"
+                          ? "text-destructive"
+                          : "text-amber-600",
                       )}
                     >
                       {issue.type === "error" ? (
@@ -392,7 +426,12 @@ export function ExportDialog({
 
         <DialogFooter className="flex-col gap-2 sm:flex-row">
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={handlePreview} disabled={isPreviewing}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreview}
+              disabled={isPreviewing}
+            >
               {isPreviewing ? (
                 <IconLoader2 className="mr-2 size-4 animate-spin" />
               ) : (

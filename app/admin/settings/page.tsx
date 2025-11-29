@@ -65,10 +65,7 @@ export default async function SettingsPage() {
           >
             Super Admins
           </TabsTrigger>
-          <TabsTrigger
-            value="mcp"
-            className="data-[state=active]:bg-white/10"
-          >
+          <TabsTrigger value="mcp" className="data-[state=active]:bg-white/10">
             AI Endpoints
           </TabsTrigger>
           <TabsTrigger

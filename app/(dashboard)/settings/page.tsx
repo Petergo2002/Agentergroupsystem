@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { ImageUpload } from "@/components/ui/image-upload";
 import {
   Card,
   CardContent,
@@ -13,13 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { AuthUser } from "@/lib/auth";
+import { BRANDING_EVENT, writeBrandingCache } from "@/lib/branding-cache";
 import { useAuthStore } from "@/lib/store";
-import {
-  BRANDING_EVENT,
-  writeBrandingCache,
-} from "@/lib/branding-cache";
 import { createSupabaseClient } from "@/lib/supabase";
 
 export default function SettingsPage() {
@@ -61,10 +59,14 @@ export default function SettingsPage() {
 
       if (dbError) throw dbError;
 
-      setUser(authData.user as any);
+      setUser(authData.user as AuthUser | null);
       toast.success("Profilen har uppdaterats");
-    } catch (error: any) {
-      toast.error(error.message || "Det gick inte att uppdatera profilen");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Det gick inte att uppdatera profilen";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -80,9 +82,7 @@ export default function SettingsPage() {
         const data = json?.data || {};
         setBranding({
           companyName:
-            typeof data.name === "string" && data.name.trim()
-              ? data.name
-              : "",
+            typeof data.name === "string" && data.name.trim() ? data.name : "",
           logoUrl:
             typeof data.logo_url === "string" && data.logo_url.trim()
               ? data.logo_url
@@ -137,10 +137,12 @@ export default function SettingsPage() {
         }),
       );
       toast.success("Företagsprofilen har uppdaterats");
-    } catch (error: any) {
-      toast.error(
-        error?.message || "Det gick inte att spara företagsprofilen",
-      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Det gick inte att spara företagsprofilen";
+      toast.error(message);
     } finally {
       setBrandingSaving(false);
     }
@@ -208,7 +210,10 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={brandingLoading || brandingSaving}>
+              <Button
+                type="submit"
+                disabled={brandingLoading || brandingSaving}
+              >
                 {brandingSaving ? "Sparar..." : "Spara företagsprofil"}
               </Button>
             </div>
@@ -324,8 +329,6 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-
-      
     </div>
   );
 }

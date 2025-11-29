@@ -62,7 +62,7 @@ export function CreateOrganizationDialog({
         throw new Error(errorData.error || "Failed to create customer");
       }
 
-      const data = await response.json();
+      const _data = await response.json();
       toast.success("Customer and user created successfully");
       setOpen(false);
       setFormData({

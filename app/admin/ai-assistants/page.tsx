@@ -1,10 +1,11 @@
 "use client";
 
+import { AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { Loader2, Sparkles, AlertCircle } from "lucide-react";
 
 interface VapiAssistant {
   id: string;
@@ -40,7 +40,9 @@ interface OrganizationWithAssistants extends Organization {
 }
 
 export default function AIAssistantsAdminPage() {
-  const [organizations, setOrganizations] = useState<OrganizationWithAssistants[]>([]);
+  const [organizations, setOrganizations] = useState<
+    OrganizationWithAssistants[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [vapiDialogOpen, setVapiDialogOpen] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
@@ -57,55 +59,78 @@ export default function AIAssistantsAdminPage() {
     try {
       const response = await fetch("/api/admin/vapi/assistants");
       if (!response.ok) throw new Error("Failed to load organizations");
-      
+
       const data = await response.json();
       const orgs = data.organizations || [];
-      
-      setOrganizations(orgs.map((org: Organization) => ({
-        ...org,
-        assistants: [],
-        loadingAssistants: false,
-      })));
+
+      setOrganizations(
+        orgs.map((org: Organization) => ({
+          ...org,
+          assistants: [],
+          loadingAssistants: false,
+        })),
+      );
 
       // Note: We can't automatically load assistants anymore since we don't expose
       // full API keys for security. Assistants will be loaded on-demand when needed.
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Ett fel uppstod";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
   };
 
   const loadOrgAssistants = async (orgId: string) => {
-    setOrganizations(prev => prev.map(org => 
-      org.id === orgId ? { ...org, loadingAssistants: true } : org
-    ));
+    setOrganizations((prev) =>
+      prev.map((org) =>
+        org.id === orgId ? { ...org, loadingAssistants: true } : org,
+      ),
+    );
 
     try {
-      const response = await fetch(`/api/admin/organizations/${orgId}/assistants`);
+      const response = await fetch(
+        `/api/admin/organizations/${orgId}/assistants`,
+      );
 
       if (!response.ok) {
         const data = await response.json();
         // If Vapi not configured, just show empty list
         if (data.message) {
-          setOrganizations(prev => prev.map(org => 
-            org.id === orgId ? { ...org, assistants: [], loadingAssistants: false } : org
-          ));
+          setOrganizations((prev) =>
+            prev.map((org) =>
+              org.id === orgId
+                ? { ...org, assistants: [], loadingAssistants: false }
+                : org,
+            ),
+          );
           return;
         }
         throw new Error("Failed to load assistants");
       }
-      
+
       const data = await response.json();
-      
-      setOrganizations(prev => prev.map(o => 
-        o.id === orgId ? { ...o, assistants: data.assistants || [], loadingAssistants: false } : o
-      ));
-    } catch (err: any) {
+
+      setOrganizations((prev) =>
+        prev.map((o) =>
+          o.id === orgId
+            ? {
+                ...o,
+                assistants: data.assistants || [],
+                loadingAssistants: false,
+              }
+            : o,
+        ),
+      );
+    } catch (err: unknown) {
       console.error("Error loading assistants for org:", err);
-      setOrganizations(prev => prev.map(org => 
-        org.id === orgId ? { ...org, assistants: [], loadingAssistants: false } : org
-      ));
+      setOrganizations((prev) =>
+        prev.map((org) =>
+          org.id === orgId
+            ? { ...org, assistants: [], loadingAssistants: false }
+            : org,
+        ),
+      );
     }
   };
 
@@ -113,10 +138,12 @@ export default function AIAssistantsAdminPage() {
     setSelectedOrg(org);
     setVapiApiKeyInput("");
     setVapiPublicKeyInput("");
-    
+
     // Always fetch current config to show masked keys (even if not enabled yet)
     try {
-      const response = await fetch(`/api/admin/organizations/${org.id}/vapi-config`);
+      const response = await fetch(
+        `/api/admin/organizations/${org.id}/vapi-config`,
+      );
       if (response.ok) {
         const config = await response.json();
         // Update selected org with masked keys for display
@@ -129,7 +156,7 @@ export default function AIAssistantsAdminPage() {
     } catch (err) {
       console.error("Error fetching VAPI config:", err);
     }
-    
+
     setVapiDialogOpen(true);
   };
 
@@ -155,10 +182,14 @@ export default function AIAssistantsAdminPage() {
 
     setActivating(true);
     try {
-      const updateData: any = {
+      const updateData: {
+        vapi_enabled: boolean;
+        vapi_api_key?: string;
+        vapi_public_api_key?: string;
+      } = {
         vapi_enabled: true,
       };
-      
+
       // Only include keys if they were changed (not empty)
       if (vapiApiKeyInput.trim()) {
         updateData.vapi_api_key = vapiApiKeyInput.trim();
@@ -167,57 +198,67 @@ export default function AIAssistantsAdminPage() {
         updateData.vapi_public_api_key = vapiPublicKeyInput.trim();
       }
 
-      const response = await fetch(`/api/admin/organizations/${selectedOrg.id}/vapi-config`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      });
+      const response = await fetch(
+        `/api/admin/organizations/${selectedOrg.id}/vapi-config`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        },
+      );
 
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data?.error || "Failed to activate VAPI");
       }
 
-      const message = selectedOrg.vapi_enabled 
+      const message = selectedOrg.vapi_enabled
         ? `VAPI-konfiguration uppdaterad för ${selectedOrg.name}! ✅`
         : `VAPI aktiverat för ${selectedOrg.name}! 🎉`;
       toast.success(message);
       closeVapiDialog();
       loadOrganizations();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const errMessage = err instanceof Error ? err.message : "Ett fel uppstod";
+      toast.error(errMessage);
     } finally {
       setActivating(false);
     }
   };
 
   const deactivateVapi = async (orgId: string, orgName: string) => {
-    if (!confirm(`Är du säker på att du vill inaktivera VAPI för ${orgName}?`)) {
+    if (
+      !confirm(`Är du säker på att du vill inaktivera VAPI för ${orgName}?`)
+    ) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/admin/organizations/${orgId}/vapi-config`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          vapi_enabled: false,
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/organizations/${orgId}/vapi-config`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            vapi_enabled: false,
+          }),
+        },
+      );
 
       if (!response.ok) throw new Error("Failed to deactivate VAPI");
 
       toast.success(`VAPI inaktiverat för ${orgName}`);
       loadOrganizations();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Ett fel uppstod";
+      toast.error(message);
     }
   };
 
   const stats = {
     total: organizations.length,
-    enabled: organizations.filter(o => o.vapi_enabled).length,
-    disabled: organizations.filter(o => !o.vapi_enabled).length,
+    enabled: organizations.filter((o) => o.vapi_enabled).length,
+    disabled: organizations.filter((o) => !o.vapi_enabled).length,
   };
 
   if (isLoading) {
@@ -243,7 +284,9 @@ export default function AIAssistantsAdminPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totalt antal kunder</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Totalt antal kunder
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
@@ -251,10 +294,14 @@ export default function AIAssistantsAdminPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">VAPI Aktiverat</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              VAPI Aktiverat
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.enabled}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.enabled}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -262,7 +309,9 @@ export default function AIAssistantsAdminPage() {
             <CardTitle className="text-sm font-medium">Utan VAPI</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-400">{stats.disabled}</div>
+            <div className="text-2xl font-bold text-gray-400">
+              {stats.disabled}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -333,16 +382,17 @@ export default function AIAssistantsAdminPage() {
                         <Sparkles className="w-4 h-4" />
                         Assistenter ({org.assistants?.length || 0})
                       </h4>
-                      {!org.loadingAssistants && org.assistants?.length === 0 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => loadOrgAssistants(org.id)}
-                        >
-                          🔄 Ladda assistenter
-                        </Button>
-                      )}
+                      {!org.loadingAssistants &&
+                        org.assistants?.length === 0 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => loadOrgAssistants(org.id)}
+                          >
+                            🔄 Ladda assistenter
+                          </Button>
+                        )}
                     </div>
                     {org.loadingAssistants ? (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -357,7 +407,9 @@ export default function AIAssistantsAdminPage() {
                             className="flex items-center justify-between p-3 bg-muted rounded-lg"
                           >
                             <div>
-                              <div className="font-medium">{assistant.name || assistant.id}</div>
+                              <div className="font-medium">
+                                {assistant.name || assistant.id}
+                              </div>
                               {assistant.description && (
                                 <div className="text-sm text-muted-foreground">
                                   {assistant.description}
@@ -365,7 +417,9 @@ export default function AIAssistantsAdminPage() {
                               )}
                             </div>
                             {assistant.status && (
-                              <Badge variant="outline">{assistant.status}</Badge>
+                              <Badge variant="outline">
+                                {assistant.status}
+                              </Badge>
                             )}
                           </div>
                         ))}
@@ -382,33 +436,45 @@ export default function AIAssistantsAdminPage() {
             ))}
           </div>
           {organizations.length === 0 && (
-            <p className="text-gray-500 text-center py-8">Inga kunder hittades</p>
+            <p className="text-gray-500 text-center py-8">
+              Inga kunder hittades
+            </p>
           )}
         </CardContent>
       </Card>
 
       {/* VAPI Dialog */}
-      <Dialog open={vapiDialogOpen} onOpenChange={(open) => (open ? setVapiDialogOpen(true) : closeVapiDialog())}>
+      <Dialog
+        open={vapiDialogOpen}
+        onOpenChange={(open) =>
+          open ? setVapiDialogOpen(true) : closeVapiDialog()
+        }
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {selectedOrg?.vapi_enabled ? "Hantera" : "Aktivera"} VAPI för {selectedOrg?.name}
+              {selectedOrg?.vapi_enabled ? "Hantera" : "Aktivera"} VAPI för{" "}
+              {selectedOrg?.name}
             </DialogTitle>
             <DialogDescription>
-              {selectedOrg?.vapi_enabled 
+              {selectedOrg?.vapi_enabled
                 ? "Uppdatera VAPI API-nyckeln för denna kund."
                 : "Klistra in VAPI API-nyckeln från kundens VAPI-organisation."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">VAPI API-nyckel (Server)</label>
+              <label className="text-sm font-medium" htmlFor="vapi-api-key">
+                VAPI API-nyckel (Server)
+              </label>
               {selectedOrg?.vapi_api_key && (
                 <div className="flex items-center gap-2 mb-2 text-xs text-green-600">
-                  ✓ Nyckel sparad (slutar på: {selectedOrg.vapi_api_key.slice(-4)})
+                  ✓ Nyckel sparad (slutar på:{" "}
+                  {selectedOrg.vapi_api_key.slice(-4)})
                 </div>
               )}
               <Textarea
+                id="vapi-api-key"
                 value={vapiApiKeyInput}
                 onChange={(e) => setVapiApiKeyInput(e.target.value)}
                 placeholder={
@@ -424,13 +490,20 @@ export default function AIAssistantsAdminPage() {
               </p>
             </div>
             <div>
-              <label className="text-sm font-medium">VAPI Public API-nyckel (Valfritt)</label>
+              <label
+                className="text-sm font-medium"
+                htmlFor="vapi-public-api-key"
+              >
+                VAPI Public API-nyckel (Valfritt)
+              </label>
               {selectedOrg?.vapi_public_api_key && (
                 <div className="flex items-center gap-2 mb-2 text-xs text-green-600">
-                  ✓ Nyckel sparad (slutar på: {selectedOrg.vapi_public_api_key.slice(-4)})
+                  ✓ Nyckel sparad (slutar på:{" "}
+                  {selectedOrg.vapi_public_api_key.slice(-4)})
                 </div>
               )}
               <Textarea
+                id="vapi-public-api-key"
                 value={vapiPublicKeyInput}
                 onChange={(e) => setVapiPublicKeyInput(e.target.value)}
                 placeholder={
@@ -453,15 +526,20 @@ export default function AIAssistantsAdminPage() {
             <Button
               type="button"
               onClick={activateVapi}
-              disabled={activating || (!selectedOrg?.vapi_enabled && !vapiApiKeyInput.trim())}
+              disabled={
+                activating ||
+                (!selectedOrg?.vapi_enabled && !vapiApiKeyInput.trim())
+              }
             >
               {activating ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {selectedOrg?.vapi_enabled ? "Uppdaterar..." : "Aktiverar..."}
                 </>
+              ) : selectedOrg?.vapi_enabled ? (
+                "Uppdatera"
               ) : (
-                selectedOrg?.vapi_enabled ? "Uppdatera" : "Aktivera VAPI"
+                "Aktivera VAPI"
               )}
             </Button>
           </DialogFooter>

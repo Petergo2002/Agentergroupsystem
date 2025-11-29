@@ -1,6 +1,6 @@
 /**
  * PDF Generator för Rapport-systemet
- * 
+ *
  * Genererar professionell HTML för PDF-export med stöd för:
  * - Dynamiska variabler
  * - Intern/kund-profiler
@@ -10,10 +10,10 @@
 
 import type {
   Report,
-  ReportTemplate,
-  ReportSectionInstance,
-  ReportSectionDefinition,
   ReportChecklistItem,
+  ReportSectionDefinition,
+  ReportSectionInstance,
+  ReportTemplate,
 } from "@/lib/types/rapport";
 import { renderTemplate, type TemplateContext } from "./templateEngine";
 
@@ -47,7 +47,10 @@ export interface PdfGeneratorOptions {
 // ============================================================================
 
 // Branschspecifika färger (matchar Report Studio)
-const TRADE_COLORS: Record<string, { primary: string; secondary: string; accent: string }> = {
+const TRADE_COLORS: Record<
+  string,
+  { primary: string; secondary: string; accent: string }
+> = {
   läckage: { primary: "#065f46", secondary: "#10b981", accent: "#d1fae5" },
   bygg: { primary: "#78350f", secondary: "#d97706", accent: "#fef3c7" },
   elektriker: { primary: "#1e3a5f", secondary: "#3b82f6", accent: "#dbeafe" },
@@ -67,7 +70,7 @@ const STATUS_LABELS: Record<string, string> = {
   approved: "Godkänd",
 };
 
-const TRADE_LABELS: Record<string, string> = {
+const _TRADE_LABELS: Record<string, string> = {
   bygg: "Bygg",
   läckage: "Läckage",
   elektriker: "Elektriker",
@@ -93,15 +96,19 @@ export function generatePdfHtml(options: PdfGeneratorOptions): string {
   } = options;
 
   // Hämta branschfärger baserat på rapporttyp
-  const defaultTradeColors = { primary: "#78350f", secondary: "#d97706", accent: "#fef3c7" };
+  const defaultTradeColors = {
+    primary: "#78350f",
+    secondary: "#d97706",
+    accent: "#fef3c7",
+  };
   const tradeColors = TRADE_COLORS[report.type] ?? defaultTradeColors;
-  
+
   // Använd branschfärger som standard om ingen profil anges
-  const profile = { 
-    ...DEFAULT_PROFILE, 
+  const profile = {
+    ...DEFAULT_PROFILE,
     brandColor: tradeColors.primary,
     accentColor: tradeColors.secondary,
-    ...pdfProfile 
+    ...pdfProfile,
   };
   const isInternal = viewMode === "internal";
 
@@ -614,9 +621,9 @@ function generateStyles(profile: PdfProfile): string {
 
 function generateHeader(
   report: Report,
-  template: ReportTemplate | null | undefined,
+  _template: ReportTemplate | null | undefined,
   profile: PdfProfile,
-  context: TemplateContext
+  context: TemplateContext,
 ): string {
   const headerText = profile.headerText
     ? renderTemplate(profile.headerText, context)
@@ -632,9 +639,10 @@ function generateHeader(
         </div>
       </div>
       <div class="header-right">
-        ${profile.displayLogo && profile.logoUrl
-          ? `<img src="${escapeHtml(profile.logoUrl)}" alt="Logo" class="logo">`
-          : `<div>${formatDate(report.metadata.scheduledAt || report.updatedAt)}</div>`
+        ${
+          profile.displayLogo && profile.logoUrl
+            ? `<img src="${escapeHtml(profile.logoUrl)}" alt="Logo" class="logo">`
+            : `<div>${formatDate(report.metadata.scheduledAt || report.updatedAt)}</div>`
         }
         ${headerText ? `<div class="company-name">${escapeHtml(headerText)}</div>` : ""}
       </div>
@@ -648,7 +656,7 @@ function generateHeader(
 
 function generateMetadata(report: Report, isInternal: boolean): string {
   const statusClass = `status-${report.status}`;
-  
+
   return `
     <div class="metadata">
       <div class="metadata-item">
@@ -669,7 +677,9 @@ function generateMetadata(report: Report, isInternal: boolean): string {
           <span class="status-badge ${statusClass}">${STATUS_LABELS[report.status] || report.status}</span>
         </span>
       </div>
-      ${isInternal ? `
+      ${
+        isInternal
+          ? `
         <div class="metadata-item">
           <span class="metadata-label">Ansvarig</span>
           <span class="metadata-value">${escapeHtml(report.metadata.assignedTo || "Ej tilldelad")}</span>
@@ -678,7 +688,9 @@ function generateMetadata(report: Report, isInternal: boolean): string {
           <span class="metadata-label">Prioritet</span>
           <span class="metadata-value">${PRIORITY_LABELS[report.metadata.priority] || report.metadata.priority}</span>
         </div>
-      ` : ""}
+      `
+          : ""
+      }
     </div>
   `;
 }
@@ -691,33 +703,36 @@ function generateSections(
   sections: ReportSectionInstance[],
   definitions: ReportSectionDefinition[],
   context: TemplateContext,
-  isInternal: boolean
+  isInternal: boolean,
 ): string {
   return sections
-    .map((section, index) => generateSection(section, index + 1, definitions, context, isInternal))
+    .map((section, index) =>
+      generateSection(section, index + 1, definitions, context, isInternal),
+    )
     .join("");
 }
 
 function generateSection(
   section: ReportSectionInstance,
   number: number,
-  definitions: ReportSectionDefinition[],
+  _definitions: ReportSectionDefinition[],
   context: TemplateContext,
-  isInternal: boolean
+  isInternal: boolean,
 ): string {
   const type = section.type || "text";
-  
+
   // Render content with variables
   const renderedContent = renderTemplate(section.content || "", context);
-  
+
   // Generate section-specific content
   let sectionContent = "";
-  
+
   switch (type) {
-    case "heading":
+    case "heading": {
       const level = section.headingLevel || 1;
       return `<h${level} class="heading-${level}">${escapeHtml(renderedContent)}</h${level}>`;
-    
+    }
+
     case "summary":
       return `
         <div class="summary-box">
@@ -725,46 +740,50 @@ function generateSection(
           <p>${escapeHtml(renderedContent)}</p>
         </div>
       `;
-    
+
     case "divider":
       return `<hr class="divider">`;
-    
+
     case "checklist":
       sectionContent = generateSectionChecklist(section.checklistData || []);
       break;
-    
+
     case "table":
       sectionContent = generateSectionTable(section.tableData);
       break;
-    
+
     case "signature":
       sectionContent = generateSectionSignatures(section.signatures || []);
       break;
-    
+
     case "links":
       sectionContent = generateSectionLinks(section.links || []);
       break;
-    
+
     case "image_gallery":
-      sectionContent = `<div class="image-gallery">${(section.assetIds || []).map((id) => 
-        `<div><img src="" alt="Bild"><div class="image-caption">Bild ${id}</div></div>`
-      ).join("")}</div>`;
+      sectionContent = `<div class="image-gallery">${(section.assetIds || [])
+        .map(
+          (id) =>
+            `<div><img src="" alt="Bild"><div class="image-caption">Bild ${id}</div></div>`,
+        )
+        .join("")}</div>`;
       break;
-    
+
     default:
       sectionContent = `<div class="section-content">${escapeHtml(renderedContent)}</div>`;
   }
-  
+
   // Internal notes
-  const internalNotes = isInternal && section.internalNotes
-    ? `
+  const internalNotes =
+    isInternal && section.internalNotes
+      ? `
       <div class="internal-note">
         <div class="internal-note-label">Intern anteckning</div>
         <div class="internal-note-content">${escapeHtml(section.internalNotes)}</div>
       </div>
     `
-    : "";
-  
+      : "";
+
   return `
     <div class="section">
       <div class="section-header">
@@ -780,10 +799,12 @@ function generateSection(
 
 function generateSectionChecklist(items: ReportChecklistItem[]): string {
   if (items.length === 0) return "<p>Ingen checklista</p>";
-  
+
   return `
     <div class="checklist">
-      ${items.map((item) => `
+      ${items
+        .map(
+          (item) => `
         <div class="checklist-item">
           <div class="checklist-checkbox ${item.completed ? "checked" : ""}"></div>
           <div class="checklist-label">
@@ -791,66 +812,94 @@ function generateSectionChecklist(items: ReportChecklistItem[]): string {
             ${item.notes ? `<div class="checklist-notes">${escapeHtml(item.notes)}</div>` : ""}
           </div>
         </div>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </div>
   `;
 }
 
-function generateSectionTable(tableData: ReportSectionInstance["tableData"]): string {
+function generateSectionTable(
+  tableData: ReportSectionInstance["tableData"],
+): string {
   if (!tableData || tableData.columns.length === 0) {
     return "<p>Ingen tabell</p>";
   }
-  
+
   return `
     <table class="data-table">
       <thead>
         <tr>
-          ${tableData.columns.map((col) => `
+          ${tableData.columns
+            .map(
+              (col) => `
             <th>${escapeHtml(col.label)}${col.unit ? ` (${escapeHtml(col.unit)})` : ""}</th>
-          `).join("")}
+          `,
+            )
+            .join("")}
         </tr>
       </thead>
       <tbody>
-        ${tableData.rows.map((row) => `
+        ${tableData.rows
+          .map(
+            (row) => `
           <tr>
-            ${tableData.columns.map((col) => `
+            ${tableData.columns
+              .map(
+                (col) => `
               <td>${escapeHtml(String(row.values[col.id] || ""))}</td>
-            `).join("")}
+            `,
+              )
+              .join("")}
           </tr>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </tbody>
     </table>
   `;
 }
 
-function generateSectionSignatures(signatures: NonNullable<ReportSectionInstance["signatures"]>): string {
+function generateSectionSignatures(
+  signatures: NonNullable<ReportSectionInstance["signatures"]>,
+): string {
   if (signatures.length === 0) return "";
-  
+
   return `
     <div class="signatures">
-      ${signatures.map((sig) => `
+      ${signatures
+        .map(
+          (sig) => `
         <div class="signature-block">
           <div class="signature-line"></div>
           <div class="signature-name">${escapeHtml(sig.name)}</div>
           <div class="signature-role">${escapeHtml(sig.role)}</div>
           <div class="signature-date">${formatDate(sig.date)}</div>
         </div>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </div>
   `;
 }
 
-function generateSectionLinks(links: NonNullable<ReportSectionInstance["links"]>): string {
+function generateSectionLinks(
+  links: NonNullable<ReportSectionInstance["links"]>,
+): string {
   if (links.length === 0) return "<p>Inga länkar</p>";
-  
+
   return `
     <ul class="links-list">
-      ${links.map((link) => `
+      ${links
+        .map(
+          (link) => `
         <li>
           <a href="${escapeHtml(link.url)}" target="_blank">${escapeHtml(link.label)}</a>
           ${link.description ? `<br><small>${escapeHtml(link.description)}</small>` : ""}
         </li>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </ul>
   `;
 }
@@ -859,13 +908,18 @@ function generateSectionLinks(links: NonNullable<ReportSectionInstance["links"]>
 // Checklist
 // ============================================================================
 
-function generateChecklist(checklist: ReportChecklistItem[], isInternal: boolean): string {
+function generateChecklist(
+  checklist: ReportChecklistItem[],
+  _isInternal: boolean,
+): string {
   if (checklist.length === 0) return "";
-  
+
   return `
     <div class="checklist">
       <h2 class="checklist-title">Checklista</h2>
-      ${checklist.map((item) => `
+      ${checklist
+        .map(
+          (item) => `
         <div class="checklist-item">
           <div class="checklist-checkbox ${item.completed ? "checked" : ""}"></div>
           <div class="checklist-label">
@@ -874,7 +928,9 @@ function generateChecklist(checklist: ReportChecklistItem[], isInternal: boolean
             ${item.notes ? `<div class="checklist-notes">${escapeHtml(item.notes)}</div>` : ""}
           </div>
         </div>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </div>
   `;
 }
@@ -887,9 +943,9 @@ function generateFooter(profile: PdfProfile, context: TemplateContext): string {
   const footerText = profile.footerText
     ? renderTemplate(profile.footerText, context)
     : "";
-  
+
   const now = new Date();
-  
+
   return `
     <footer class="footer">
       ${footerText ? `<div class="footer-text">${escapeHtml(footerText)}</div>` : ""}
@@ -934,13 +990,13 @@ function formatDate(date: string | undefined): string {
 export function openPdfPreview(options: PdfGeneratorOptions): Window | null {
   const html = generatePdfHtml(options);
   const win = window.open("", "_blank");
-  
+
   if (win) {
     win.document.write(html);
     win.document.close();
     win.focus();
   }
-  
+
   return win;
 }
 

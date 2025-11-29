@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { IconAlertCircle, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
-import { IconLoader2, IconCheck, IconAlertCircle } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
-import type { Report, ReportTemplate, ReportSectionDefinition } from "@/lib/types/rapport";
-import { buildPrintableHtml } from "@/components/rapport/rapport-container";
+import { generatePdfHtml } from "@/lib/rapport/pdfGenerator";
+import type { Report, ReportTemplate } from "@/lib/types/rapport";
 
 export default function PublicReportPage() {
   const params = useParams();
@@ -28,7 +27,7 @@ export default function PublicReportPage() {
       try {
         setLoading(true);
         const response = await fetch(`/api/reports/public/${publicId}`);
-        
+
         if (!response.ok) {
           throw new Error("Rapport hittades inte");
         }
@@ -38,7 +37,9 @@ export default function PublicReportPage() {
         setTemplate(data.template);
       } catch (err) {
         console.error("Failed to load public report", err);
-        setError(err instanceof Error ? err.message : "Kunde inte ladda rapport");
+        setError(
+          err instanceof Error ? err.message : "Kunde inte ladda rapport",
+        );
       } finally {
         setLoading(false);
       }
@@ -80,8 +81,8 @@ export default function PublicReportPage() {
 
   const handleDownloadPDF = () => {
     if (!report) return;
-    
-    const html = buildPrintableHtml(report, template, []);
+
+    const html = generatePdfHtml({ report, template });
     const win = window.open("", "_blank");
     if (!win) {
       toast.error("Kunde inte öppna PDF-fönster");
@@ -166,7 +167,9 @@ export default function PublicReportPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Projektreferens</p>
-                <p className="font-medium">{report.metadata.projectReference || "-"}</p>
+                <p className="font-medium">
+                  {report.metadata.projectReference || "-"}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Datum</p>
@@ -188,7 +191,9 @@ export default function PublicReportPage() {
               <div key={section.id} className="space-y-2">
                 <h3 className="font-semibold">{section.title}</h3>
                 {section.hint && (
-                  <p className="text-xs text-muted-foreground italic">{section.hint}</p>
+                  <p className="text-xs text-muted-foreground italic">
+                    {section.hint}
+                  </p>
                 )}
                 <p className="whitespace-pre-wrap text-sm">
                   {section.content || "Ej ifyllt"}
@@ -221,7 +226,8 @@ export default function PublicReportPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Genom att godkänna denna rapport bekräftar du att du har granskat innehållet.
+                Genom att godkänna denna rapport bekräftar du att du har
+                granskat innehållet.
               </p>
               <div className="grid gap-2">
                 <Label htmlFor="approval-name">Ditt namn</Label>
@@ -266,7 +272,9 @@ export default function PublicReportPage() {
                     Rapporten godkändes av {report.customerApprovedBy}
                   </p>
                   <p className="text-sm text-emerald-700 mt-1">
-                    {new Date(report.customerApprovedAt!).toLocaleString("sv-SE")}
+                    {new Date(report.customerApprovedAt!).toLocaleString(
+                      "sv-SE",
+                    )}
                   </p>
                 </div>
                 <Button variant="outline" onClick={handleDownloadPDF}>

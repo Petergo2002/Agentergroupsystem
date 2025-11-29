@@ -155,15 +155,7 @@ export function EventDialog({
 
         startLocal = new Date(sy, sm - 1, sd, 0, 0, 0, 0);
         // End at 00:00 of the day AFTER endDate for exclusive end
-        const endBase = new Date(
-          ey,
-          em - 1,
-          ed,
-          0,
-          0,
-          0,
-          0,
-        );
+        const endBase = new Date(ey, em - 1, ed, 0, 0, 0, 0);
         endLocal = addDays(endBase, 1);
       } else {
         const [syStr, smStr, sdStr] = startDate.split("-");
@@ -183,15 +175,7 @@ export function EventDialog({
         const emin = Number(eminStr) || 0;
 
         startLocal = new Date(sy, sm - 1, sd, sh, smin, 0, 0);
-        endLocal = new Date(
-          ey,
-          em - 1,
-          ed,
-          eh,
-          emin,
-          0,
-          0,
-        );
+        endLocal = new Date(ey, em - 1, ed, eh, emin, 0, 0);
       }
 
       const startUtc = fromZonedTime(startLocal, SWEDEN_TZ);
@@ -329,9 +313,7 @@ export function EventDialog({
           </div>
 
           <div className="space-y-2">
-            <Label className="block text-sm font-medium">
-              Typ av händelse
-            </Label>
+            <Label className="block text-sm font-medium">Typ av händelse</Label>
             <Select
               value={eventType}
               onValueChange={(value) =>

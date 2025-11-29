@@ -43,11 +43,11 @@ export async function PATCH(
         plan_type: body.plan_type,
         subscription_status: body.subscription_status,
         monthly_price: parseFloat(body.monthly_price),
-        max_users: parseInt(body.max_users),
-        max_contacts: parseInt(body.max_contacts),
-        max_leads: parseInt(body.max_leads),
-        max_jobs: parseInt(body.max_jobs),
-        max_storage_gb: parseInt(body.max_storage_gb),
+        max_users: parseInt(body.max_users, 10),
+        max_contacts: parseInt(body.max_contacts, 10),
+        max_leads: parseInt(body.max_leads, 10),
+        max_jobs: parseInt(body.max_jobs, 10),
+        max_storage_gb: parseInt(body.max_storage_gb, 10),
       })
       .eq("id", id)
       .select()
@@ -72,7 +72,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {

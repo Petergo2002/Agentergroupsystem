@@ -2,9 +2,7 @@
 
 import {
   BarChart3,
-  Calendar,
   Clock,
-  DollarSign,
   Filter,
   Target,
   TrendingDown,
@@ -17,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function PerformanceAnalyticsPage() {
   const [timeRange, setTimeRange] = useState("30d");
-  const [selectedMetric, setSelectedMetric] = useState("overall");
+  const [_selectedMetric, _setSelectedMetric] = useState("overall");
 
   // Mock performance data
   const performanceMetrics = {

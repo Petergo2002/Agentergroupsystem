@@ -11,10 +11,7 @@ export default function QuotesPage() {
 
   return (
     <>
-      <SiteHeader
-        title="Offerter"
-        showAddButton={false}
-      />
+      <SiteHeader title="Offerter" showAddButton={false} />
       <div className="space-y-6 p-6">
         <QuoteList
           onCreate={() => {

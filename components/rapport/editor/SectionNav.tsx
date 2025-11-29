@@ -2,25 +2,24 @@
 
 import {
   IconCheck,
-  IconChevronDown,
-  IconChevronRight,
-  IconCircle,
-  IconGripVertical,
-  IconPhoto,
-  IconTable,
-  IconSignature,
+  IconFileText,
+  IconHeading,
   IconLink,
   IconList,
-  IconHeading,
-  IconFileText,
+  IconPhoto,
   IconSeparator,
+  IconSignature,
+  IconTable,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { ReportSectionInstance, ReportSectionType, SectionGroup } from "@/lib/types/rapport";
+import type {
+  ReportSectionInstance,
+  ReportSectionType,
+  SectionGroup,
+} from "@/lib/types/rapport";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -66,25 +65,31 @@ export function SectionNav({
   onSelectSection,
   onReorderSection,
 }: SectionNavProps) {
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [_collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Calculate progress
-  const completedCount = sections.filter((s) => s.status === "completed").length;
+  const completedCount = sections.filter(
+    (s) => s.status === "completed",
+  ).length;
   const totalCount = sections.length;
-  const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  const progressPercent =
+    totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   // Group sections
-  const groupedSections = groups.length > 0
-    ? groups.map((group) => ({
-        ...group,
-        sections: sections.filter((s) => {
-          // Match by group field or by order range
-          return true; // For now, show all in each group
-        }),
-      }))
-    : [{ id: "default", title: "Sektioner", sections, order: 0 }];
+  const _groupedSections =
+    groups.length > 0
+      ? groups.map((group) => ({
+          ...group,
+          sections: sections.filter((_s) => {
+            // Match by group field or by order range
+            return true; // For now, show all in each group
+          }),
+        }))
+      : [{ id: "default", title: "Sektioner", sections, order: 0 }];
 
-  const toggleGroup = (groupId: string) => {
+  const _toggleGroup = (groupId: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(groupId)) {
@@ -128,7 +133,7 @@ export function SectionNav({
                   "w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
                   "hover:bg-accent",
                   isActive && "bg-primary/10 text-primary font-medium",
-                  !isActive && isCompleted && "text-muted-foreground"
+                  !isActive && isCompleted && "text-muted-foreground",
                 )}
               >
                 {/* Status indicator */}
@@ -139,7 +144,7 @@ export function SectionNav({
                       ? "border-emerald-500 bg-emerald-500 text-white"
                       : isActive
                         ? "border-primary bg-primary/10"
-                        : "border-muted-foreground/30"
+                        : "border-muted-foreground/30",
                   )}
                 >
                   {isCompleted ? (
@@ -154,7 +159,10 @@ export function SectionNav({
                   <div className="flex items-center gap-2">
                     <span className="truncate">{section.title}</span>
                     {section.visibility?.audience === "internal" && (
-                      <Badge variant="outline" className="text-[10px] px-1 py-0">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] px-1 py-0"
+                      >
                         Intern
                       </Badge>
                     )}

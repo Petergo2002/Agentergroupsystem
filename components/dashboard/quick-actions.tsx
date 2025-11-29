@@ -7,7 +7,6 @@ import {
   Clock,
   Mail,
   Phone,
-  Plus,
   Users,
   Video,
   Zap,

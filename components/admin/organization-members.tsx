@@ -1,10 +1,8 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,

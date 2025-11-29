@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getOrganizationVapiConfig } from "@/lib/server/vapi-org-config";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     console.log("🔍 Vapi Debug API called");
-    
-    const { vapi, config, organizationId, userId, error } = await getOrganizationVapiConfig();
+
+    const { vapi, config, organizationId, userId, error } =
+      await getOrganizationVapiConfig();
 
     if (error || !vapi) {
       return NextResponse.json({
@@ -13,11 +14,13 @@ export async function GET(req: NextRequest) {
         error,
         organizationId,
         userId,
-        config: config ? {
-          vapi_enabled: config.vapi_enabled,
-          hasApiKey: !!config.vapi_api_key,
-          hasPublicKey: !!config.vapi_public_api_key,
-        } : null,
+        config: config
+          ? {
+              vapi_enabled: config.vapi_enabled,
+              hasApiKey: !!config.vapi_api_key,
+              hasPublicKey: !!config.vapi_public_api_key,
+            }
+          : null,
       });
     }
 
@@ -25,7 +28,7 @@ export async function GET(req: NextRequest) {
     console.log("🔍 Testing Vapi call endpoint...");
     let callsResult: any = null;
     let callsError: string | null = null;
-    
+
     try {
       const calls = await vapi.getCallLogs({ limit: 5 });
       callsResult = {
@@ -51,7 +54,7 @@ export async function GET(req: NextRequest) {
     console.log("🔍 Testing Vapi chat endpoint...");
     let chatsResult: any = null;
     let chatsError: string | null = null;
-    
+
     try {
       const chats = await vapi.getChatSessions({ limit: 5 });
       chatsResult = {
@@ -71,7 +74,7 @@ export async function GET(req: NextRequest) {
     console.log("🔍 Testing Vapi assistants endpoint...");
     let assistantsResult: any = null;
     let assistantsError: string | null = null;
-    
+
     try {
       const assistants = await vapi.getAssistants();
       assistantsResult = {
@@ -94,13 +97,18 @@ export async function GET(req: NextRequest) {
       },
       calls: callsError ? { error: callsError } : callsResult,
       chats: chatsError ? { error: chatsError } : chatsResult,
-      assistants: assistantsError ? { error: assistantsError } : assistantsResult,
+      assistants: assistantsError
+        ? { error: assistantsError }
+        : assistantsResult,
     });
   } catch (e: any) {
     console.error("❌ Vapi Debug error:", e);
-    return NextResponse.json({
-      success: false,
-      error: e.message,
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: e.message,
+      },
+      { status: 500 },
+    );
   }
 }

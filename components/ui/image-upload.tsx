@@ -1,7 +1,7 @@
 "use client";
 
-import { IconPhoto, IconTrash, IconUpload, IconX } from "@tabler/icons-react";
-import { useState, useRef } from "react";
+import { IconPhoto, IconTrash, IconUpload } from "@tabler/icons-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createSupabaseClient } from "@/lib/supabase";
@@ -29,12 +29,21 @@ export function ImageUpload({
   const [preview, setPreview] = useState<string | undefined>(value);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validera filtyp
-    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+    const validTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+    ];
     if (!validTypes.includes(file.type)) {
       toast.error("Ogiltig filtyp. Använd JPEG, PNG, GIF, WebP eller SVG.");
       return;
@@ -102,11 +111,9 @@ export function ImageUpload({
       const fileName = pathParts[pathParts.length - 1];
 
       const supabase = createSupabaseClient();
-      
+
       // Ta bort från storage
-      const { error } = await supabase.storage
-        .from(bucket)
-        .remove([fileName]);
+      const { error } = await supabase.storage.from(bucket).remove([fileName]);
 
       if (error) {
         console.error("Delete error:", error);
@@ -139,7 +146,7 @@ export function ImageUpload({
 
       {preview ? (
         <div className="relative">
-          <div 
+          <div
             className="relative overflow-hidden rounded-lg border bg-gray-50"
             style={aspectRatio ? { aspectRatio } : {}}
           >

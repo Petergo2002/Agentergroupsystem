@@ -8,7 +8,6 @@ import {
   Clock,
   Mail,
   Phone,
-  Users,
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

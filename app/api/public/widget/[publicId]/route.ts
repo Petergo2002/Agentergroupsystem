@@ -53,10 +53,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(
-      { data },
-      { status: 200, headers: CORS_HEADERS },
-    );
+    return NextResponse.json({ data }, { status: 200, headers: CORS_HEADERS });
   } catch (error) {
     console.error("Unexpected widget lookup error", error);
     return NextResponse.json(

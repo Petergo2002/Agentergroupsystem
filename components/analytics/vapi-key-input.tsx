@@ -43,7 +43,7 @@ export function VapiKeyInput() {
     toast.success("VAPI-inställningar rensade");
   };
 
-  const masked = apiKey ? apiKey.slice(0, 4) + "••••" + apiKey.slice(-4) : "—";
+  const masked = apiKey ? `${apiKey.slice(0, 4)}••••${apiKey.slice(-4)}` : "—";
 
   return (
     <Card>

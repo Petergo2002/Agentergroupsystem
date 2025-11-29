@@ -1,11 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server";
+import {
+  checkRateLimitForRequest,
+  getRateLimitHeaders,
+  widgetRateLimit,
+} from "@/lib/rate-limit";
 import { recordChatInteraction } from "@/lib/server/ai-logging";
 import {
   isUuid,
   resolveVapiAssistantIdentifiers,
 } from "@/lib/server/vapi-assistant";
 import { createServiceClient } from "@/lib/supabase/service";
-import { widgetRateLimit, checkRateLimitForRequest, getRateLimitHeaders } from "@/lib/rate-limit";
 
 const DEFAULT_VAPI_BASE = "https://api.vapi.ai";
 
@@ -32,19 +36,22 @@ export async function POST(request: NextRequest) {
     | null = null;
   try {
     // Rate limiting by IP
-    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "anonymous";
+    const ip =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "anonymous";
     const rateLimitResult = await checkRateLimitForRequest(
       `widget:${ip}`,
-      widgetRateLimit
+      widgetRateLimit,
     );
-    
+
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
-        { 
+        {
           status: 429,
-          headers: { ...CORS_HEADERS, ...getRateLimitHeaders(rateLimitResult) }
-        }
+          headers: { ...CORS_HEADERS, ...getRateLimitHeaders(rateLimitResult) },
+        },
       );
     }
 
@@ -69,7 +76,10 @@ export async function POST(request: NextRequest) {
 
     if (configError) {
       console.error("Failed to load widget config", configError);
-      return NextResponse.json({ error: "Widget not found" }, { status: 404, headers: CORS_HEADERS });
+      return NextResponse.json(
+        { error: "Widget not found" },
+        { status: 404, headers: CORS_HEADERS },
+      );
     }
 
     if (!config || !config.enabled || !config.vapi_agent_id) {
@@ -136,7 +146,8 @@ export async function POST(request: NextRequest) {
           .update({ vapi_agent_uuid: candidate })
           .eq("org_id", config.org_id)
           .then(({ error }) => {
-            if (error) console.warn("Failed to backfill widget assistant UUID", error);
+            if (error)
+              console.warn("Failed to backfill widget assistant UUID", error);
           });
         return candidate;
       }
@@ -226,7 +237,7 @@ export async function POST(request: NextRequest) {
       let parsed: any = null;
       try {
         parsed = errorBody ? JSON.parse(errorBody) : null;
-      } catch (parseError) {
+      } catch (_parseError) {
         parsed = null;
       }
       return NextResponse.json(

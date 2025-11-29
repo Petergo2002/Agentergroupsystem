@@ -1,15 +1,24 @@
 "use client";
 
-import { IconArrowLeft, IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  IconArrowLeft,
+  IconDeviceFloppy,
+  IconLoader2,
+} from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { rapportApi } from "@/lib/rapport/rapportApi";
-import type { Report, ReportMetadata, ReportSectionInstance, ReportStatus } from "@/lib/types/rapport";
-import { SectionNav } from "./SectionNav";
-import SectionEditor from "./SectionEditor";
+import type {
+  Report,
+  ReportMetadata,
+  ReportSectionInstance,
+  ReportStatus,
+} from "@/lib/types/rapport";
 import { MetadataPanel } from "./MetadataPanel";
+import SectionEditor from "./SectionEditor";
+import { SectionNav } from "./SectionNav";
 
 // ============================================================================
 // Types
@@ -25,13 +34,15 @@ interface ReportEditorProps {
 
 export function ReportEditor({ reportId }: ReportEditorProps) {
   const router = useRouter();
-  
+
   // State
   const [report, setReport] = useState<Report | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [autosaveStatus, setAutosaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [autosaveStatus, setAutosaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -52,7 +63,11 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
           setReport(data);
           // Set first non-basic_info section as active
           if (data.sections.length > 0 && !activeSectionId) {
-            const firstSection = data.sections.find(s => s.type !== "basic_info" && !s.title.toLowerCase().includes("grundinformation"));
+            const firstSection = data.sections.find(
+              (s) =>
+                s.type !== "basic_info" &&
+                !s.title.toLowerCase().includes("grundinformation"),
+            );
             if (firstSection) {
               setActiveSectionId(firstSection.id);
             }
@@ -140,7 +155,7 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
       pendingChangesRef.current = { ...pendingChangesRef.current, ...updates };
       triggerAutosave();
     },
-    [report, triggerAutosave]
+    [report, triggerAutosave],
   );
 
   const updateSection = useCallback(
@@ -148,11 +163,11 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
       if (!report) return;
 
       const newSections = report.sections.map((s) =>
-        s.id === sectionId ? { ...s, ...updates } : s
+        s.id === sectionId ? { ...s, ...updates } : s,
       );
       updateReport({ sections: newSections });
     },
-    [report, updateReport]
+    [report, updateReport],
   );
 
   // Update assets
@@ -160,7 +175,7 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
     (assets: Report["assets"]) => {
       updateReport({ assets });
     },
-    [updateReport]
+    [updateReport],
   );
 
   const updateMetadata = useCallback(
@@ -168,14 +183,14 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
       if (!report) return;
       updateReport({ metadata: { ...report.metadata, ...updates } });
     },
-    [report, updateReport]
+    [report, updateReport],
   );
 
   const updateStatus = useCallback(
     (status: ReportStatus) => {
       updateReport({ status });
     },
-    [updateReport]
+    [updateReport],
   );
 
   // -------------------------------------------------------------------------
@@ -184,22 +199,22 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
 
   const activeSection = useMemo(
     () => report?.sections.find((s) => s.id === activeSectionId) ?? null,
-    [report, activeSectionId]
+    [report, activeSectionId],
   );
 
   const activeSectionIndex = useMemo(
     () => report?.sections.findIndex((s) => s.id === activeSectionId) ?? -1,
-    [report, activeSectionId]
+    [report, activeSectionId],
   );
 
   const goToPreviousSection = useCallback(() => {
     if (!report || activeSectionIndex <= 0) return;
-    setActiveSectionId(report.sections[activeSectionIndex - 1]!.id);
+    setActiveSectionId(report.sections[activeSectionIndex - 1]?.id);
   }, [report, activeSectionIndex]);
 
   const goToNextSection = useCallback(() => {
     if (!report || activeSectionIndex >= report.sections.length - 1) return;
-    setActiveSectionId(report.sections[activeSectionIndex + 1]!.id);
+    setActiveSectionId(report.sections[activeSectionIndex + 1]?.id);
   }, [report, activeSectionIndex]);
 
   const toggleSectionComplete = useCallback(() => {
@@ -235,13 +250,13 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
 
     try {
       setIsExporting(true);
-      
+
       // Save first
       await rapportApi.updateReport(report.id, report);
-      
+
       // Export
       await rapportApi.exportReport(report);
-      
+
       toast.success("Rapport exporterad!");
       router.push("/rapport?tab=saved");
     } catch (error) {
@@ -252,7 +267,7 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
     }
   }, [report, router]);
 
-  const handlePreview = useCallback(() => {
+  const _handlePreview = useCallback(() => {
     if (!report) return;
     rapportApi.openPdf(report.id);
   }, [report]);
@@ -343,7 +358,11 @@ export function ReportEditor({ reportId }: ReportEditorProps) {
         {/* Left: Section navigation - filter out basic_info since it's in sidebar */}
         <div className="w-64 shrink-0">
           <SectionNav
-            sections={report.sections.filter(s => s.type !== "basic_info" && !s.title.toLowerCase().includes("grundinformation"))}
+            sections={report.sections.filter(
+              (s) =>
+                s.type !== "basic_info" &&
+                !s.title.toLowerCase().includes("grundinformation"),
+            )}
             activeSectionId={activeSectionId}
             onSelectSection={setActiveSectionId}
           />

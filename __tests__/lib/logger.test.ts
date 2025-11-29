@@ -29,7 +29,7 @@ describe("logger", () => {
     const consoleSpy = vi.spyOn(console, "log");
     logger.info("Test message", { action: "login", userId: "123" });
     expect(consoleSpy).toHaveBeenCalled();
-    const logMessage = consoleSpy.mock.calls[0][0];
+    const logMessage = consoleSpy.mock.calls[0]?.[0] ?? "";
     expect(logMessage).toContain("Test message");
     expect(logMessage).toContain("userId");
     expect(logMessage).toContain("123");

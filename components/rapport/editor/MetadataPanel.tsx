@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useRef } from "react";
 import {
   IconCalendar,
   IconCheck,
@@ -8,20 +7,15 @@ import {
   IconDownload,
   IconHistory,
   IconLoader2,
-  IconMapPin,
   IconMail,
+  IconMapPin,
   IconPhone,
   IconPhoto,
   IconUpload,
   IconUser,
   IconX,
 } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +26,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Report, ReportMetadata, ReportStatus, ReportAsset } from "@/lib/types/rapport";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import type {
+  Report,
+  ReportAsset,
+  ReportMetadata,
+  ReportStatus,
+} from "@/lib/types/rapport";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -68,7 +72,8 @@ export function MetadataPanel({
 
   // Get cover image from assets
   const coverImage = report.assets.find(
-    (a) => a.tags?.includes("cover") || a.label?.toLowerCase().includes("omslag")
+    (a) =>
+      a.tags?.includes("cover") || a.label?.toLowerCase().includes("omslag"),
   );
 
   // Handle cover image upload
@@ -90,7 +95,9 @@ export function MetadataPanel({
 
       // Remove old cover if exists, add new
       const filteredAssets = report.assets.filter(
-        (a) => !a.tags?.includes("cover") && !a.label?.toLowerCase().includes("omslag")
+        (a) =>
+          !a.tags?.includes("cover") &&
+          !a.label?.toLowerCase().includes("omslag"),
       );
       onAssetsChange([...filteredAssets, newAsset]);
     } finally {
@@ -136,7 +143,7 @@ export function MetadataPanel({
               <IconPhoto className="size-4" />
               Omslagsbild
             </Label>
-            
+
             {coverImage ? (
               <div className="relative group">
                 <img
@@ -163,7 +170,9 @@ export function MetadataPanel({
                 ) : (
                   <>
                     <IconUpload className="size-6 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Klicka för att ladda upp</span>
+                    <span className="text-xs text-muted-foreground">
+                      Klicka för att ladda upp
+                    </span>
                   </>
                 )}
               </div>
@@ -184,7 +193,7 @@ export function MetadataPanel({
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">
               Grundinformation
             </Label>
-            
+
             <div>
               <Label className="text-xs">Kund / Företag</Label>
               <Input
@@ -201,7 +210,9 @@ export function MetadataPanel({
                 <IconMapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   value={report.metadata.location || ""}
-                  onChange={(e) => onMetadataChange({ location: e.target.value })}
+                  onChange={(e) =>
+                    onMetadataChange({ location: e.target.value })
+                  }
                   className="pl-9"
                   placeholder="Gatuadress..."
                 />
@@ -214,7 +225,9 @@ export function MetadataPanel({
                 <IconUser className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   value={report.metadata.assignedTo || ""}
-                  onChange={(e) => onMetadataChange({ assignedTo: e.target.value })}
+                  onChange={(e) =>
+                    onMetadataChange({ assignedTo: e.target.value })
+                  }
                   className="pl-9"
                   placeholder="Namn..."
                 />
@@ -253,7 +266,9 @@ export function MetadataPanel({
               <Label className="text-xs">Projektreferens</Label>
               <Input
                 value={report.metadata.projectReference || ""}
-                onChange={(e) => onMetadataChange({ projectReference: e.target.value })}
+                onChange={(e) =>
+                  onMetadataChange({ projectReference: e.target.value })
+                }
                 className="mt-1"
                 placeholder="Jobb-ID, ordernr..."
               />
@@ -263,7 +278,9 @@ export function MetadataPanel({
               <Label className="text-xs">Utredare</Label>
               <Input
                 value={report.metadata.investigator || ""}
-                onChange={(e) => onMetadataChange({ investigator: e.target.value })}
+                onChange={(e) =>
+                  onMetadataChange({ investigator: e.target.value })
+                }
                 className="mt-1"
                 placeholder="Ditt namn..."
               />
@@ -275,13 +292,20 @@ export function MetadataPanel({
                 <IconCalendar className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   type="date"
-                  value={report.metadata.scheduledAt ? report.metadata.scheduledAt.slice(0, 10) : ""}
-                  onChange={(e) => onMetadataChange({ scheduledAt: new Date(e.target.value).toISOString() })}
+                  value={
+                    report.metadata.scheduledAt
+                      ? report.metadata.scheduledAt.slice(0, 10)
+                      : ""
+                  }
+                  onChange={(e) =>
+                    onMetadataChange({
+                      scheduledAt: new Date(e.target.value).toISOString(),
+                    })
+                  }
                   className="pl-9"
                 />
               </div>
             </div>
-
           </div>
 
           <Separator />
@@ -296,17 +320,26 @@ export function MetadataPanel({
               {report.createdAt && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <IconClock className="size-4" />
-                  <span>Skapad {new Date(report.createdAt).toLocaleDateString("sv-SE")}</span>
+                  <span>
+                    Skapad{" "}
+                    {new Date(report.createdAt).toLocaleDateString("sv-SE")}
+                  </span>
                 </div>
               )}
               <div className="flex items-center gap-2 text-muted-foreground">
                 <IconClock className="size-4" />
-                <span>Uppdaterad {new Date(report.updatedAt).toLocaleString("sv-SE")}</span>
+                <span>
+                  Uppdaterad{" "}
+                  {new Date(report.updatedAt).toLocaleString("sv-SE")}
+                </span>
               </div>
               {report.exportedAt && (
                 <div className="flex items-center gap-2 text-emerald-600">
                   <IconCheck className="size-4" />
-                  <span>Exporterad {new Date(report.exportedAt).toLocaleDateString("sv-SE")}</span>
+                  <span>
+                    Exporterad{" "}
+                    {new Date(report.exportedAt).toLocaleDateString("sv-SE")}
+                  </span>
                 </div>
               )}
             </div>
@@ -328,7 +361,8 @@ export function MetadataPanel({
                     >
                       <div>
                         <p className="font-medium">
-                          v{entry.version} - {entry.profileType === "customer" ? "Kund" : "Intern"}
+                          v{entry.version} -{" "}
+                          {entry.profileType === "customer" ? "Kund" : "Intern"}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(entry.exportedAt).toLocaleString("sv-SE")}
@@ -350,9 +384,9 @@ export function MetadataPanel({
 
       {/* Single Action Button */}
       <div className="border-t p-4 space-y-3">
-        <Button 
-          onClick={handleExportClick} 
-          disabled={isExporting} 
+        <Button
+          onClick={handleExportClick}
+          disabled={isExporting}
           className="w-full bg-blue-600 hover:bg-blue-700"
           size="lg"
         >
@@ -368,7 +402,7 @@ export function MetadataPanel({
             </>
           )}
         </Button>
-        
+
         <p className="text-xs text-muted-foreground text-center">
           Fyll i all information ovan, sedan ladda ner och arkivera rapporten
         </p>
@@ -392,7 +426,10 @@ export function MetadataPanel({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Avbryt</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmExport} className="bg-blue-600 hover:bg-blue-700">
+            <AlertDialogAction
+              onClick={handleConfirmExport}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               Ja, ladda ner & arkivera
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -406,7 +443,11 @@ export function MetadataPanel({
 // Autosave Indicator
 // ============================================================================
 
-function AutosaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "error" }) {
+function AutosaveIndicator({
+  status,
+}: {
+  status: "idle" | "saving" | "saved" | "error";
+}) {
   if (status === "idle") return null;
 
   const config = {
@@ -415,9 +456,7 @@ function AutosaveIndicator({ status }: { status: "idle" | "saving" | "saved" | "
     error: { text: "Fel", className: "text-destructive" },
   }[status];
 
-  return (
-    <span className={cn("text-xs", config.className)}>{config.text}</span>
-  );
+  return <span className={cn("text-xs", config.className)}>{config.text}</span>;
 }
 
 export default MetadataPanel;

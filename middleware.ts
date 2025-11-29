@@ -6,21 +6,21 @@ export async function middleware(req: NextRequest) {
 
   try {
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
       {
         cookies: {
           get(name: string) {
             return req.cookies.get(name)?.value;
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: Record<string, unknown>) {
             res.cookies.set({
               name,
               value,
               ...options,
             });
           },
-          remove(name: string, options: any) {
+          remove(name: string, options: Record<string, unknown>) {
             res.cookies.set({
               name,
               value: "",
@@ -39,26 +39,26 @@ export async function middleware(req: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-  // Protect admin routes (except login page)
-  if (
-    req.nextUrl.pathname.startsWith("/admin") &&
-    !req.nextUrl.pathname.startsWith("/admin/login")
-  ) {
-    if (!user) {
-      return NextResponse.redirect(new URL("/admin/login", req.url));
-    }
+    // Protect admin routes (except login page)
+    if (
+      req.nextUrl.pathname.startsWith("/admin") &&
+      !req.nextUrl.pathname.startsWith("/admin/login")
+    ) {
+      if (!user) {
+        return NextResponse.redirect(new URL("/admin/login", req.url));
+      }
 
-    // Check if user is super admin
-    const { data: userData } = await supabase
-      .from("users")
-      .select("is_super_admin")
-      .eq("id", user.id)
-      .single();
+      // Check if user is super admin
+      const { data: userData } = await supabase
+        .from("users")
+        .select("is_super_admin")
+        .eq("id", user.id)
+        .single();
 
-    if (!userData?.is_super_admin) {
-      return NextResponse.redirect(new URL("/", req.url));
+      if (!userData?.is_super_admin) {
+        return NextResponse.redirect(new URL("/", req.url));
+      }
     }
-  }
 
     // Protect analytics API routes
     if (req.nextUrl.pathname.startsWith("/analytics/api")) {

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { Vapi } from "@/lib/analytics/vapi";
 import { createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { Vapi } from "@/lib/analytics/vapi";
 
 /**
  * GET /api/admin/organizations/[id]/assistants
@@ -9,7 +9,7 @@ import { Vapi } from "@/lib/analytics/vapi";
  * Super admin only
  */
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -39,14 +39,16 @@ export async function GET(
 
     const { data: org, error: orgError } = await serviceClient
       .from("organizations")
-      .select("id, name, vapi_enabled, vapi_api_key, vapi_base_url, vapi_org_id")
+      .select(
+        "id, name, vapi_enabled, vapi_api_key, vapi_base_url, vapi_org_id",
+      )
       .eq("id", id)
       .single();
 
     if (orgError || !org) {
       return NextResponse.json(
         { error: "Organization not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -84,14 +86,17 @@ export async function GET(
           error: "Failed to fetch assistants from Vapi",
           details: vapiError.message,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
   } catch (error: any) {
-    console.error("Error in GET /api/admin/organizations/[id]/assistants:", error);
+    console.error(
+      "Error in GET /api/admin/organizations/[id]/assistants:",
+      error,
+    );
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

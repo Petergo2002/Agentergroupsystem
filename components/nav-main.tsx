@@ -1,14 +1,10 @@
 "use client";
 
-import {
-  type Icon,
-  IconChevronRight,
-} from "@tabler/icons-react";
+import { type Icon, IconChevronRight } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memo, useCallback } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -27,20 +23,20 @@ import {
 } from "@/components/ui/sidebar";
 
 // Memoized nav item for better performance
-const NavItem = memo(function NavItem({ 
-  item, 
-  onPrefetch 
-}: { 
-  item: { title: string; url?: string; icon?: Icon }; 
+const NavItem = memo(function NavItem({
+  item,
+  onPrefetch,
+}: {
+  item: { title: string; url?: string; icon?: Icon };
   onPrefetch: (url: string) => void;
 }) {
   if (!item.url) return null;
-  
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton tooltip={item.title} asChild>
-        <Link 
-          href={item.url} 
+        <Link
+          href={item.url}
           prefetch={true}
           onMouseEnter={() => onPrefetch(item.url!)}
         >
@@ -69,11 +65,14 @@ export const NavMain = memo(function NavMain({
   label?: string;
 }) {
   const router = useRouter();
-  
+
   // Prefetch route on hover for instant navigation
-  const handlePrefetch = useCallback((url: string) => {
-    router.prefetch(url);
-  }, [router]);
+  const handlePrefetch = useCallback(
+    (url: string) => {
+      router.prefetch(url);
+    },
+    [router],
+  );
 
   return (
     <SidebarGroup>
@@ -96,7 +95,7 @@ export const NavMain = memo(function NavMain({
                       {item.items.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
-                            <Link 
+                            <Link
                               href={subItem.url}
                               prefetch={true}
                               onMouseEnter={() => handlePrefetch(subItem.url)}
@@ -112,10 +111,10 @@ export const NavMain = memo(function NavMain({
                 </SidebarMenuItem>
               </Collapsible>
             ) : (
-              <NavItem 
-                key={item.title} 
-                item={item} 
-                onPrefetch={handlePrefetch} 
+              <NavItem
+                key={item.title}
+                item={item}
+                onPrefetch={handlePrefetch}
               />
             ),
           )}

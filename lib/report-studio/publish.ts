@@ -1,17 +1,16 @@
 /**
  * Report Studio - Publish Module
- * 
+ *
  * Hanterar publicering av mallar från Report Studio till User Dashboard.
  * Synkar mallar med Supabase och genererar PDF:er.
  */
 
+import { getTradeColors, TRADE_COLORS } from "../constants/colors";
 import { createSupabaseClient, IS_DEMO_MODE } from "../supabase";
-import type { 
-  SimpleReportTemplate, 
+import type {
+  SimpleReportTemplate,
   SimpleSectionDefinition,
-  ReportTrade,
 } from "../types/rapport";
-import { TRADE_COLORS, getTradeColors } from "../constants/colors";
 
 // ============================================================================
 // Types
@@ -41,7 +40,9 @@ export interface PublishResult {
 /**
  * Publicerar en mall till Supabase så att den blir tillgänglig i User Dashboard
  */
-export async function publishTemplate(options: PublishOptions): Promise<PublishResult> {
+export async function publishTemplate(
+  options: PublishOptions,
+): Promise<PublishResult> {
   const { templateId, includePreview = false } = options;
 
   try {
@@ -54,7 +55,7 @@ export async function publishTemplate(options: PublishOptions): Promise<PublishR
     }
 
     const supabase = createSupabaseClient();
-    
+
     // Hämta mallen från local store eller Supabase
     const { data: template, error } = await supabase
       .from("report_templates")
@@ -73,7 +74,7 @@ export async function publishTemplate(options: PublishOptions): Promise<PublishR
     // Uppdatera mallen som "publicerad"
     const { error: updateError } = await supabase
       .from("report_templates")
-      .update({ 
+      .update({
         updated_at: new Date().toISOString(),
         // Lägg till en "published" flagga om den finns i schemat
       })
@@ -117,18 +118,31 @@ export function generateTemplatePdfHtml(
     projectReference?: string;
     assignedTo?: string;
     date?: string;
-  }
+  },
 ): string {
   const colors = getTradeColors(template.trade);
-  
+
   const sectionsHtml = template.sections
-    .sort((a: SimpleSectionDefinition, b: SimpleSectionDefinition) => a.order - b.order)
+    .sort(
+      (a: SimpleSectionDefinition, b: SimpleSectionDefinition) =>
+        a.order - b.order,
+    )
     .map((section: SimpleSectionDefinition, index: number) => {
       const isText = section.type === "text";
-      const isGrundinfo = section.title.toLowerCase().includes("grundinformation");
-      const bgColor = isGrundinfo ? colors.accent : (isText ? "#f8fafc" : "#faf5ff");
-      const borderColor = isGrundinfo ? colors.primary : (isText ? colors.secondary : "#a855f7");
-      
+      const isGrundinfo = section.title
+        .toLowerCase()
+        .includes("grundinformation");
+      const bgColor = isGrundinfo
+        ? colors.accent
+        : isText
+          ? "#f8fafc"
+          : "#faf5ff";
+      const borderColor = isGrundinfo
+        ? colors.primary
+        : isText
+          ? colors.secondary
+          : "#a855f7";
+
       // Grundinformation-sektion med metadata
       if (isGrundinfo && metadata) {
         return `
@@ -160,7 +174,7 @@ export function generateTemplatePdfHtml(
           </div>
         `;
       }
-      
+
       return `
         <div style="
           margin-bottom: 24px;
@@ -196,7 +210,9 @@ export function generateTemplatePdfHtml(
             background: ${bgColor};
             min-height: 80px;
           ">
-            ${isText ? `
+            ${
+              isText
+                ? `
               <div style="color: #64748b; font-size: 13px; font-style: italic;">
                 ${section.description || "Här skriver användaren text..."}
               </div>
@@ -211,7 +227,8 @@ export function generateTemplatePdfHtml(
               ">
                 [Textinnehåll fylls i av användaren]
               </div>
-            ` : `
+            `
+                : `
               <div style="color: #64748b; font-size: 13px; font-style: italic; margin-bottom: 12px;">
                 ${section.description || "Här laddas bilder upp..."}
               </div>
@@ -220,7 +237,9 @@ export function generateTemplatePdfHtml(
                 grid-template-columns: repeat(3, 1fr);
                 gap: 12px;
               ">
-                ${[1, 2, 3].map(() => `
+                ${[1, 2, 3]
+                  .map(
+                    () => `
                   <div style="
                     aspect-ratio: 4/3;
                     background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 100%);
@@ -236,13 +255,17 @@ export function generateTemplatePdfHtml(
                       <path d="m21 15-5-5L5 21"/>
                     </svg>
                   </div>
-                `).join("")}
+                `,
+                  )
+                  .join("")}
               </div>
-            `}
+            `
+            }
           </div>
         </div>
       `;
-    }).join("");
+    })
+    .join("");
 
   return `
     <!DOCTYPE html>
@@ -359,7 +382,10 @@ export function generateTemplatePdfHtml(
 /**
  * Öppnar PDF i nytt fönster
  */
-export function openTemplatePdf(template: SimpleReportTemplate, metadata?: Parameters<typeof generateTemplatePdfHtml>[1]): void {
+export function openTemplatePdf(
+  template: SimpleReportTemplate,
+  metadata?: Parameters<typeof generateTemplatePdfHtml>[1],
+): void {
   const html = generateTemplatePdfHtml(template, metadata);
   const win = window.open("", "_blank");
   if (win) {
@@ -371,7 +397,10 @@ export function openTemplatePdf(template: SimpleReportTemplate, metadata?: Param
 /**
  * Öppnar PDF med print-dialog
  */
-export function printTemplatePdf(template: SimpleReportTemplate, metadata?: Parameters<typeof generateTemplatePdfHtml>[1]): void {
+export function printTemplatePdf(
+  template: SimpleReportTemplate,
+  metadata?: Parameters<typeof generateTemplatePdfHtml>[1],
+): void {
   const html = generateTemplatePdfHtml(template, metadata);
   const win = window.open("", "_blank");
   if (win) {

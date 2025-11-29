@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ publicId: string }> }
+  { params }: { params: Promise<{ publicId: string }> },
 ) {
   try {
     const { publicId } = await params;
@@ -13,7 +13,7 @@ export async function POST(
     if (!approvedBy || typeof approvedBy !== "string") {
       return NextResponse.json(
         { error: "Namn krävs för godkännande" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -35,7 +35,7 @@ export async function POST(
     if (updateError || !reportData) {
       return NextResponse.json(
         { error: "Kunde inte godkänna rapport" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -63,9 +63,6 @@ export async function POST(
     return NextResponse.json({ report: mappedReport });
   } catch (error) {
     console.error("Error approving report:", error);
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internt serverfel" }, { status: 500 });
   }
 }

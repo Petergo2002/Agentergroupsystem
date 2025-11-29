@@ -30,7 +30,7 @@ export default function TestAuthPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (event: any, session: Session | null) => {
+      (_event: any, session: Session | null) => {
         setSession(session);
       },
     );

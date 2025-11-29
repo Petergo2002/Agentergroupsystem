@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * API Route för att generera PDF från rapport
- * 
+ *
  * GET /api/rapport/[id]/pdf?profile=customer|internal
- * 
+ *
  * Returnerar HTML som kan skrivas ut som PDF
  * I framtiden kan detta utökas med Puppeteer/Playwright för server-side PDF
  */
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -27,7 +27,7 @@ export async function GET(
     console.error("PDF generation error:", error);
     return NextResponse.json(
       { error: "Kunde inte generera PDF" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

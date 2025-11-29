@@ -14,20 +14,20 @@ export interface ReportFormData {
   utredarePhone?: string;
   caseId?: string;
   customFilename?: string;
-  
+
   // Textsektioner
   inledning?: string;
   bakgrund: string;
   matmetoder: string;
   slutsats: string;
-  
+
   // Bilder
   images: string[]; // Galleri-bilder (data URLs eller http URLs)
   gannTableImage?: string; // GANN-tabell bild
-  
+
   // Läckageområden
   leakAreas: LeakArea[];
-  
+
   // Anpassade sektioner (från rapportmall)
   sections?: {
     id: string;
@@ -35,7 +35,7 @@ export interface ReportFormData {
     content: string;
     type?: string;
   }[];
-  
+
   // Mallar & låsning
   templateId?: string;
   lockedFields?: string[];
@@ -69,6 +69,12 @@ export interface LegacyReportTemplate {
  */
 export type ReportBuilderTemplate = LegacyReportTemplate;
 
+/**
+ * @deprecated Alias för bakåtkompatibilitet med reportBuilderStore
+ * Använd ReportTemplate från lib/types/rapport.ts för nya implementationer
+ */
+export type ReportTemplate = LegacyReportTemplate;
+
 export interface TemplateBindings {
   source: Record<string, string>; // Original malltext
   resolved: Record<string, string>; // Text efter token-ersättning
@@ -91,7 +97,7 @@ export interface SavedReport {
 export interface BrandingConfig {
   logoUrl?: string;
   companyName?: string;
-  theme?: 'default' | 'modern' | 'classic';
+  theme?: "default" | "modern" | "classic";
   addressLine1?: string;
   addressLine2?: string;
   contactEmail?: string;

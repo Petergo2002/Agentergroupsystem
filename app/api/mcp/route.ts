@@ -197,14 +197,17 @@ function createErrorResponse(
  * Dynamically validates origin against allowed list
  */
 export async function OPTIONS(request: NextRequest) {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || ['http://localhost:3000'];
-  const requestOrigin = request.headers.get('origin');
-  
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",").map((o) =>
+    o.trim(),
+  ) || ["http://localhost:3000"];
+  const requestOrigin = request.headers.get("origin");
+
   // Only allow if origin is in the allowed list
-  const origin = requestOrigin && allowedOrigins.includes(requestOrigin)
-    ? requestOrigin
-    : allowedOrigins[0] || 'http://localhost:3000';
-  
+  const origin =
+    requestOrigin && allowedOrigins.includes(requestOrigin)
+      ? requestOrigin
+      : allowedOrigins[0] || "http://localhost:3000";
+
   return new NextResponse(null, {
     status: 200,
     headers: {

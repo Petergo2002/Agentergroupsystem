@@ -1,5 +1,15 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+const DAY_SKELETON_KEYS = Array.from(
+  { length: 7 },
+  (_unused, index) => `day-${index + 1}`,
+);
+
+const CELL_SKELETON_KEYS = Array.from(
+  { length: 35 },
+  (_unused, index) => `cell-${index + 1}`,
+);
+
 export default function CalendarLoading() {
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -11,11 +21,11 @@ export default function CalendarLoading() {
         </div>
       </div>
       <div className="grid grid-cols-7 gap-1">
-        {[...Array(7)].map((_, i) => (
-          <Skeleton key={i} className="h-8 w-full" />
+        {DAY_SKELETON_KEYS.map((key) => (
+          <Skeleton key={key} className="h-8 w-full" />
         ))}
-        {[...Array(35)].map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full" />
+        {CELL_SKELETON_KEYS.map((key) => (
+          <Skeleton key={key} className="h-24 w-full" />
         ))}
       </div>
     </div>

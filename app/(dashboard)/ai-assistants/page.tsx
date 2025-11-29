@@ -1,10 +1,24 @@
 "use client";
 
+// A7: Lazy load Vapi to reduce initial bundle size
+// import Vapi from "@vapi-ai/web";
+
+import {
+  Loader2,
+  Lock,
+  MessageSquare,
+  Mic,
+  MicOff,
+  Phone,
+  Sparkles,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { SiteHeader } from "@/components/site-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -13,13 +27,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { MessageSquare, Sparkles, Phone, Mic, MicOff, Loader2, Lock } from "lucide-react";
-import Vapi from "@vapi-ai/web";
 import { useFeatureFlags } from "@/lib/hooks/use-feature-flags";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { SiteHeader } from "@/components/site-header";
+
+// A7: Dynamic import for Vapi
+let VapiModule: typeof import("@vapi-ai/web") | null = null;
+const loadVapi = async () => {
+  if (!VapiModule) {
+    VapiModule = await import("@vapi-ai/web");
+  }
+  return VapiModule.default;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type VapiClient = {
+  start: (assistantId: string) => Promise<unknown>;
+  stop: () => void;
+  on: (event: unknown, handler: (payload: unknown) => void) => unknown;
+};
 
 interface VapiAssistant {
   id: string;
@@ -37,7 +63,7 @@ export default function UserAIAssistantsPage() {
   const [error, setError] = useState<string | null>(null);
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [activeAssistant, setActiveAssistant] = useState<VapiAssistant | null>(
-    null
+    null,
   );
   const [testMessages, setTestMessages] = useState<
     Array<{ id: string; role: "user" | "assistant"; content: string }>
@@ -51,33 +77,23 @@ export default function UserAIAssistantsPage() {
 
   // Voice test state
   const [voiceDialogOpen, setVoiceDialogOpen] = useState(false);
-  const [voiceAssistant, setVoiceAssistant] = useState<VapiAssistant | null>(null);
-
-  if (!flagsLoading && !flags?.ai_assistant_enabled) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <SiteHeader title="AI-assistenter" showAddButton={false} />
-        <div className="flex-1 flex items-center justify-center p-8">
-          <Alert className="max-w-md">
-            <Lock className="h-4 w-4" />
-            <AlertDescription>
-              Denna funktion är inte tillgänglig. Kontakta administratören för att aktivera AI-assistenter.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </div>
-    );
-  }
+  const [voiceAssistant, setVoiceAssistant] = useState<VapiAssistant | null>(
+    null,
+  );
   const [vapiWebConfig, setVapiWebConfig] = useState<{
     publicKey: string;
     baseUrl: string;
   } | null>(null);
-  const [vapiWebConfigError, setVapiWebConfigError] = useState<string | null>(null);
-  const [callStatus, setCallStatus] = useState<"idle" | "connecting" | "in_progress" | "ended">("idle");
+  const [vapiWebConfigError, setVapiWebConfigError] = useState<string | null>(
+    null,
+  );
+  const [callStatus, setCallStatus] = useState<
+    "idle" | "connecting" | "in_progress" | "ended"
+  >("idle");
   const [voiceTranscripts, setVoiceTranscripts] = useState<
-    Array<{ role: "user" | "assistant"; text: string }>
+    Array<{ id: string; role: "user" | "assistant"; text: string }>
   >([]);
-  const vapiClientRef = useRef<any>(null);
+  const vapiClientRef = useRef<VapiClient | null>(null);
 
   useEffect(() => {
     loadAssistants();
@@ -94,13 +110,30 @@ export default function UserAIAssistantsPage() {
     }
   }, [vapiWebConfig]);
 
+  if (!flagsLoading && !flags?.ai_assistant_enabled) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <SiteHeader title="AI-assistenter" showAddButton={false} />
+        <div className="flex-1 flex items-center justify-center p-8">
+          <Alert className="max-w-md">
+            <Lock className="h-4 w-4" />
+            <AlertDescription>
+              Denna funktion är inte tillgänglig. Kontakta administratören för
+              att aktivera AI-assistenter.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
+
   const loadAssistants = async () => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await fetch("/api/user/assistants");
       const data = await response.json();
-      
+
       if (!response.ok) {
         // If there's an error field, show it
         if (data.error) {
@@ -111,19 +144,21 @@ export default function UserAIAssistantsPage() {
         }
         return;
       }
-      
+
       // Set assistants (may be empty array)
       setAssistants(data.assistants || []);
-      
+
       // Store info message if there's one
       if (data.message && (!data.assistants || data.assistants.length === 0)) {
         setInfoMessage(data.message);
       } else {
         setInfoMessage(null);
       }
-    } catch (err: any) {
-      setError(err.message);
-      toast.error(err.message);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load AI assistants";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -133,28 +168,36 @@ export default function UserAIAssistantsPage() {
     try {
       const response = await fetch("/api/user/vapi-web-config");
       const data = await response.json();
-      
+
       if (!response.ok) {
-        setVapiWebConfigError(data.error || "Failed to load voice configuration");
+        setVapiWebConfigError(
+          data.error || "Failed to load voice configuration",
+        );
         return;
       }
-      
+
       setVapiWebConfig({
         publicKey: data.publicKey,
         baseUrl: data.baseUrl,
       });
       setVapiWebConfigError(null);
-    } catch (err: any) {
-      setVapiWebConfigError(err.message || "Failed to load voice configuration");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to load voice configuration";
+      setVapiWebConfigError(message);
     }
   };
 
-  const initializeVapiClient = () => {
+  const initializeVapiClient = async () => {
     if (!vapiWebConfig || vapiClientRef.current) return;
 
     try {
+      // A7: Dynamically load Vapi SDK
+      const Vapi = await loadVapi();
       const vapi = new Vapi(vapiWebConfig.publicKey);
-      
+
       // Set up event listeners
       vapi.on("call-start", () => {
         setCallStatus("in_progress");
@@ -166,24 +209,30 @@ export default function UserAIAssistantsPage() {
         toast.info("Röstsamtal avslutat");
       });
 
-      vapi.on("message", (message: any) => {
+      vapi.on("message", (message) => {
         if (message.type === "transcript") {
           setVoiceTranscripts((prev) => [
             ...prev,
-            { role: message.role, text: message.transcript },
+            {
+              id: `${Date.now()}-${prev.length}`,
+              role: message.role,
+              text: message.transcript,
+            },
           ]);
         }
       });
 
-      vapi.on("error", (error: any) => {
+      vapi.on("error", (error) => {
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
         console.error("Vapi error:", error);
-        toast.error("Röstsamtal fel: " + (error.message || "Unknown error"));
+        toast.error(`Röstsamtal fel: ${message}`);
         setCallStatus("ended");
       });
 
-      vapiClientRef.current = vapi;
-    } catch (err: any) {
-      console.error("Failed to initialize Vapi client:", err);
+      vapiClientRef.current = vapi as unknown as VapiClient;
+    } catch (error) {
+      console.error("Failed to initialize Vapi client:", error);
       toast.error("Kunde inte initiera röstklient");
     }
   };
@@ -211,12 +260,12 @@ export default function UserAIAssistantsPage() {
     setVoiceAssistant(assistant);
     setVoiceTranscripts([]);
     setCallStatus("idle");
-    
+
     // Load config if not already loaded
     if (!vapiWebConfig && !vapiWebConfigError) {
       await loadVapiWebConfig();
     }
-    
+
     setVoiceDialogOpen(true);
   };
 
@@ -225,7 +274,7 @@ export default function UserAIAssistantsPage() {
     if (callStatus === "in_progress" && vapiClientRef.current) {
       vapiClientRef.current.stop();
     }
-    
+
     setVoiceDialogOpen(false);
     setVoiceAssistant(null);
     setVoiceTranscripts([]);
@@ -251,9 +300,10 @@ export default function UserAIAssistantsPage() {
     try {
       setCallStatus("connecting");
       await vapiClientRef.current.start(voiceAssistant.id);
-    } catch (err: any) {
-      console.error("Failed to start voice call:", err);
-      toast.error("Kunde inte starta röstsamtal: " + (err.message || "Unknown error"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("Failed to start voice call:", error);
+      toast.error(`Kunde inte starta röstsamtal: ${message}`);
       setCallStatus("idle");
     }
   };
@@ -294,12 +344,14 @@ export default function UserAIAssistantsPage() {
             message: trimmed,
             conversationId,
           }),
-        }
+        },
       );
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || "Misslyckades med att testa assistenten");
+        throw new Error(
+          data?.error || "Misslyckades med att testa assistenten",
+        );
       }
 
       if (data.sessionId) {
@@ -317,8 +369,10 @@ export default function UserAIAssistantsPage() {
       } else {
         toast.info("Assistenten svarade inte med ett meddelande");
       }
-    } catch (err: any) {
-      setTestError(err.message || "Ett fel uppstod");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Ett fel uppstod";
+      setTestError(message);
     } finally {
       setTestLoading(false);
     }
@@ -328,14 +382,20 @@ export default function UserAIAssistantsPage() {
     return <Sparkles className="h-5 w-5" />;
   };
 
+  const LOADING_CARD_KEYS = [
+    "assistant-card-1",
+    "assistant-card-2",
+    "assistant-card-3",
+  ];
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
         <div>
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-48 w-full rounded-lg" />
+            {LOADING_CARD_KEYS.map((key) => (
+              <Skeleton key={key} className="h-48 w-full rounded-lg" />
             ))}
           </div>
         </div>
@@ -355,7 +415,11 @@ export default function UserAIAssistantsPage() {
               <div className="mt-2 text-sm text-red-700">
                 <p>{error}</p>
               </div>
-              <Button onClick={loadAssistants} className="mt-4" variant="outline">
+              <Button
+                onClick={loadAssistants}
+                className="mt-4"
+                variant="outline"
+              >
                 Försök igen
               </Button>
             </div>
@@ -370,7 +434,8 @@ export default function UserAIAssistantsPage() {
       <div>
         <h1 className="text-2xl font-bold mb-2">Mina AI-assistenter</h1>
         <p className="text-gray-600 mb-6">
-          Här kan du se och testa de AI-assistenter som är tilldelade till din organisation.
+          Här kan du se och testa de AI-assistenter som är tilldelade till din
+          organisation.
         </p>
       </div>
 
@@ -383,7 +448,8 @@ export default function UserAIAssistantsPage() {
                 Inga assistenter tilldelade
               </h3>
               <p className="text-gray-500 mb-2">
-                {infoMessage || "Din organisation har inga AI-assistenter tilldelade ännu."}
+                {infoMessage ||
+                  "Din organisation har inga AI-assistenter tilldelade ännu."}
               </p>
               {!infoMessage?.includes("not configured") && (
                 <p className="text-sm text-gray-400">
@@ -396,7 +462,10 @@ export default function UserAIAssistantsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {assistants.map((assistant) => (
-            <Card key={assistant.id} className="hover:shadow-lg transition-shadow">
+            <Card
+              key={assistant.id}
+              className="hover:shadow-lg transition-shadow"
+            >
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -406,7 +475,11 @@ export default function UserAIAssistantsPage() {
                     </CardTitle>
                   </div>
                   {assistant.status && (
-                    <Badge variant={assistant.status === "active" ? "default" : "secondary"}>
+                    <Badge
+                      variant={
+                        assistant.status === "active" ? "default" : "secondary"
+                      }
+                    >
                       {assistant.status}
                     </Badge>
                   )}
@@ -414,7 +487,9 @@ export default function UserAIAssistantsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {assistant.description && (
-                  <p className="text-sm text-gray-600">{assistant.description}</p>
+                  <p className="text-sm text-gray-600">
+                    {assistant.description}
+                  </p>
                 )}
                 <div className="text-xs text-gray-500">
                   ID: {assistant.id.slice(0, 8)}...
@@ -451,12 +526,15 @@ export default function UserAIAssistantsPage() {
 
       <Dialog
         open={testDialogOpen}
-        onOpenChange={(open) => (open ? setTestDialogOpen(true) : closeTestDialog())}
+        onOpenChange={(open) =>
+          open ? setTestDialogOpen(true) : closeTestDialog()
+        }
       >
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              Testa {activeAssistant?.name || activeAssistant?.id || "assistent"}
+              Testa{" "}
+              {activeAssistant?.name || activeAssistant?.id || "assistent"}
             </DialogTitle>
             <DialogDescription>
               Chatta med AI-assistenten för att se hur den fungerar.
@@ -483,7 +561,9 @@ export default function UserAIAssistantsPage() {
                     >
                       <p>{message.content}</p>
                       <p className="mt-1 text-[10px] uppercase tracking-wide opacity-60">
-                        {message.role === "user" ? "Du" : activeAssistant?.name || "Assistent"}
+                        {message.role === "user"
+                          ? "Du"
+                          : activeAssistant?.name || "Assistent"}
                       </p>
                     </div>
                   </div>
@@ -510,7 +590,9 @@ export default function UserAIAssistantsPage() {
             />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                {conversationId ? `Session: ${conversationId.slice(0, 12)}...` : "Ingen aktiv session"}
+                {conversationId
+                  ? `Session: ${conversationId.slice(0, 12)}...`
+                  : "Ingen aktiv session"}
               </span>
               {testMessages.length > 0 && (
                 <Button
@@ -543,12 +625,15 @@ export default function UserAIAssistantsPage() {
       {/* Voice Test Dialog */}
       <Dialog
         open={voiceDialogOpen}
-        onOpenChange={(open) => (open ? setVoiceDialogOpen(true) : closeVoiceDialog())}
+        onOpenChange={(open) =>
+          open ? setVoiceDialogOpen(true) : closeVoiceDialog()
+        }
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Rösttest - {voiceAssistant?.name || voiceAssistant?.id || "assistent"}
+              Rösttest -{" "}
+              {voiceAssistant?.name || voiceAssistant?.id || "assistent"}
             </DialogTitle>
             <DialogDescription>
               Testa assistenten med röst direkt i webbläsaren. Mikrofon krävs.
@@ -576,7 +661,9 @@ export default function UserAIAssistantsPage() {
                   {callStatus === "idle" && (
                     <>
                       <Mic className="h-5 w-5 text-gray-400" />
-                      <span className="text-sm text-gray-600">Redo att starta</span>
+                      <span className="text-sm text-gray-600">
+                        Redo att starta
+                      </span>
                     </>
                   )}
                   {callStatus === "connecting" && (
@@ -588,13 +675,17 @@ export default function UserAIAssistantsPage() {
                   {callStatus === "in_progress" && (
                     <>
                       <Mic className="h-5 w-5 text-green-600 animate-pulse" />
-                      <span className="text-sm text-green-600">Samtal pågår</span>
+                      <span className="text-sm text-green-600">
+                        Samtal pågår
+                      </span>
                     </>
                   )}
                   {callStatus === "ended" && (
                     <>
                       <MicOff className="h-5 w-5 text-gray-400" />
-                      <span className="text-sm text-gray-600">Samtal avslutat</span>
+                      <span className="text-sm text-gray-600">
+                        Samtal avslutat
+                      </span>
                     </>
                   )}
                 </div>
@@ -605,9 +696,9 @@ export default function UserAIAssistantsPage() {
                     <div className="text-xs font-medium text-gray-500 mb-2">
                       Transkript:
                     </div>
-                    {voiceTranscripts.map((transcript, idx) => (
+                    {voiceTranscripts.map((transcript) => (
                       <div
-                        key={idx}
+                        key={transcript.id}
                         className={`text-sm p-2 rounded ${
                           transcript.role === "user"
                             ? "bg-blue-100 text-blue-900 ml-4"
@@ -626,8 +717,8 @@ export default function UserAIAssistantsPage() {
                 {/* Info */}
                 {callStatus === "idle" && (
                   <div className="text-xs text-gray-500 p-3 bg-blue-50 rounded-lg">
-                    💡 Klicka på "Starta rösttest" för att börja prata med assistenten.
-                    Browsern kommer be om mikrofonåtkomst.
+                    💡 Klicka på "Starta rösttest" för att börja prata med
+                    assistenten. Browsern kommer be om mikrofonåtkomst.
                   </div>
                 )}
               </>
@@ -638,30 +729,27 @@ export default function UserAIAssistantsPage() {
             <Button type="button" variant="ghost" onClick={closeVoiceDialog}>
               Stäng
             </Button>
-            {!vapiWebConfigError && (
-              <>
-                {callStatus === "idle" || callStatus === "ended" ? (
-                  <Button
-                    type="button"
-                    onClick={startVoiceCall}
-                    disabled={!voiceAssistant}
-                  >
-                    <Mic className="h-4 w-4 mr-2" />
-                    Starta rösttest
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={stopVoiceCall}
-                    disabled={callStatus === "connecting"}
-                  >
-                    <MicOff className="h-4 w-4 mr-2" />
-                    Avsluta samtal
-                  </Button>
-                )}
-              </>
-            )}
+            {!vapiWebConfigError &&
+              (callStatus === "idle" || callStatus === "ended" ? (
+                <Button
+                  type="button"
+                  onClick={startVoiceCall}
+                  disabled={!voiceAssistant}
+                >
+                  <Mic className="h-4 w-4 mr-2" />
+                  Starta rösttest
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={stopVoiceCall}
+                  disabled={callStatus === "connecting"}
+                >
+                  <MicOff className="h-4 w-4 mr-2" />
+                  Avsluta samtal
+                </Button>
+              ))}
           </DialogFooter>
         </DialogContent>
       </Dialog>

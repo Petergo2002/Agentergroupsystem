@@ -2,32 +2,32 @@
 
 /**
  * Report Studio v2
- * 
+ *
  * Förenklat mallsystem med endast 2 sektionstyper:
  * - Text (rubrik + fritext)
  * - Bilder (galleri med annoteringar)
- * 
+ *
  * Synkar med Supabase för att dela mallar med User Dashboard.
  */
 
-import { useState, useEffect } from "react";
+import {
+  IconArrowLeft,
+  IconEye,
+  IconFileText,
+  IconLoader2,
+  IconPalette,
+  IconRefresh,
+  IconSettings,
+} from "@tabler/icons-react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  IconFileText, 
-  IconEye, 
-  IconSettings,
-  IconArrowLeft,
-  IconLoader2,
-  IconRefresh,
-  IconPalette,
-} from "@tabler/icons-react";
 import { useSimpleReportStore } from "@/stores/simpleReportStore";
-import { TemplateList } from "./template-list";
-import { TemplateEditor } from "./template-editor";
-import { PdfDesigner } from "./pdf-designer";
-import { DesignsManager } from "./designs-manager";
 import { CreateTemplateDialog } from "./create-template-dialog";
+import { DesignsManager } from "./designs-manager";
+import { PdfDesigner } from "./pdf-designer";
+import { TemplateEditor } from "./template-editor";
+import { TemplateList } from "./template-list";
 
 type View = "list" | "editor";
 
@@ -36,23 +36,35 @@ interface ReportStudioV2Props {
   hideDesignsTab?: boolean;
 }
 
-export function ReportStudioV2({ hideDesignsTab = false }: ReportStudioV2Props) {
-  const { 
-    activeTemplateId, 
-    setActiveTemplate, 
-    fetchTemplates, 
-    loading, 
-    initialized,
-    saving,
-  } = useSimpleReportStore();
+export function ReportStudioV2({
+  hideDesignsTab = false,
+}: ReportStudioV2Props) {
+  // A2: UI-state är nu lokalt i komponenten istället för globalt i store
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, _setIsSaving] = useState(false);
+
+  const { activeTemplateId, setActiveTemplate, fetchTemplates, initialized } =
+    useSimpleReportStore();
   const [view, setView] = useState<View>("list");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"editor" | "preview" | "designs">("editor");
+  const [activeTab, setActiveTab] = useState<"editor" | "preview" | "designs">(
+    "editor",
+  );
 
-  // Ladda mallar vid mount
+  // Ladda mallar vid mount (A2: lokal loading-state)
+  const loadTemplates = useCallback(async () => {
+    if (initialized) return;
+    setIsLoading(true);
+    try {
+      await fetchTemplates();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchTemplates, initialized]);
+
   useEffect(() => {
-    fetchTemplates();
-  }, [fetchTemplates]);
+    loadTemplates();
+  }, [loadTemplates]);
 
   // När en mall väljs, gå till editor
   const handleSelectTemplate = (id: string) => {
@@ -78,21 +90,28 @@ export function ReportStudioV2({ hideDesignsTab = false }: ReportStudioV2Props) 
     setView("editor");
   };
 
-  // Ladda om mallar
-  const handleRefresh = () => {
+  // Ladda om mallar (A2: lokal loading-state)
+  const handleRefresh = useCallback(async () => {
+    setIsLoading(true);
     useSimpleReportStore.setState({ initialized: false });
-    fetchTemplates();
-  };
+    try {
+      await fetchTemplates();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchTemplates]);
 
   // Loading state
-  if (loading && !initialized) {
+  if (isLoading && !initialized) {
     return (
       <div className="h-screen flex flex-col bg-[#0a0a0a]">
         <header className="border-b border-white/10 bg-[#111111]">
           <div className="flex items-center justify-between px-6 py-4">
             <div>
               <h1 className="text-xl font-bold text-white">Report Studio</h1>
-              <p className="text-sm text-gray-400">Skapa och hantera rapportmallar</p>
+              <p className="text-sm text-gray-400">
+                Skapa och hantera rapportmallar
+              </p>
             </div>
           </div>
         </header>
@@ -122,7 +141,9 @@ export function ReportStudioV2({ hideDesignsTab = false }: ReportStudioV2Props) 
               <h1 className="text-xl font-bold text-white">Report Studio</h1>
               <p className="text-sm text-gray-400">
                 Skapa och hantera rapportmallar
-                {saving && <span className="ml-2 text-emerald-400">• Sparar...</span>}
+                {isSaving && (
+                  <span className="ml-2 text-emerald-400">• Sparar...</span>
+                )}
               </p>
             </div>
           </div>
@@ -130,15 +151,17 @@ export function ReportStudioV2({ hideDesignsTab = false }: ReportStudioV2Props) 
           <div className="flex items-center gap-2">
             {view === "list" && (
               <>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={handleRefresh}
-                  disabled={loading}
+                  disabled={isLoading}
                 >
-                  <IconRefresh className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                  <IconRefresh
+                    className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+                  />
                 </Button>
-                <Button 
+                <Button
                   onClick={handleCreateNew}
                   className="bg-emerald-600 hover:bg-emerald-700"
                 >
@@ -154,37 +177,39 @@ export function ReportStudioV2({ hideDesignsTab = false }: ReportStudioV2Props) 
       {/* Content */}
       {view === "list" ? (
         <div className="flex-1 overflow-hidden">
-          <TemplateList 
+          <TemplateList
             onCreateNew={handleCreateNew}
             onSelect={handleSelectTemplate}
           />
         </div>
       ) : (
         <div className="flex-1 overflow-hidden">
-          <Tabs 
-            value={activeTab} 
-            onValueChange={(v) => setActiveTab(v as "editor" | "preview" | "designs")}
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) =>
+              setActiveTab(v as "editor" | "preview" | "designs")
+            }
             className="h-full flex flex-col"
           >
             <div className="border-b border-white/10 px-6 bg-[#111111]">
               <TabsList className="bg-transparent h-12">
-                <TabsTrigger 
-                  value="editor" 
+                <TabsTrigger
+                  value="editor"
                   className="data-[state=active]:bg-white/10 gap-2"
                 >
                   <IconSettings className="w-4 h-4" />
                   Redigera
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="preview" 
+                <TabsTrigger
+                  value="preview"
                   className="data-[state=active]:bg-white/10 gap-2"
                 >
                   <IconEye className="w-4 h-4" />
                   Förhandsvisning & PDF
                 </TabsTrigger>
                 {!hideDesignsTab && (
-                  <TabsTrigger 
-                    value="designs" 
+                  <TabsTrigger
+                    value="designs"
                     className="data-[state=active]:bg-white/10 gap-2"
                   >
                     <IconPalette className="w-4 h-4" />
@@ -203,7 +228,10 @@ export function ReportStudioV2({ hideDesignsTab = false }: ReportStudioV2Props) 
             </TabsContent>
 
             {!hideDesignsTab && (
-              <TabsContent value="designs" className="flex-1 m-0 overflow-hidden">
+              <TabsContent
+                value="designs"
+                className="flex-1 m-0 overflow-hidden"
+              >
                 <DesignsManager />
               </TabsContent>
             )}
@@ -212,8 +240,8 @@ export function ReportStudioV2({ hideDesignsTab = false }: ReportStudioV2Props) 
       )}
 
       {/* Create Dialog */}
-      <CreateTemplateDialog 
-        open={createDialogOpen} 
+      <CreateTemplateDialog
+        open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onCreated={handleTemplateCreated}
       />

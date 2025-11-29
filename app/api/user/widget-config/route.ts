@@ -23,7 +23,10 @@ export async function GET() {
       .single();
 
     if (!userProfile?.organization_id) {
-      return NextResponse.json({ error: "No organization found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "No organization found" },
+        { status: 404 },
+      );
     }
 
     // Get widget config
@@ -45,8 +48,10 @@ export async function GET() {
         primary_color: widgetConfig.primary_color || "#3b82f6",
         text_color: widgetConfig.text_color || "#ffffff",
         position: widgetConfig.position || "bottom-right",
-        welcome_message: widgetConfig.welcome_message || "Hej! Hur kan jag hjälpa dig idag?",
-        placeholder_text: widgetConfig.placeholder_text || "Skriv ditt meddelande...",
+        welcome_message:
+          widgetConfig.welcome_message || "Hej! Hur kan jag hjälpa dig idag?",
+        placeholder_text:
+          widgetConfig.placeholder_text || "Skriv ditt meddelande...",
         button_text: widgetConfig.button_text || "Chatta med oss",
         logo_url: widgetConfig.logo_url || null,
         widget_mode: widgetConfig.widget_mode || "chat",
@@ -56,7 +61,7 @@ export async function GET() {
     console.error("Error fetching widget config:", error);
     return NextResponse.json(
       { error: "Failed to fetch widget config" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -82,7 +87,10 @@ export async function POST(req: Request) {
       .single();
 
     if (!userProfile?.organization_id) {
-      return NextResponse.json({ error: "No organization found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "No organization found" },
+        { status: 404 },
+      );
     }
 
     const body = await req.json();
@@ -141,8 +149,11 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Error saving widget config:", error);
     return NextResponse.json(
-      { error: "Failed to save widget config", details: error?.message || error },
-      { status: 500 }
+      {
+        error: "Failed to save widget config",
+        details: error?.message || error,
+      },
+      { status: 500 },
     );
   }
 }

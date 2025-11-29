@@ -2,10 +2,27 @@
 
 import { sv } from "date-fns/locale";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
-import { CalendarIcon, Clock, AlignLeft, ChevronDown, User, Repeat, Trash2 } from "lucide-react";
+import {
+  AlignLeft,
+  CalendarIcon,
+  ChevronDown,
+  Clock,
+  Repeat,
+  Trash2,
+  User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,18 +39,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { createEvent, useEventsStore, useCustomersStore, deleteEventById, updateEventById } from "@/lib/store";
-import { cn, SWEDEN_TZ } from "@/lib/utils";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  createEvent,
+  deleteEventById,
+  updateEventById,
+  useCustomersStore,
+  useEventsStore,
+} from "@/lib/store";
+import { cn, SWEDEN_TZ } from "@/lib/utils";
 
 interface EventPopoverFormProps {
   slot?: Date;
@@ -65,7 +78,13 @@ const RECURRENCE_OPTIONS = [
   { value: "monthly", label: "Varje månad" },
 ] as const;
 
-function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function TimeSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value);
 
@@ -85,7 +104,9 @@ function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) 
     const match = inputValue.match(/^(\d{1,2}):?(\d{2})?$/);
     if (match) {
       const hours = Math.min(23, Math.max(0, parseInt(match[1] ?? "0", 10)));
-      const minutes = match[2] ? Math.min(59, Math.max(0, parseInt(match[2] ?? "0", 10))) : 0;
+      const minutes = match[2]
+        ? Math.min(59, Math.max(0, parseInt(match[2] ?? "0", 10)))
+        : 0;
       const formatted = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
       setInputValue(formatted);
       onChange(formatted);
@@ -109,7 +130,10 @@ function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) 
           <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-[100px] p-1 max-h-[200px] overflow-auto" align="start">
+      <PopoverContent
+        className="w-[100px] p-1 max-h-[200px] overflow-auto"
+        align="start"
+      >
         <div className="space-y-0.5">
           {TIME_OPTIONS.map((time) => (
             <button
@@ -117,7 +141,8 @@ function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) 
               type="button"
               className={cn(
                 "w-full text-left px-2 py-1 text-sm rounded hover:bg-accent transition-colors",
-                time === value && "bg-primary text-primary-foreground hover:bg-primary"
+                time === value &&
+                  "bg-primary text-primary-foreground hover:bg-primary",
               )}
               onClick={() => {
                 onChange(time);
@@ -134,11 +159,16 @@ function TimeSelect({ value, onChange }: { value: string; onChange: (v: string) 
   );
 }
 
-export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopoverFormProps) {
+export function EventPopoverForm({
+  slot,
+  eventId,
+  onClose,
+  onSave,
+}: EventPopoverFormProps) {
   const events = useEventsStore((s) => s.events);
   const customers = useCustomersStore((s) => s.customers);
-  const updateEvent = useEventsStore((s) => s.updateEvent);
-  
+  const _updateEvent = useEventsStore((s) => s.updateEvent);
+
   const existingEvent = eventId ? events.find((e) => e.id === eventId) : null;
   const isEditing = !!existingEvent;
 
@@ -162,28 +192,59 @@ export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopove
       setDescription(existingEvent.description || "");
       setEventType(existingEvent.event_type || "meeting");
       setContactId(existingEvent.contact_id || "");
-      
-      const dateStr = formatInTimeZone(existingEvent.start_time, SWEDEN_TZ, "yyyy-MM-dd", { locale: sv });
+
+      const dateStr = formatInTimeZone(
+        existingEvent.start_time,
+        SWEDEN_TZ,
+        "yyyy-MM-dd",
+        { locale: sv },
+      );
       setStartDate(dateStr);
-      
-      const startH = formatInTimeZone(existingEvent.start_time, SWEDEN_TZ, "HH", { locale: sv });
-      const startM = formatInTimeZone(existingEvent.start_time, SWEDEN_TZ, "mm", { locale: sv });
+
+      const startH = formatInTimeZone(
+        existingEvent.start_time,
+        SWEDEN_TZ,
+        "HH",
+        { locale: sv },
+      );
+      const startM = formatInTimeZone(
+        existingEvent.start_time,
+        SWEDEN_TZ,
+        "mm",
+        { locale: sv },
+      );
       setStartTime(`${startH}:${startM}`);
-      
-      const endH = formatInTimeZone(existingEvent.end_time, SWEDEN_TZ, "HH", { locale: sv });
-      const endM = formatInTimeZone(existingEvent.end_time, SWEDEN_TZ, "mm", { locale: sv });
+
+      const endH = formatInTimeZone(existingEvent.end_time, SWEDEN_TZ, "HH", {
+        locale: sv,
+      });
+      const endM = formatInTimeZone(existingEvent.end_time, SWEDEN_TZ, "mm", {
+        locale: sv,
+      });
       setEndTime(`${endH}:${endM}`);
     } else if (slot) {
-      const dateStr = formatInTimeZone(slot, SWEDEN_TZ, "yyyy-MM-dd", { locale: sv });
+      const dateStr = formatInTimeZone(slot, SWEDEN_TZ, "yyyy-MM-dd", {
+        locale: sv,
+      });
       setStartDate(dateStr);
-      
-      const slotH = parseInt(formatInTimeZone(slot, SWEDEN_TZ, "HH", { locale: sv }), 10);
-      const slotM = parseInt(formatInTimeZone(slot, SWEDEN_TZ, "mm", { locale: sv }), 10);
-      
+
+      const slotH = parseInt(
+        formatInTimeZone(slot, SWEDEN_TZ, "HH", { locale: sv }),
+        10,
+      );
+      const slotM = parseInt(
+        formatInTimeZone(slot, SWEDEN_TZ, "mm", { locale: sv }),
+        10,
+      );
+
       if (slotH !== 0 || slotM !== 0) {
-        setStartTime(`${String(slotH).padStart(2, "0")}:${String(slotM).padStart(2, "0")}`);
+        setStartTime(
+          `${String(slotH).padStart(2, "0")}:${String(slotM).padStart(2, "0")}`,
+        );
         const endH = (slotH + 1) % 24;
-        setEndTime(`${String(endH).padStart(2, "0")}:${String(slotM).padStart(2, "0")}`);
+        setEndTime(
+          `${String(endH).padStart(2, "0")}:${String(slotM).padStart(2, "0")}`,
+        );
       }
     }
   }, [slot, existingEvent]);
@@ -200,11 +261,11 @@ export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopove
       const y = dateParts[0] ?? 2024;
       const m = dateParts[1] ?? 1;
       const d = dateParts[2] ?? 1;
-      
+
       const startParts = startTime.split(":").map(Number);
       const sh = startParts[0] ?? 0;
       const sm = startParts[1] ?? 0;
-      
+
       const endParts = endTime.split(":").map(Number);
       const eh = endParts[0] ?? 0;
       const em = endParts[1] ?? 0;
@@ -252,11 +313,15 @@ export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopove
         toast.success("Händelse skapad");
         onSave(newEvent);
       }
-      
+
       onClose();
     } catch (error) {
       console.error(error);
-      toast.error(isEditing ? "Kunde inte uppdatera händelse" : "Kunde inte skapa händelse");
+      toast.error(
+        isEditing
+          ? "Kunde inte uppdatera händelse"
+          : "Kunde inte skapa händelse",
+      );
     } finally {
       setSaving(false);
     }
@@ -284,22 +349,41 @@ export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopove
     <>
       <div className="w-[340px] p-4 space-y-4">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="font-medium">{isEditing ? "Redigera händelse" : "Ny händelse"}</h4>
+          <h4 className="font-medium">
+            {isEditing ? "Redigera händelse" : "Ny händelse"}
+          </h4>
           <div className="flex items-center gap-1">
             {isEditing && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-6 w-6 text-destructive hover:text-destructive" 
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-destructive hover:text-destructive"
                 onClick={() => setDeleteDialogOpen(true)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={onClose}
+            >
               <span className="sr-only">Stäng</span>
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
-                <path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.1929 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.1929 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd" />
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 15 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+              >
+                <path
+                  d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.1929 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.1929 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                />
               </svg>
             </Button>
           </div>
@@ -316,7 +400,12 @@ export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopove
         <div className="space-y-3">
           {/* Event Type */}
           <div className="flex items-center gap-3 text-sm">
-            <div className={cn("h-4 w-4 rounded-full shrink-0", selectedEventType?.color || "bg-gray-400")} />
+            <div
+              className={cn(
+                "h-4 w-4 rounded-full shrink-0",
+                selectedEventType?.color || "bg-gray-400",
+              )}
+            />
             <Select value={eventType} onValueChange={setEventType}>
               <SelectTrigger className="h-8 border-none shadow-none px-0 focus:ring-0">
                 <SelectValue placeholder="Välj typ" />
@@ -339,7 +428,14 @@ export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopove
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
             <div className="flex-1">
               <div className="font-medium">
-                {startDate ? formatInTimeZone(new Date(startDate), SWEDEN_TZ, "EEEE, d MMM", { locale: sv }) : "Välj datum"}
+                {startDate
+                  ? formatInTimeZone(
+                      new Date(startDate),
+                      SWEDEN_TZ,
+                      "EEEE, d MMM",
+                      { locale: sv },
+                    )
+                  : "Välj datum"}
               </div>
             </div>
           </div>
@@ -355,22 +451,37 @@ export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopove
                   <TimeSelect value={endTime} onChange={setEndTime} />
                 </>
               )}
-              {allDay && <span className="text-muted-foreground">Hela dagen</span>}
+              {allDay && (
+                <span className="text-muted-foreground">Hela dagen</span>
+              )}
             </div>
           </div>
 
           {/* All day toggle */}
           <div className="flex items-center gap-3 text-sm ml-7">
             <div className="flex items-center gap-2">
-              <Switch id="all-day-switch" checked={allDay} onCheckedChange={setAllDay} className="scale-75 origin-left" />
-              <Label htmlFor="all-day-switch" className="font-normal text-muted-foreground cursor-pointer">Heldag</Label>
+              <Switch
+                id="all-day-switch"
+                checked={allDay}
+                onCheckedChange={setAllDay}
+                className="scale-75 origin-left"
+              />
+              <Label
+                htmlFor="all-day-switch"
+                className="font-normal text-muted-foreground cursor-pointer"
+              >
+                Heldag
+              </Label>
             </div>
           </div>
 
           {/* Contact */}
           <div className="flex items-center gap-3 text-sm">
             <User className="h-4 w-4 text-muted-foreground" />
-            <Select value={contactId || "none"} onValueChange={(val) => setContactId(val === "none" ? "" : val)}>
+            <Select
+              value={contactId || "none"}
+              onValueChange={(val) => setContactId(val === "none" ? "" : val)}
+            >
               <SelectTrigger className="h-8 border-none shadow-none px-0 focus:ring-0 flex-1">
                 <SelectValue placeholder="Välj kontakt (valfritt)" />
               </SelectTrigger>
@@ -415,7 +526,9 @@ export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopove
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" size="sm" onClick={onClose}>Avbryt</Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Avbryt
+          </Button>
           <Button size="sm" onClick={handleSave} disabled={saving}>
             {saving ? "Sparar..." : isEditing ? "Uppdatera" : "Spara"}
           </Button>
@@ -427,12 +540,17 @@ export function EventPopoverForm({ slot, eventId, onClose, onSave }: EventPopove
           <AlertDialogHeader>
             <AlertDialogTitle>Ta bort händelse?</AlertDialogTitle>
             <AlertDialogDescription>
-              Är du säker på att du vill ta bort denna händelse? Detta går inte att ångra.
+              Är du säker på att du vill ta bort denna händelse? Detta går inte
+              att ångra.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Avbryt</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {deleting ? "Tar bort..." : "Ta bort"}
             </AlertDialogAction>
           </AlertDialogFooter>

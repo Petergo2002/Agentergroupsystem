@@ -1,7 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
+import { type NextRequest, NextResponse } from "next/server";
 import { Vapi } from "@/lib/analytics/vapi";
-import { widgetRateLimit, checkRateLimitForRequest, getRateLimitHeaders } from "@/lib/rate-limit";
+import {
+  checkRateLimitForRequest,
+  getRateLimitHeaders,
+  widgetRateLimit,
+} from "@/lib/rate-limit";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (!organizationId || !assistantId || !message) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -45,14 +49,14 @@ export async function POST(req: NextRequest) {
     if (orgError || !org) {
       return NextResponse.json(
         { error: "Organization not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (!org.vapi_enabled || !org.vapi_api_key) {
       return NextResponse.json(
         { error: "VAPI not configured for this organization" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -83,7 +87,7 @@ export async function POST(req: NextRequest) {
     console.error("Widget chat error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to send message" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

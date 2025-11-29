@@ -1,24 +1,24 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { Vapi } from "@/lib/analytics/vapi";
 import { createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { Vapi } from "@/lib/analytics/vapi";
 
 export async function POST(
   req: NextRequest,
   {
     params,
   }: {
-    params: { assistantId: string } | Promise<{ assistantId: string }>;
-  }
+    params: Promise<{ assistantId: string }>;
+  },
 ) {
   try {
-    const resolvedParams = await Promise.resolve(params);
+    const resolvedParams = await params;
     const assistantId = resolvedParams.assistantId;
 
     if (!assistantId) {
       return NextResponse.json(
         { error: "Assistant ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +44,7 @@ export async function POST(
     if (!userProfile?.organization_id) {
       return NextResponse.json(
         { error: "No organization found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -59,14 +59,14 @@ export async function POST(
       console.error("Failed to load organization", orgError);
       return NextResponse.json(
         { error: "Failed to load organization" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     if (!org?.vapi_enabled || !org.vapi_api_key) {
       return NextResponse.json(
         { error: "VAPI integration not configured" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -80,7 +80,7 @@ export async function POST(
     if (!message) {
       return NextResponse.json(
         { error: "Message is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -115,7 +115,7 @@ export async function POST(
         : 500;
     return NextResponse.json(
       { error: error?.message || "Failed to test assistant" },
-      { status }
+      { status },
     );
   }
 }

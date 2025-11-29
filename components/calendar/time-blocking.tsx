@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { Book, Briefcase, Clock, Coffee, Focus, Zap } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,

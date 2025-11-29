@@ -274,7 +274,9 @@ export function LeadDialog({ open, onOpenChange, leadId }: LeadDialogProps) {
             </div>
             <Switch
               checked={formState.is_qualified}
-              onCheckedChange={(value: boolean) => handleChange("is_qualified", value)}
+              onCheckedChange={(value: boolean) =>
+                handleChange("is_qualified", value)
+              }
             />
           </div>
 

@@ -4,6 +4,7 @@ import {
   IconCalendar,
   IconChecklist,
   IconFileDescription,
+  IconInnerShadowTop,
   IconLayoutDashboard,
   IconMessageCircle,
   IconPhoneCall,
@@ -15,7 +16,6 @@ import {
   IconTemplate,
   IconTool,
   IconUsers,
-  IconInnerShadowTop,
 } from "@tabler/icons-react";
 import Link from "next/link";
 import * as React from "react";
@@ -32,14 +32,14 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
-  type FeatureFlagKey,
-  useFeatureFlags,
-} from "@/lib/hooks/use-feature-flags";
-import {
   BRANDING_EVENT,
   readBrandingCache,
   writeBrandingCache,
 } from "@/lib/branding-cache";
+import {
+  type FeatureFlagKey,
+  useFeatureFlags,
+} from "@/lib/hooks/use-feature-flags";
 import { useAuthStore } from "@/lib/store";
 
 // Navigation groups
@@ -188,7 +188,10 @@ export function AppSidebar({
       }));
     };
 
-    window.addEventListener(BRANDING_EVENT, handleBrandingUpdate as EventListener);
+    window.addEventListener(
+      BRANDING_EVENT,
+      handleBrandingUpdate as EventListener,
+    );
 
     const loadBranding = async () => {
       try {

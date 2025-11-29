@@ -79,8 +79,10 @@ export default function ApiKeysSettingsPage() {
         };
       }
       setEdits(next);
-    } catch (e: any) {
-      toast.error(e?.message || "Fel vid hämtning");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Fel vid hämtning";
+      toast.error(message);
     }
   };
 
@@ -108,8 +110,10 @@ export default function ApiKeysSettingsPage() {
       setCreatedApiKey(json.apiKey);
       toast.success("Ny API-nyckel skapad");
       await loadKeys();
-    } catch (e: any) {
-      toast.error(e?.message || "Fel vid skapande");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Fel vid skapande";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -126,8 +130,10 @@ export default function ApiKeysSettingsPage() {
       setCreatedApiKey(json.apiKey);
       toast.success("Nyckeln har roterats. Spara den nya nyckeln!");
       await loadKeys();
-    } catch (e: any) {
-      toast.error(e?.message || "Fel vid rotation");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Fel vid rotation";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -144,8 +150,10 @@ export default function ApiKeysSettingsPage() {
       if (!res.ok) throw new Error(json.error || "Kunde inte spärra nyckel");
       toast.success("Nyckeln är spärrad");
       await loadKeys();
-    } catch (e: any) {
-      toast.error(e?.message || "Fel vid spärrning");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Fel vid spärrning";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -168,8 +176,10 @@ export default function ApiKeysSettingsPage() {
       if (!res.ok) throw new Error(json.error || "Kunde inte uppdatera nyckel");
       toast.success("Nyckeln uppdaterad");
       await loadKeys();
-    } catch (e: any) {
-      toast.error(e?.message || "Fel vid uppdatering");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Fel vid uppdatering";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

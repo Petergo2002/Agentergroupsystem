@@ -7,12 +7,13 @@ import { Redis } from "@upstash/redis";
  */
 
 // Initialize Redis client (only if credentials are provided)
-const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-  ? new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    })
-  : null;
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      })
+    : null;
 
 /**
  * Rate limiter for API endpoints
@@ -58,7 +59,7 @@ export const widgetRateLimit = redis
  */
 export async function checkRateLimitForRequest(
   identifier: string,
-  limiter: Ratelimit | null
+  limiter: Ratelimit | null,
 ): Promise<{
   success: boolean;
   limit: number;

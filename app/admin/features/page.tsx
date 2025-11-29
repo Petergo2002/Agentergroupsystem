@@ -1,4 +1,4 @@
-import { Code, Flag, Zap } from "lucide-react";
+import { Flag } from "lucide-react";
 import {
   Card,
   CardContent,

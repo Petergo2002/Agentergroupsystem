@@ -4,7 +4,7 @@ import { Vapi } from "@/lib/analytics/vapi";
 function getKey(req: NextRequest): string | null {
   const auth = req.headers.get("authorization");
   const keyHeader = req.headers.get("x-vapi-key");
-  if (keyHeader && keyHeader.trim()) return keyHeader.trim();
+  if (keyHeader?.trim()) return keyHeader.trim();
   if (auth?.toLowerCase().startsWith("bearer ")) return auth.slice(7).trim();
   return null;
 }

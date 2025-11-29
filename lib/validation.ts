@@ -27,7 +27,10 @@ export const ChatMessageSchema = z.object({
 
 export const WidgetConfigSchema = z.object({
   assistant_id: z.string().max(100).optional(),
-  primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  primary_color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
   welcome_message: z.string().max(500).optional(),
   logo_url: z.string().url().optional().or(z.literal("")),
   enabled: z.boolean().optional(),
@@ -36,7 +39,10 @@ export const WidgetConfigSchema = z.object({
 /**
  * Validate and sanitize input
  */
-export function validateInput<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; error: string } {
+export function validateInput<T>(
+  schema: z.ZodSchema<T>,
+  data: unknown,
+): { success: true; data: T } | { success: false; error: string } {
   try {
     const validated = schema.parse(data);
     return { success: true, data: validated };
@@ -44,9 +50,9 @@ export function validateInput<T>(schema: z.ZodSchema<T>, data: unknown): { succe
     if (error instanceof z.ZodError) {
       const firstError = error.errors[0];
       if (firstError) {
-        return { 
-          success: false, 
-          error: `${firstError.path.join('.')}: ${firstError.message}` 
+        return {
+          success: false,
+          error: `${firstError.path.join(".")}: ${firstError.message}`,
         };
       }
     }

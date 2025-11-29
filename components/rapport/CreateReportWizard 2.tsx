@@ -11,12 +11,11 @@ import {
   IconMapPin,
   IconUser,
 } from "@tabler/icons-react";
-import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -27,8 +26,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { rapportApi } from "@/lib/rapport/rapportApi";
 import { renderTemplate } from "@/lib/rapport/templateEngine";
 import type { ReportTemplate, ReportTrade } from "@/lib/types/rapport";
@@ -63,20 +60,54 @@ interface FormData {
 // ============================================================================
 
 const STEPS = [
-  { id: 1, title: "Välj mall & Grundinfo", description: "Välj mall och fyll i grunduppgifter" },
+  {
+    id: 1,
+    title: "Välj mall & Grundinfo",
+    description: "Välj mall och fyll i grunduppgifter",
+  },
   { id: 2, title: "Bekräfta", description: "Granska och skapa rapport" },
 ] as const;
 
-const TRADE_CONFIG: Record<ReportTrade, { label: string; color: string; icon: string }> = {
-  bygg: { label: "Bygg", color: "bg-orange-100 text-orange-800 border-orange-200", icon: "🏗️" },
-  läckage: { label: "Läckage", color: "bg-blue-100 text-blue-800 border-blue-200", icon: "💧" },
-  elektriker: { label: "Elektriker", color: "bg-yellow-100 text-yellow-800 border-yellow-200", icon: "⚡" },
+const TRADE_CONFIG: Record<
+  ReportTrade,
+  { label: string; color: string; icon: string }
+> = {
+  bygg: {
+    label: "Bygg",
+    color: "bg-orange-100 text-orange-800 border-orange-200",
+    icon: "🏗️",
+  },
+  läckage: {
+    label: "Läckage",
+    color: "bg-blue-100 text-blue-800 border-blue-200",
+    icon: "💧",
+  },
+  elektriker: {
+    label: "Elektriker",
+    color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    icon: "⚡",
+  },
 };
 
-const PRIORITY_OPTIONS = [
-  { value: "low", label: "Låg", description: "Ingen brådska", color: "text-slate-600" },
-  { value: "medium", label: "Medel", description: "Normal prioritet", color: "text-amber-600" },
-  { value: "high", label: "Hög", description: "Brådskande", color: "text-red-600" },
+const _PRIORITY_OPTIONS = [
+  {
+    value: "low",
+    label: "Låg",
+    description: "Ingen brådska",
+    color: "text-slate-600",
+  },
+  {
+    value: "medium",
+    label: "Medel",
+    description: "Normal prioritet",
+    color: "text-amber-600",
+  },
+  {
+    value: "high",
+    label: "Hög",
+    description: "Brådskande",
+    color: "text-red-600",
+  },
 ] as const;
 
 const INITIAL_FORM: FormData = {
@@ -110,7 +141,7 @@ export function CreateReportWizard({
   // Get selected template
   const selectedTemplate = useMemo(
     () => templates.find((t) => t.id === form.templateId),
-    [templates, form.templateId]
+    [templates, form.templateId],
   );
 
   // Group templates by trade
@@ -136,7 +167,12 @@ export function CreateReportWizard({
     switch (step) {
       case 1:
         // Steg 1: Mall vald + grundinfo ifylld
-        return !!form.templateId && !!form.title.trim() && !!form.client.trim() && !!form.location.trim();
+        return (
+          !!form.templateId &&
+          !!form.title.trim() &&
+          !!form.client.trim() &&
+          !!form.location.trim()
+        );
       case 2:
         // Steg 2: Alltid kan skapa
         return true;
@@ -216,7 +252,7 @@ export function CreateReportWizard({
             title: s.title,
             hint: s.description,
             content: defaultContent,
-            status: defaultContent ? "completed" : "pending" as const,
+            status: defaultContent ? "completed" : ("pending" as const),
             type: s.type,
           };
         }),
@@ -229,7 +265,7 @@ export function CreateReportWizard({
 
       toast.success("Rapport skapad!");
       onOpenChange(false);
-      
+
       // Reset form
       setForm(INITIAL_FORM);
       setStep(1);
@@ -279,7 +315,7 @@ export function CreateReportWizard({
                   key={s.id}
                   className={cn(
                     "w-2 h-2 rounded-full transition-colors",
-                    step >= s.id ? "bg-primary" : "bg-muted-foreground/30"
+                    step >= s.id ? "bg-primary" : "bg-muted-foreground/30",
                   )}
                 />
               ))}
@@ -310,10 +346,7 @@ export function CreateReportWizard({
           )}
 
           {step === 2 && (
-            <Step2Confirm
-              form={form}
-              selectedTemplate={selectedTemplate}
-            />
+            <Step2Confirm form={form} selectedTemplate={selectedTemplate} />
           )}
         </ScrollArea>
 
@@ -329,7 +362,11 @@ export function CreateReportWizard({
           </Button>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleClose} disabled={isCreating}>
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              disabled={isCreating}
+            >
               Avbryt
             </Button>
             <Button onClick={handleNext} disabled={!canProceed || isCreating}>
@@ -393,7 +430,7 @@ function Step1TemplateAndBasicInfo({
                   "hover:border-primary/50 hover:bg-accent/30",
                   form.templateId === template.id
                     ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                    : "border-border"
+                    : "border-border",
                 )}
               >
                 <span className="text-xl">{config.icon}</span>
@@ -413,7 +450,9 @@ function Step1TemplateAndBasicInfo({
           {templates.length === 0 && (
             <div className="text-center py-6 bg-muted/30 rounded-lg border border-dashed">
               <IconFileText className="mx-auto size-8 text-muted-foreground opacity-50" />
-              <p className="mt-2 text-sm text-muted-foreground">Inga mallar tillgängliga</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Inga mallar tillgängliga
+              </p>
             </div>
           )}
         </div>
@@ -486,7 +525,9 @@ function Step1TemplateAndBasicInfo({
                 <Input
                   id="projectReference"
                   value={form.projectReference}
-                  onChange={(e) => onChange({ projectReference: e.target.value })}
+                  onChange={(e) =>
+                    onChange({ projectReference: e.target.value })
+                  }
                   placeholder="Jobb-ID, ordernummer..."
                   className="mt-1"
                 />
@@ -539,7 +580,9 @@ function Step2Confirm({
           {/* Mall */}
           {selectedTemplate && (
             <div className="flex items-center gap-3 p-3 bg-background rounded-lg">
-              <span className="text-2xl">{TRADE_CONFIG[selectedTemplate.trade].icon}</span>
+              <span className="text-2xl">
+                {TRADE_CONFIG[selectedTemplate.trade].icon}
+              </span>
               <div>
                 <p className="font-medium">{selectedTemplate.name}</p>
                 <p className="text-sm text-muted-foreground">
@@ -552,38 +595,49 @@ function Step2Confirm({
           {/* Grundinfo */}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="p-3 bg-background rounded-lg">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Rapporttitel</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                Rapporttitel
+              </p>
               <p className="font-medium">{form.title || "-"}</p>
             </div>
             <div className="p-3 bg-background rounded-lg">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Företag / Kund</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                Företag / Kund
+              </p>
               <p className="font-medium">{form.client || "-"}</p>
             </div>
             <div className="p-3 bg-background rounded-lg">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Adress</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                Adress
+              </p>
               <p className="font-medium">{form.location || "-"}</p>
             </div>
             <div className="p-3 bg-background rounded-lg">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Kontaktperson</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                Kontaktperson
+              </p>
               <p className="font-medium">{form.assignedTo || "-"}</p>
             </div>
             {form.projectReference && (
               <div className="p-3 bg-background rounded-lg">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Projektreferens</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                  Projektreferens
+                </p>
                 <p className="font-medium">{form.projectReference}</p>
               </div>
             )}
             <div className="p-3 bg-background rounded-lg">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Datum</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                Datum
+              </p>
               <p className="font-medium">
-                {form.scheduledAt 
-                  ? new Date(form.scheduledAt).toLocaleDateString("sv-SE", { 
-                      year: "numeric", 
-                      month: "long", 
-                      day: "numeric" 
+                {form.scheduledAt
+                  ? new Date(form.scheduledAt).toLocaleDateString("sv-SE", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
                     })
-                  : "-"
-                }
+                  : "-"}
               </p>
             </div>
           </div>

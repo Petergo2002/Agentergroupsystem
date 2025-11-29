@@ -1,6 +1,6 @@
 /**
  * useRapportData Hook
- * 
+ *
  * En kraftfull hook för att hantera all rapportdata med:
  * - Automatisk datahämtning och caching
  * - Filtrering och sökning
@@ -11,22 +11,26 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  useReportsStore,
-  useReportTemplatesStore,
-  useReportSectionsStore,
+  fetchReportSections,
   fetchReports,
   fetchReportTemplates,
-  fetchReportSections,
+  useReportSectionsStore,
+  useReportsStore,
+  useReportTemplatesStore,
 } from "@/lib/store";
-import { rapportApi, type ReportFilter, type ReportSortOptions } from "./rapportApi";
 import type {
   Report,
-  ReportTemplate,
   ReportSectionDefinition,
+  ReportTemplate,
 } from "@/lib/types/rapport";
+import {
+  type ReportFilter,
+  type ReportSortOptions,
+  rapportApi,
+} from "./rapportApi";
 
 // ============================================================================
 // Types
@@ -50,24 +54,24 @@ export interface UseRapportDataReturn {
   reports: Report[];
   templates: ReportTemplate[];
   sections: ReportSectionDefinition[];
-  
+
   // Filtrerade rapporter
   filteredReports: Report[];
   draftReports: Report[];
   archivedReports: Report[];
-  
+
   // Loading states
   isLoading: boolean;
   isLoadingReports: boolean;
   isLoadingTemplates: boolean;
   isLoadingSections: boolean;
   isInitialized: boolean;
-  
+
   // Selected report
   selectedReport: Report | null;
   selectedTemplate: ReportTemplate | null;
   selectReport: (id: string | null) => void;
-  
+
   // Filter & Search
   filter: ReportFilter;
   setFilter: (filter: ReportFilter) => void;
@@ -75,28 +79,33 @@ export interface UseRapportDataReturn {
   clearFilter: () => void;
   search: string;
   setSearch: (search: string) => void;
-  
+
   // Sort
   sort: ReportSortOptions;
   setSort: (sort: ReportSortOptions) => void;
-  
+
   // CRUD Operations
-  createReport: (input: Parameters<typeof rapportApi.createReport>[0]) => Promise<Report>;
-  updateReport: (id: string, updates: Parameters<typeof rapportApi.updateReport>[1]) => Promise<Report>;
+  createReport: (
+    input: Parameters<typeof rapportApi.createReport>[0],
+  ) => Promise<Report>;
+  updateReport: (
+    id: string,
+    updates: Parameters<typeof rapportApi.updateReport>[1],
+  ) => Promise<Report>;
   deleteReport: (id: string) => Promise<void>;
   duplicateReport: (id: string, newTitle?: string) => Promise<Report>;
-  
+
   // Export
   exportReport: (report: Report, customerEmail?: string) => Promise<Report>;
   openPdf: (reportId: string) => void;
-  
+
   // Autosave
   autosaveStatus: "idle" | "saving" | "saved" | "error";
   triggerAutosave: () => void;
-  
+
   // Refresh
   refresh: () => Promise<void>;
-  
+
   // Statistics
   statistics: {
     total: number;
@@ -112,7 +121,7 @@ export interface UseRapportDataReturn {
 // ============================================================================
 
 export function useRapportData(
-  options: UseRapportDataOptions = {}
+  options: UseRapportDataOptions = {},
 ): UseRapportDataReturn {
   const {
     autoFetch = true,
@@ -122,31 +131,33 @@ export function useRapportData(
     onError,
   } = options;
 
-  // Zustand stores
-  const {
-    reports,
-    loading: reportsLoading,
-    initialized: reportsInitialized,
-    setReports,
-    setLoading: setReportsLoading,
-    upsertReport,
-  } = useReportsStore();
+  // Zustand stores (selector-baserade för att minska onödiga re-renders)
+  const reports = useReportsStore((state) => state.reports);
+  const reportsLoading = useReportsStore((state) => state.loading);
+  const reportsInitialized = useReportsStore((state) => state.initialized);
+  const setReports = useReportsStore((state) => state.setReports);
+  const setReportsLoading = useReportsStore((state) => state.setLoading);
+  const _upsertReport = useReportsStore((state) => state.upsertReport);
 
-  const {
-    templates,
-    loading: templatesLoading,
-    initialized: templatesInitialized,
-    setTemplates,
-    setLoading: setTemplatesLoading,
-  } = useReportTemplatesStore();
+  const templates = useReportTemplatesStore((state) => state.templates);
+  const templatesLoading = useReportTemplatesStore((state) => state.loading);
+  const templatesInitialized = useReportTemplatesStore(
+    (state) => state.initialized,
+  );
+  const setTemplates = useReportTemplatesStore((state) => state.setTemplates);
+  const setTemplatesLoading = useReportTemplatesStore(
+    (state) => state.setLoading,
+  );
 
-  const {
-    sections,
-    loading: sectionsLoading,
-    initialized: sectionsInitialized,
-    setSections,
-    setLoading: setSectionsLoading,
-  } = useReportSectionsStore();
+  const sections = useReportSectionsStore((state) => state.sections);
+  const sectionsLoading = useReportSectionsStore((state) => state.loading);
+  const sectionsInitialized = useReportSectionsStore(
+    (state) => state.initialized,
+  );
+  const setSections = useReportSectionsStore((state) => state.setSections);
+  const setSectionsLoading = useReportSectionsStore(
+    (state) => state.setLoading,
+  );
 
   // Local state
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
@@ -158,7 +169,10 @@ export function useRapportData(
 
   // Refs for autosave
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingChangesRef = useRef<{ id: string; updates: Partial<Report> } | null>(null);
+  const pendingChangesRef = useRef<{
+    id: string;
+    updates: Partial<Report>;
+  } | null>(null);
 
   // -------------------------------------------------------------------------
   // Data Fetching
@@ -166,7 +180,7 @@ export function useRapportData(
 
   const loadReports = useCallback(async () => {
     if (reportsInitialized) return;
-    
+
     try {
       setReportsLoading(true);
       const data = await fetchReports();
@@ -181,7 +195,7 @@ export function useRapportData(
 
   const loadTemplates = useCallback(async () => {
     if (templatesInitialized) return;
-    
+
     try {
       setTemplatesLoading(true);
       const data = await fetchReportTemplates();
@@ -196,7 +210,7 @@ export function useRapportData(
 
   const loadSections = useCallback(async () => {
     if (sectionsInitialized) return;
-    
+
     try {
       setSectionsLoading(true);
       const data = await fetchReportSections();
@@ -253,24 +267,40 @@ export function useRapportData(
   }, [autoFetch, loadReports, loadTemplates, loadSections]);
 
   // -------------------------------------------------------------------------
-  // Filtering & Sorting
+  // Filtering & Sorting (A3: Optimerade med tidig retur)
   // -------------------------------------------------------------------------
 
   const filteredReports = useMemo(() => {
+    // A3: Tidig retur om inga rapporter
+    if (reports.length === 0) return [];
+
+    // A3: Tidig retur om default filter/sort (ingen filtrering behövs)
+    const isDefaultFilter =
+      !filter.search && !filter.status && !filter.templateId;
+    const isDefaultSort =
+      sort.field === "updatedAt" && sort.direction === "desc";
+
+    if (isDefaultFilter && isDefaultSort) {
+      // Rapporter är redan sorterade efter updatedAt desc från API
+      return reports;
+    }
+
     let result = rapportApi.applyFilter(reports, filter);
     result = rapportApi.applySort(result, sort);
     return result;
   }, [reports, filter, sort]);
 
-  const draftReports = useMemo(
-    () => reports.filter((r) => !r.exportedAt),
-    [reports]
-  );
+  const draftReports = useMemo(() => {
+    // A3: Tidig retur om inga rapporter
+    if (reports.length === 0) return [];
+    return reports.filter((r) => !r.exportedAt);
+  }, [reports]);
 
-  const archivedReports = useMemo(
-    () => reports.filter((r) => !!r.exportedAt),
-    [reports]
-  );
+  const archivedReports = useMemo(() => {
+    // A3: Tidig retur om inga rapporter
+    if (reports.length === 0) return [];
+    return reports.filter((r) => !!r.exportedAt);
+  }, [reports]);
 
   const updateFilter = useCallback((updates: Partial<ReportFilter>) => {
     setFilter((prev) => ({ ...prev, ...updates }));
@@ -290,15 +320,15 @@ export function useRapportData(
 
   const selectedReport = useMemo(
     () => reports.find((r) => r.id === selectedReportId) ?? null,
-    [reports, selectedReportId]
+    [reports, selectedReportId],
   );
 
   const selectedTemplate = useMemo(
     () =>
       selectedReport
-        ? templates.find((t) => t.id === selectedReport.templateId) ?? null
+        ? (templates.find((t) => t.id === selectedReport.templateId) ?? null)
         : null,
-    [selectedReport, templates]
+    [selectedReport, templates],
   );
 
   const selectReport = useCallback((id: string | null) => {
@@ -337,11 +367,14 @@ export function useRapportData(
         throw error;
       }
     },
-    []
+    [],
   );
 
   const updateReport = useCallback(
-    async (id: string, updates: Parameters<typeof rapportApi.updateReport>[1]) => {
+    async (
+      id: string,
+      updates: Parameters<typeof rapportApi.updateReport>[1],
+    ) => {
       try {
         const updated = await rapportApi.updateReport(id, updates);
         return updated;
@@ -351,38 +384,38 @@ export function useRapportData(
         throw error;
       }
     },
-    []
+    [],
   );
 
-  const deleteReport = useCallback(async (id: string) => {
-    try {
-      await rapportApi.deleteReport(id);
-      if (selectedReportId === id) {
-        setSelectedReportId(null);
-      }
-      toast.success("Rapport borttagen");
-    } catch (error) {
-      console.error("Failed to delete report", error);
-      toast.error("Kunde inte ta bort rapport");
-      throw error;
-    }
-  }, [selectedReportId]);
-
-  const duplicateReport = useCallback(
-    async (id: string, newTitle?: string) => {
+  const deleteReport = useCallback(
+    async (id: string) => {
       try {
-        const duplicated = await rapportApi.duplicateReport(id, newTitle);
-        setSelectedReportId(duplicated.id);
-        toast.success("Rapport duplicerad");
-        return duplicated;
+        await rapportApi.deleteReport(id);
+        if (selectedReportId === id) {
+          setSelectedReportId(null);
+        }
+        toast.success("Rapport borttagen");
       } catch (error) {
-        console.error("Failed to duplicate report", error);
-        toast.error("Kunde inte duplicera rapport");
+        console.error("Failed to delete report", error);
+        toast.error("Kunde inte ta bort rapport");
         throw error;
       }
     },
-    []
+    [selectedReportId],
   );
+
+  const duplicateReport = useCallback(async (id: string, newTitle?: string) => {
+    try {
+      const duplicated = await rapportApi.duplicateReport(id, newTitle);
+      setSelectedReportId(duplicated.id);
+      toast.success("Rapport duplicerad");
+      return duplicated;
+    } catch (error) {
+      console.error("Failed to duplicate report", error);
+      toast.error("Kunde inte duplicera rapport");
+      throw error;
+    }
+  }, []);
 
   // -------------------------------------------------------------------------
   // Export
@@ -400,7 +433,7 @@ export function useRapportData(
         throw error;
       }
     },
-    []
+    [],
   );
 
   const openPdf = useCallback((reportId: string) => {
@@ -426,7 +459,10 @@ export function useRapportData(
 
       try {
         setAutosaveStatus("saving");
-        await rapportApi.updateReport(pending.id, pending.updates as Parameters<typeof rapportApi.updateReport>[1]);
+        await rapportApi.updateReport(
+          pending.id,
+          pending.updates as Parameters<typeof rapportApi.updateReport>[1],
+        );
         setAutosaveStatus("saved");
         pendingChangesRef.current = null;
 
@@ -460,7 +496,7 @@ export function useRapportData(
       approved: reports.filter((r) => r.status === "approved").length,
       exported: reports.filter((r) => !!r.exportedAt).length,
     }),
-    [reports]
+    [reports],
   );
 
   // -------------------------------------------------------------------------
@@ -483,7 +519,8 @@ export function useRapportData(
     isLoadingReports: reportsLoading,
     isLoadingTemplates: templatesLoading,
     isLoadingSections: sectionsLoading,
-    isInitialized: reportsInitialized && templatesInitialized && sectionsInitialized,
+    isInitialized:
+      reportsInitialized && templatesInitialized && sectionsInitialized,
 
     // Selected report
     selectedReport,

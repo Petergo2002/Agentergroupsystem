@@ -128,8 +128,7 @@ export function EventDetailsDialog({
                   <p className="font-medium text-foreground">Typ</p>
                   <p>
                     {event.event_type
-                      ? EVENT_TYPE_LABEL[event.event_type] ??
-                        event.event_type
+                      ? (EVENT_TYPE_LABEL[event.event_type] ?? event.event_type)
                       : "Inte angiven"}
                   </p>
                 </div>

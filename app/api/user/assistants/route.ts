@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
+import { Vapi } from "@/lib/analytics/vapi";
 import { createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { Vapi } from "@/lib/analytics/vapi";
 
 export async function GET() {
   try {
@@ -84,7 +84,7 @@ export async function GET() {
     console.error("Error fetching user assistants:", error);
     return NextResponse.json(
       { error: error?.message || "Failed to fetch assistants" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

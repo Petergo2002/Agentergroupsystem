@@ -9,20 +9,21 @@ import {
 } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { memo, Suspense, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 // Lazy load heavy chart components
 const LazyAreaChart = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.AreaChart })),
-  { ssr: false }
+  { ssr: false },
 );
 const LazyLineChart = dynamic(
   () => import("recharts").then((mod) => ({ default: mod.LineChart })),
-  { ssr: false }
+  { ssr: false },
 );
 const LazyResponsiveContainer = dynamic(
-  () => import("recharts").then((mod) => ({ default: mod.ResponsiveContainer })),
-  { ssr: false }
+  () =>
+    import("recharts").then((mod) => ({ default: mod.ResponsiveContainer })),
+  { ssr: false },
 );
 
 // Import only what we need from recharts (tree-shaken)
@@ -41,7 +42,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useAuthStore,
   useCustomersStore,
@@ -51,8 +51,7 @@ import {
   useLeadsStore,
   useTasksStore,
 } from "@/lib/store";
-import { formatDate, formatTime } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatTime } from "@/lib/utils";
 
 const SEK = new Intl.NumberFormat("sv-SE", {
   style: "currency",
@@ -62,8 +61,16 @@ const SEK = new Intl.NumberFormat("sv-SE", {
 
 // Static data - memoized outside component to prevent re-creation
 const SPARKLINE_DATA = [
-  { value: 65 }, { value: 78 }, { value: 52 }, { value: 91 }, { value: 83 },
-  { value: 67 }, { value: 95 }, { value: 72 }, { value: 88 }, { value: 76 },
+  { value: 65 },
+  { value: 78 },
+  { value: 52 },
+  { value: 91 },
+  { value: 83 },
+  { value: 67 },
+  { value: 95 },
+  { value: 72 },
+  { value: 88 },
+  { value: 76 },
 ];
 
 const CHART_DATA = [
@@ -85,7 +92,7 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const orgId = searchParams.get("org");
+  const _orgId = searchParams.get("org");
 
   const customers = useCustomersStore((state) => state.customers);
   const leads = useLeadsStore((state) => state.leads);
@@ -151,9 +158,14 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 w-full md:w-auto">
           <div className="relative w-full md:w-64">
             <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Sök vad som helst..." className="pl-8 bg-background" />
+            <Input
+              placeholder="Sök vad som helst..."
+              className="pl-8 bg-background"
+            />
           </div>
-          <Button onClick={() => router.push("/leads")}>+ Lägg till Lead</Button>
+          <Button onClick={() => router.push("/leads")}>
+            + Lägg till Lead
+          </Button>
         </div>
       </div>
 
@@ -286,7 +298,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="space-y-0">
-                  {customers.slice(0, 5).map((customer, i) => (
+                  {customers.slice(0, 5).map((customer, _i) => (
                     <div
                       key={customer.id}
                       className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-b last:border-0"
@@ -299,9 +311,7 @@ export default function DashboardPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-sm font-medium">
-                            {customer.name}
-                          </p>
+                          <p className="text-sm font-medium">{customer.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {customer.email}
                           </p>
@@ -351,20 +361,22 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium">
-                            {job.notes?.split('\n')[0] || "Jobb utan titel"}
+                            {job.notes?.split("\n")[0] || "Jobb utan titel"}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {job.start_time ? formatTime(job.start_time) : "Ingen tid"}
+                            {job.start_time
+                              ? formatTime(job.start_time)
+                              : "Ingen tid"}
                           </p>
                         </div>
                       </div>
                       <div className="text-sm font-medium text-muted-foreground">
-                         {/* Placeholder for duration or amount */}
-                         2h
+                        {/* Placeholder for duration or amount */}
+                        2h
                       </div>
                     </div>
                   ))}
-                   {metrics.bookedJobs.length === 0 && (
+                  {metrics.bookedJobs.length === 0 && (
                     <div className="p-4 text-center text-sm text-muted-foreground">
                       Inga bokade jobb
                     </div>
@@ -388,55 +400,68 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-6">
               <div className="flex justify-center border-b pb-4">
-                 <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    className="rounded-md border shadow-sm"
-                  />
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  className="rounded-md border shadow-sm"
+                />
               </div>
 
               <div className="flex flex-col gap-3">
-                 <div className="flex items-center justify-between">
-                     <h3 className="text-sm font-medium">Kommande händelser</h3>
-                 </div>
-                 <div className="space-y-3">
-                    {metrics.upcomingEvents.map((event) => (
-                        <div key={event.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
-                             <div className="w-1 h-full bg-blue-500 rounded-full min-h-[30px]" />
-                             <div>
-                                 <p className="text-sm font-medium">{event.title}</p>
-                                 <p className="text-xs text-muted-foreground">
-                                     {formatDate(event.start_time)} • {formatTime(event.start_time)}
-                                 </p>
-                             </div>
-                        </div>
-                    ))}
-                    {metrics.upcomingEvents.length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-2">Inga händelser</p>
-                    )}
-                 </div>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Kommande händelser</h3>
+                </div>
+                <div className="space-y-3">
+                  {metrics.upcomingEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/50"
+                    >
+                      <div className="w-1 h-full bg-blue-500 rounded-full min-h-[30px]" />
+                      <div>
+                        <p className="text-sm font-medium">{event.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(event.start_time)} •{" "}
+                          {formatTime(event.start_time)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {metrics.upcomingEvents.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">
+                      Inga händelser
+                    </p>
+                  )}
+                </div>
               </div>
 
               <Separator />
 
               <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                     <h3 className="text-sm font-medium">Uppgifter</h3>
-                 </div>
-                  <div className="space-y-2">
-                      {metrics.openTasks.map(task => (
-                           <div key={task.id} className="flex items-center justify-between group">
-                               <div className="flex items-center gap-2">
-                                   <div className="h-4 w-4 rounded-full border border-muted-foreground/30" />
-                                   <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{task.title}</span>
-                               </div>
-                           </div>
-                      ))}
-                       {metrics.openTasks.length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-2">Inga öppna uppgifter</p>
-                    )}
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Uppgifter</h3>
+                </div>
+                <div className="space-y-2">
+                  {metrics.openTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="flex items-center justify-between group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 rounded-full border border-muted-foreground/30" />
+                        <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                          {task.title}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {metrics.openTasks.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">
+                      Inga öppna uppgifter
+                    </p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -459,7 +484,7 @@ function MetricCard({
   value: number | string;
   trend: number;
   trendLabel: string;
-  data: any[];
+  data: Array<{ value: number }>;
   color: string;
   currency?: boolean;
 }) {
@@ -474,7 +499,7 @@ function MetricCard({
       <CardContent>
         <div className="flex flex-col gap-1">
           <div className="text-2xl font-bold">
-            {currency && typeof value === 'number' ? SEK.format(value) : value}
+            {currency && typeof value === "number" ? SEK.format(value) : value}
           </div>
           <div className="flex items-center gap-2 text-xs">
             <span

@@ -70,7 +70,7 @@ export function NavUser({
       setUser(null);
       router.push("/auth/login");
       toast.success("Utloggad");
-    } catch (error) {
+    } catch (_error) {
       toast.error("Kunde inte logga ut");
     }
   };

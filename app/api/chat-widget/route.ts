@@ -15,7 +15,7 @@ type WidgetPayload = {
   enabled?: boolean;
 };
 
-function slugify(input: string) {
+function _slugify(input: string) {
   return input
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")

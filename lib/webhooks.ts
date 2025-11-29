@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { createServerClient } from "@/lib/supabase/server";
 
 export type WebhookEvent =

@@ -95,6 +95,25 @@ export function TaskForm({ isOpen, onClose, taskId }: TaskFormProps) {
     try {
       setLoading(true);
       const supabase = createSupabaseClient();
+
+      // Get user and organization_id for RLS compliance
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast.error("Du måste vara inloggad");
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("organization_id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const organizationId = profile?.organization_id;
+
       const payload = {
         title: formState.title.trim(),
         due_date: formState.due_date ? formState.due_date.toISOString() : null,
@@ -116,7 +135,11 @@ export function TaskForm({ isOpen, onClose, taskId }: TaskFormProps) {
       } else {
         const { data, error } = await supabase
           .from("tasks")
-          .insert(payload)
+          .insert({
+            ...payload,
+            user_id: user.id,
+            organization_id: organizationId,
+          })
           .select()
           .single();
         if (error) throw error;

@@ -1,8 +1,8 @@
 "use client";
 
-import { Phone, PhoneOff, Mic, MicOff, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import Vapi from "@vapi-ai/web";
+import { Mic, MicOff, Phone, PhoneOff, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 type VoiceWidgetFrameProps = {
   publicId: string;
@@ -21,7 +21,9 @@ export function VoiceWidgetFrame({
 }: VoiceWidgetFrameProps) {
   const accent = primaryColor || BUBBLE_COLOR;
   const [isOpen, setIsOpen] = useState(false);
-  const [callStatus, setCallStatus] = useState<"idle" | "connecting" | "active" | "ended">("idle");
+  const [callStatus, setCallStatus] = useState<
+    "idle" | "connecting" | "active" | "ended"
+  >("idle");
   const [isMuted, setIsMuted] = useState(false);
   const [vapiPublicKey, setVapiPublicKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,9 @@ export function VoiceWidgetFrame({
   useEffect(() => {
     const fetchVapiKey = async () => {
       try {
-        const response = await fetch(`/api/public/widget/${publicId}/vapi-config`);
+        const response = await fetch(
+          `/api/public/widget/${publicId}/vapi-config`,
+        );
         if (response.ok) {
           const data = await response.json();
           setVapiPublicKey(data.publicKey);
@@ -77,7 +81,7 @@ export function VoiceWidgetFrame({
 
     try {
       const vapi = new Vapi(vapiPublicKey);
-      
+
       vapi.on("call-start", () => {
         setCallStatus("active");
         setError(null);
@@ -279,7 +283,9 @@ export function VoiceWidgetFrame({
         {disabled ? (
           <div style={{ textAlign: "center", color: "#64748b" }}>
             <Phone size={48} style={{ marginBottom: "16px", opacity: 0.3 }} />
-            <p style={{ margin: 0, fontSize: "14px" }}>Röst-widget inte konfigurerad</p>
+            <p style={{ margin: 0, fontSize: "14px" }}>
+              Röst-widget inte konfigurerad
+            </p>
             <p style={{ margin: "8px 0 0", fontSize: "12px", opacity: 0.7 }}>
               Kontrollera att Vapi är korrekt inställt
             </p>
@@ -296,7 +302,8 @@ export function VoiceWidgetFrame({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                animation: callStatus === "active" ? "pulse 2s infinite" : "none",
+                animation:
+                  callStatus === "active" ? "pulse 2s infinite" : "none",
                 transition: "background 0.3s ease",
               }}
             >
@@ -307,7 +314,14 @@ export function VoiceWidgetFrame({
             </div>
 
             {/* Status text */}
-            <p style={{ margin: 0, fontSize: "16px", fontWeight: 500, color: "#334155" }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "16px",
+                fontWeight: 500,
+                color: "#334155",
+              }}
+            >
               {callStatus === "idle" && "Redo att ringa"}
               {callStatus === "connecting" && "Ansluter..."}
               {callStatus === "active" && "Samtal aktivt"}
@@ -316,7 +330,14 @@ export function VoiceWidgetFrame({
 
             {/* Error message */}
             {error && (
-              <p style={{ margin: 0, fontSize: "12px", color: "#ef4444", textAlign: "center" }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "12px",
+                  color: "#ef4444",
+                  textAlign: "center",
+                }}
+              >
                 {error}
               </p>
             )}
@@ -342,8 +363,12 @@ export function VoiceWidgetFrame({
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     transition: "transform 0.2s ease",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.transform = "scale(1.05)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
                 >
                   <Phone size={20} />
                   Ring
@@ -351,7 +376,14 @@ export function VoiceWidgetFrame({
               )}
 
               {callStatus === "connecting" && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#64748b" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    color: "#64748b",
+                  }}
+                >
                   <div
                     style={{
                       width: "20px",
@@ -403,8 +435,12 @@ export function VoiceWidgetFrame({
                       justifyContent: "center",
                       transition: "background 0.2s ease",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#dc2626")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "#ef4444")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "#dc2626")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "#ef4444")
+                    }
                   >
                     <PhoneOff size={24} />
                   </button>
@@ -416,7 +452,9 @@ export function VoiceWidgetFrame({
       </div>
 
       {/* CSS animations */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.7; }
@@ -424,7 +462,9 @@ export function VoiceWidgetFrame({
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 }

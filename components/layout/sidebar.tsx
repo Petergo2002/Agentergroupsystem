@@ -36,7 +36,7 @@ const analyticsNavigation = [
   { name: "Prestanda", href: "/analytics/performance", icon: BarChart3 },
 ];
 
-const settingsNavigation = [
+const _settingsNavigation = [
   { name: "Profil", href: "/settings/profile", icon: Settings },
   { name: "API-nycklar", href: "/settings/api-keys", icon: Key },
 ];

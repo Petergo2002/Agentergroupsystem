@@ -3,7 +3,6 @@
 import {
   IconCalendarEvent,
   IconCheck,
-  IconChevronDown,
   IconClock,
   IconFilter,
   IconMapPin,
@@ -12,7 +11,7 @@ import {
   IconSortDescending,
   IconX,
 } from "@tabler/icons-react";
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,8 +32,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Report, ReportStatus } from "@/lib/types/rapport";
 import type { ReportFilter, ReportSortOptions } from "@/lib/rapport/rapportApi";
+import type { Report, ReportStatus } from "@/lib/types/rapport";
 import { cn } from "@/lib/utils";
 
 // ============================================================================
@@ -126,51 +125,60 @@ export function RapportListPanel({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeQuickFilter, setActiveQuickFilter] = useState<string>("all");
 
-  // Handle search
-  const handleSearchChange = (value: string) => {
-    onFilterChange({ ...filter, search: value || undefined });
-  };
+  // A8: Wrap handlers in useCallback to prevent unnecessary re-renders
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      onFilterChange({ ...filter, search: value || undefined });
+    },
+    [filter, onFilterChange],
+  );
 
   // Handle quick filter
-  const handleQuickFilter = (key: string) => {
-    setActiveQuickFilter(key);
-    
-    let newFilter: ReportFilter = { ...filter };
-    
-    // Clear status and priority filters first
-    delete newFilter.status;
-    delete newFilter.priority;
-    
-    switch (key) {
-      case "draft":
-        newFilter.status = "draft";
-        break;
-      case "review":
-        newFilter.status = "review";
-        break;
-      case "approved":
-        newFilter.status = "approved";
-        break;
-      case "high-priority":
-        newFilter.priority = "high";
-        break;
-      // "all" - no additional filters
-    }
-    
-    onFilterChange(newFilter);
-  };
+  const handleQuickFilter = useCallback(
+    (key: string) => {
+      setActiveQuickFilter(key);
+
+      const newFilter: ReportFilter = { ...filter };
+
+      // Clear status and priority filters first
+      delete newFilter.status;
+      delete newFilter.priority;
+
+      switch (key) {
+        case "draft":
+          newFilter.status = "draft";
+          break;
+        case "review":
+          newFilter.status = "review";
+          break;
+        case "approved":
+          newFilter.status = "approved";
+          break;
+        case "high-priority":
+          newFilter.priority = "high";
+          break;
+        // "all" - no additional filters
+      }
+
+      onFilterChange(newFilter);
+    },
+    [filter, onFilterChange],
+  );
 
   // Handle sort change
-  const handleSortFieldChange = (field: ReportSortOptions["field"]) => {
-    onSortChange({ ...sort, field });
-  };
+  const handleSortFieldChange = useCallback(
+    (field: ReportSortOptions["field"]) => {
+      onSortChange({ ...sort, field });
+    },
+    [sort, onSortChange],
+  );
 
-  const toggleSortDirection = () => {
+  const toggleSortDirection = useCallback(() => {
     onSortChange({
       ...sort,
       direction: sort.direction === "asc" ? "desc" : "asc",
     });
-  };
+  }, [sort, onSortChange]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -355,7 +363,7 @@ export function RapportListPanel({
 }
 
 // ============================================================================
-// Report Card Sub-component
+// Report Card Sub-component (A8: Memoized to prevent unnecessary re-renders)
 // ============================================================================
 
 interface ReportCardProps {
@@ -365,7 +373,12 @@ interface ReportCardProps {
   showArchived?: boolean;
 }
 
-function ReportCard({ report, isSelected, onClick, showArchived }: ReportCardProps) {
+const ReportCard = memo(function ReportCard({
+  report,
+  isSelected,
+  onClick,
+  showArchived,
+}: ReportCardProps) {
   const statusConfig = STATUS_CONFIG[report.status];
   const priorityConfig = PRIORITY_CONFIG[report.metadata.priority];
   const isExported = !!report.exportedAt;
@@ -377,7 +390,7 @@ function ReportCard({ report, isSelected, onClick, showArchived }: ReportCardPro
       className={cn(
         "w-full rounded-xl border p-4 text-left transition-all",
         "hover:border-primary/40 hover:bg-accent/50",
-        isSelected && "border-primary bg-primary/5 shadow-sm"
+        isSelected && "border-primary bg-primary/5 shadow-sm",
       )}
     >
       {/* Header */}
@@ -390,7 +403,10 @@ function ReportCard({ report, isSelected, onClick, showArchived }: ReportCardPro
         </div>
         <Badge
           variant="outline"
-          className={cn("shrink-0 rounded-full text-xs", statusConfig.className)}
+          className={cn(
+            "shrink-0 rounded-full text-xs",
+            statusConfig.className,
+          )}
         >
           {statusConfig.label}
         </Badge>
@@ -405,11 +421,16 @@ function ReportCard({ report, isSelected, onClick, showArchived }: ReportCardPro
         <span className="inline-flex items-center gap-1">
           <IconCalendarEvent className="size-3.5" />
           {new Date(
-            report.metadata.scheduledAt || report.updatedAt
+            report.metadata.scheduledAt || report.updatedAt,
           ).toLocaleDateString("sv-SE")}
         </span>
         {report.metadata.priority === "high" && (
-          <span className={cn("inline-flex items-center gap-1 font-medium", priorityConfig.className)}>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 font-medium",
+              priorityConfig.className,
+            )}
+          >
             <IconClock className="size-3.5" />
             {priorityConfig.label}
           </span>
@@ -438,9 +459,10 @@ function ReportCard({ report, isSelected, onClick, showArchived }: ReportCardPro
               style={{
                 width: `${
                   report.sections.length > 0
-                    ? (report.sections.filter((s) => s.status === "completed").length /
-                        report.sections.length) *
-                      100
+                    ? (
+                        report.sections.filter((s) => s.status === "completed")
+                          .length / report.sections.length
+                      ) * 100
                     : 0
                 }%`,
               }}
@@ -450,6 +472,6 @@ function ReportCard({ report, isSelected, onClick, showArchived }: ReportCardPro
       )}
     </button>
   );
-}
+});
 
 export default RapportListPanel;

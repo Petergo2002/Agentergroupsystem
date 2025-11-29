@@ -1,9 +1,15 @@
 "use client";
 
+import {
+  IconArrowBackUp,
+  IconArrowRight,
+  IconCircle,
+  IconDownload,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
-import { Stage, Layer, Image as KonvaImage, Arrow, Circle, Transformer } from "react-konva";
+import { Arrow, Circle, Image as KonvaImage, Layer, Stage } from "react-konva";
 import { Button } from "@/components/ui/button";
-import { IconCircle, IconArrowRight, IconTrash, IconDownload, IconArrowBackUp } from "@tabler/icons-react";
 import type { AnnotationShape, AnnotationShapeType } from "@/lib/types/rapport";
 import { cn } from "@/lib/utils";
 
@@ -23,11 +29,15 @@ export function ImageAnnotationCanvas({
   readOnly = false,
 }: ImageAnnotationCanvasProps) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
-  const [selectedTool, setSelectedTool] = useState<AnnotationShapeType | null>("arrow");
+  const [selectedTool, setSelectedTool] = useState<AnnotationShapeType | null>(
+    "arrow",
+  );
   const [selectedColor, setSelectedColor] = useState("#ef4444"); // red-500
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const [draftShape, setDraftShape] = useState<AnnotationShape | null>(null);
   const stageRef = useRef<any>(null);
 
@@ -43,7 +53,7 @@ export function ImageAnnotationCanvas({
 
   const handleMouseDown = (e: any) => {
     if (readOnly || !selectedTool) return;
-    
+
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
     setIsDrawing(true);
@@ -58,7 +68,7 @@ export function ImageAnnotationCanvas({
     const pos = stage.getPointerPosition();
 
     const draft: AnnotationShape = {
-      id: 'draft',
+      id: "draft",
       type: selectedTool,
       x: startPos.x,
       y: startPos.y,
@@ -71,7 +81,7 @@ export function ImageAnnotationCanvas({
       draft.height = pos.y - startPos.y;
     } else if (selectedTool === "circle") {
       const radius = Math.sqrt(
-        Math.pow(pos.x - startPos.x, 2) + Math.pow(pos.y - startPos.y, 2)
+        (pos.x - startPos.x) ** 2 + (pos.y - startPos.y) ** 2,
       );
       draft.radius = radius;
     }
@@ -99,7 +109,7 @@ export function ImageAnnotationCanvas({
       newShape.height = pos.y - startPos.y;
     } else if (selectedTool === "circle") {
       const radius = Math.sqrt(
-        Math.pow(pos.x - startPos.x, 2) + Math.pow(pos.y - startPos.y, 2)
+        (pos.x - startPos.x) ** 2 + (pos.y - startPos.y) ** 2,
       );
       newShape.radius = radius;
     }
@@ -188,7 +198,7 @@ export function ImageAnnotationCanvas({
                   "size-8 rounded-full border-2 transition-all",
                   selectedColor === color.value
                     ? "border-primary ring-2 ring-primary ring-offset-2"
-                    : "border-border hover:border-primary"
+                    : "border-border hover:border-primary",
                 )}
                 style={{ backgroundColor: color.value }}
                 title={color.label}
@@ -258,7 +268,11 @@ export function ImageAnnotationCanvas({
                     y={shape.y}
                     points={[0, 0, shape.width || 0, shape.height || 0]}
                     stroke={shape.color}
-                    strokeWidth={isSelected ? (shape.strokeWidth || 3) + 2 : (shape.strokeWidth || 3)}
+                    strokeWidth={
+                      isSelected
+                        ? (shape.strokeWidth || 3) + 2
+                        : shape.strokeWidth || 3
+                    }
                     fill={shape.color}
                     pointerLength={10}
                     pointerWidth={10}
@@ -274,7 +288,11 @@ export function ImageAnnotationCanvas({
                     y={shape.y}
                     radius={shape.radius || 50}
                     stroke={shape.color}
-                    strokeWidth={isSelected ? (shape.strokeWidth || 3) + 2 : (shape.strokeWidth || 3)}
+                    strokeWidth={
+                      isSelected
+                        ? (shape.strokeWidth || 3) + 2
+                        : shape.strokeWidth || 3
+                    }
                     onClick={() => handleShapeClick(shape.id)}
                     draggable={!readOnly}
                   />
@@ -289,7 +307,12 @@ export function ImageAnnotationCanvas({
                   <Arrow
                     x={draftShape.x}
                     y={draftShape.y}
-                    points={[0, 0, draftShape.width || 0, draftShape.height || 0]}
+                    points={[
+                      0,
+                      0,
+                      draftShape.width || 0,
+                      draftShape.height || 0,
+                    ]}
                     stroke={draftShape.color}
                     strokeWidth={draftShape.strokeWidth || 3}
                     fill={draftShape.color}
@@ -316,7 +339,8 @@ export function ImageAnnotationCanvas({
 
       {!readOnly && (
         <p className="text-xs text-muted-foreground">
-          Välj ett verktyg och klicka-och-dra på bilden för att markera läckage eller andra områden.
+          Välj ett verktyg och klicka-och-dra på bilden för att markera läckage
+          eller andra områden.
         </p>
       )}
     </div>

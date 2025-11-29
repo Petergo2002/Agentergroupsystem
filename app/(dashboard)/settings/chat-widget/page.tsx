@@ -1,11 +1,29 @@
 "use client";
 
+import {
+  Bot,
+  Code2,
+  Copy,
+  Eye,
+  Globe,
+  Image as ImageIcon,
+  Save,
+  Sparkles,
+  Upload,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,9 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import { Copy, Eye, Save, Sparkles, Upload, X, Image as ImageIcon, Phone, PhoneOff, Mic, Code2, Bot, Globe } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Assistant {
   id: string;
@@ -42,7 +59,7 @@ export default function ChatWidgetSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(true);
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  
+
   const [config, setConfig] = useState<WidgetConfig>({
     assistant_id: "",
     primary_color: "#3b82f6",
@@ -66,7 +83,7 @@ export default function ChatWidgetSettingsPage() {
     const handleMessage = (event: MessageEvent) => {
       // Only accept messages from our own origin
       if (event.origin !== window.location.origin) return;
-      
+
       const data = event.data;
       if (data && typeof data === "object" && data.type === "ag-widget:state") {
         setPreviewOpen(Boolean(data.open));
@@ -94,7 +111,7 @@ export default function ChatWidgetSettingsPage() {
           generateEmbedCode(configData.config);
         }
       }
-    } catch (err: any) {
+    } catch (_err: unknown) {
       toast.error("Kunde inte ladda data");
     } finally {
       setLoading(false);
@@ -116,17 +133,20 @@ export default function ChatWidgetSettingsPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(data.details || data.error || "Kunde inte spara konfiguration");
+        throw new Error(
+          data.details || data.error || "Kunde inte spara konfiguration",
+        );
       }
-      
+
       toast.success("Widget-konfiguration sparad! 🎉");
-      
+
       // Reload to get the public_id
       await loadData();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Ett fel uppstod";
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -137,11 +157,11 @@ export default function ChatWidgetSettingsPage() {
       setEmbedCode("");
       return;
     }
-    
+
     const baseUrl = "https://calendar-crm-six.vercel.app";
     const position = cfg.position === "bottom-left" ? "left" : "right";
     const widgetType = cfg.widget_mode === "voice" ? "Voice" : "Chat";
-    
+
     const code = `<!-- AI ${widgetType} Widget -->
 <iframe 
   src="${baseUrl}/embed/widget?publicId=${cfg.public_id}"
@@ -158,7 +178,7 @@ window.addEventListener('message',function(e){
   else{f.style.width='80px';f.style.height='80px';f.style.borderRadius='50%';f.style.boxShadow='0 8px 24px rgba(15,23,42,0.2)';}
 });
 </script>`;
-    
+
     setEmbedCode(code);
   };
 
@@ -172,7 +192,13 @@ window.addEventListener('message',function(e){
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+    ];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Ogiltig filtyp. Använd JPEG, PNG, GIF, WebP eller SVG");
       return;
@@ -202,8 +228,9 @@ window.addEventListener('message',function(e){
       const data = await response.json();
       setConfig({ ...config, logo_url: data.logoUrl });
       toast.success("Logotyp uppladdad! 🎉");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Ett fel uppstod";
+      toast.error(message);
     } finally {
       setUploadingLogo(false);
     }
@@ -254,7 +281,9 @@ window.addEventListener('message',function(e){
                 <Label>AI-Assistent</Label>
                 <Select
                   value={config.assistant_id}
-                  onValueChange={(value) => setConfig({ ...config, assistant_id: value })}
+                  onValueChange={(value) =>
+                    setConfig({ ...config, assistant_id: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Välj en assistent" />
@@ -273,14 +302,20 @@ window.addEventListener('message',function(e){
                 <Label>Position</Label>
                 <Select
                   value={config.position}
-                  onValueChange={(value: any) => setConfig({ ...config, position: value })}
+                  onValueChange={(value: "bottom-right" | "bottom-left") =>
+                    setConfig({ ...config, position: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="bottom-right">Nere till höger</SelectItem>
-                    <SelectItem value="bottom-left">Nere till vänster</SelectItem>
+                    <SelectItem value="bottom-right">
+                      Nere till höger
+                    </SelectItem>
+                    <SelectItem value="bottom-left">
+                      Nere till vänster
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -299,19 +334,23 @@ window.addEventListener('message',function(e){
                 <Label>Widget-typ</Label>
                 <Select
                   value={config.widget_mode || "chat"}
-                  onValueChange={(value: "chat" | "voice") => setConfig({ ...config, widget_mode: value })}
+                  onValueChange={(value: "chat" | "voice") =>
+                    setConfig({ ...config, widget_mode: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="chat">💬 Chat-widget (text)</SelectItem>
-                    <SelectItem value="voice">📞 Voice-widget (röst)</SelectItem>
+                    <SelectItem value="voice">
+                      📞 Voice-widget (röst)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  {config.widget_mode === "voice" 
-                    ? "Användare kan ringa och prata med assistenten via röst" 
+                  {config.widget_mode === "voice"
+                    ? "Användare kan ringa och prata med assistenten via röst"
                     : "Användare kan chatta med assistenten via text"}
                 </p>
               </div>
@@ -320,13 +359,15 @@ window.addEventListener('message',function(e){
                 <Label>Logotyp</Label>
                 {config.logo_url ? (
                   <div className="flex items-center gap-4">
-                    <img 
-                      src={config.logo_url} 
-                      alt="Widget logo" 
+                    <img
+                      src={config.logo_url}
+                      alt="Widget logo"
                       className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
                     />
                     <div className="flex-1">
-                      <p className="text-sm text-muted-foreground">Logotyp uppladdad</p>
+                      <p className="text-sm text-muted-foreground">
+                        Logotyp uppladdad
+                      </p>
                     </div>
                     <Button
                       type="button"
@@ -350,7 +391,9 @@ window.addEventListener('message',function(e){
                         variant="outline"
                         size="sm"
                         disabled={uploadingLogo}
-                        onClick={() => document.getElementById("logo-upload")?.click()}
+                        onClick={() =>
+                          document.getElementById("logo-upload")?.click()
+                        }
                       >
                         {uploadingLogo ? (
                           <>
@@ -384,13 +427,17 @@ window.addEventListener('message',function(e){
                     <Input
                       type="color"
                       value={config.primary_color}
-                      onChange={(e) => setConfig({ ...config, primary_color: e.target.value })}
+                      onChange={(e) =>
+                        setConfig({ ...config, primary_color: e.target.value })
+                      }
                       className="w-20 h-10"
                     />
                     <Input
                       type="text"
                       value={config.primary_color}
-                      onChange={(e) => setConfig({ ...config, primary_color: e.target.value })}
+                      onChange={(e) =>
+                        setConfig({ ...config, primary_color: e.target.value })
+                      }
                       placeholder="#3b82f6"
                     />
                   </div>
@@ -402,13 +449,17 @@ window.addEventListener('message',function(e){
                     <Input
                       type="color"
                       value={config.text_color}
-                      onChange={(e) => setConfig({ ...config, text_color: e.target.value })}
+                      onChange={(e) =>
+                        setConfig({ ...config, text_color: e.target.value })
+                      }
                       className="w-20 h-10"
                     />
                     <Input
                       type="text"
                       value={config.text_color}
-                      onChange={(e) => setConfig({ ...config, text_color: e.target.value })}
+                      onChange={(e) =>
+                        setConfig({ ...config, text_color: e.target.value })
+                      }
                       placeholder="#ffffff"
                     />
                   </div>
@@ -429,7 +480,9 @@ window.addEventListener('message',function(e){
                 <Label>Knapptext</Label>
                 <Input
                   value={config.button_text}
-                  onChange={(e) => setConfig({ ...config, button_text: e.target.value })}
+                  onChange={(e) =>
+                    setConfig({ ...config, button_text: e.target.value })
+                  }
                   placeholder="Chatta med oss"
                 />
               </div>
@@ -438,7 +491,9 @@ window.addEventListener('message',function(e){
                 <Label>Välkomstmeddelande</Label>
                 <Textarea
                   value={config.welcome_message}
-                  onChange={(e) => setConfig({ ...config, welcome_message: e.target.value })}
+                  onChange={(e) =>
+                    setConfig({ ...config, welcome_message: e.target.value })
+                  }
                   placeholder="Hej! Hur kan jag hjälpa dig idag?"
                   rows={3}
                 />
@@ -448,7 +503,9 @@ window.addEventListener('message',function(e){
                 <Label>Placeholder-text</Label>
                 <Input
                   value={config.placeholder_text}
-                  onChange={(e) => setConfig({ ...config, placeholder_text: e.target.value })}
+                  onChange={(e) =>
+                    setConfig({ ...config, placeholder_text: e.target.value })
+                  }
                   placeholder="Skriv ditt meddelande..."
                 />
               </div>
@@ -456,7 +513,10 @@ window.addEventListener('message',function(e){
           </Card>
 
           <div className="flex gap-2">
-            <Button onClick={saveConfig} disabled={saving || !config.assistant_id}>
+            <Button
+              onClick={saveConfig}
+              disabled={saving || !config.assistant_id}
+            >
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -484,12 +544,16 @@ window.addEventListener('message',function(e){
                 Live-förhandsvisning
               </CardTitle>
               <CardDescription>
-                Detta är en riktig, fungerande widget. Klicka på bubblan och chatta med din AI-assistent!
+                Detta är en riktig, fungerande widget. Klicka på bubblan och
+                chatta med din AI-assistent!
               </CardDescription>
             </CardHeader>
             <CardContent>
               {config.public_id ? (
-                <div className="relative bg-gradient-to-br from-slate-100 via-gray-50 to-slate-100 rounded-xl min-h-[700px] border border-slate-200" style={{ overflow: "visible" }}>
+                <div
+                  className="relative bg-gradient-to-br from-slate-100 via-gray-50 to-slate-100 rounded-xl min-h-[700px] border border-slate-200"
+                  style={{ overflow: "visible" }}
+                >
                   {/* Simulated website content */}
                   <div className="p-8 space-y-6">
                     <div className="max-w-2xl">
@@ -509,11 +573,11 @@ window.addEventListener('message',function(e){
                       <div className="h-4 bg-slate-200/50 rounded w-3/4"></div>
                     </div>
                   </div>
-                  
+
                   {/* Real widget iframe */}
-                  <div 
+                  <div
                     className={`absolute ${config.position === "bottom-right" ? "right-4" : "left-4"} bottom-4`}
-                    style={{ 
+                    style={{
                       zIndex: 9999,
                       width: previewOpen ? "380px" : "80px",
                       height: previewOpen ? "580px" : "80px",
@@ -529,8 +593,8 @@ window.addEventListener('message',function(e){
                         height: "100%",
                         border: "none",
                         borderRadius: previewOpen ? "24px" : "50%",
-                        boxShadow: previewOpen 
-                          ? "0 25px 60px rgba(15,23,42,0.35)" 
+                        boxShadow: previewOpen
+                          ? "0 25px 60px rgba(15,23,42,0.35)"
                           : "0 8px 24px rgba(15,23,42,0.2)",
                         transition: "all 250ms cubic-bezier(0.4,0,0.2,1)",
                         background: "transparent",
@@ -547,9 +611,20 @@ window.addEventListener('message',function(e){
               ) : (
                 <div className="text-center py-16 text-gray-500 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                   <Sparkles className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">Ingen widget konfigurerad</h3>
-                  <p className="text-sm mb-4">Spara din konfiguration först för att se en live-förhandsvisning</p>
-                  <Button onClick={() => document.querySelector('[value="settings"]')?.dispatchEvent(new Event('click', { bubbles: true }))}>
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">
+                    Ingen widget konfigurerad
+                  </h3>
+                  <p className="text-sm mb-4">
+                    Spara din konfiguration först för att se en
+                    live-förhandsvisning
+                  </p>
+                  <Button
+                    onClick={() =>
+                      document
+                        .querySelector('[value="settings"]')
+                        ?.dispatchEvent(new Event("click", { bubbles: true }))
+                    }
+                  >
                     Gå till inställningar
                   </Button>
                 </div>
@@ -566,19 +641,30 @@ window.addEventListener('message',function(e){
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Klicka på den runda bubblan för att öppna chatten</span>
+                    <span>
+                      Klicka på den runda bubblan för att öppna chatten
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 mt-0.5">✓</span>
-                    <span>Skriv ett meddelande och tryck Enter eller klicka på skicka-knappen</span>
+                    <span>
+                      Skriv ett meddelande och tryck Enter eller klicka på
+                      skicka-knappen
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-green-500 mt-0.5">✓</span>
-                    <span>AI-assistenten svarar i realtid – precis som på din hemsida</span>
+                    <span>
+                      AI-assistenten svarar i realtid – precis som på din
+                      hemsida
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-blue-500 mt-0.5">ℹ</span>
-                    <span>Ändringar i inställningarna kräver att du sparar och laddar om sidan</span>
+                    <span>
+                      Ändringar i inställningarna kräver att du sparar och
+                      laddar om sidan
+                    </span>
                   </li>
                 </ul>
               </CardContent>
@@ -591,11 +677,22 @@ window.addEventListener('message',function(e){
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <Sparkles className="w-12 h-12 text-primary/20 mb-4" />
-                <h3 className="text-lg font-medium text-slate-900">Ingen kod genererad än</h3>
+                <h3 className="text-lg font-medium text-slate-900">
+                  Ingen kod genererad än
+                </h3>
                 <p className="text-slate-500 max-w-sm mt-2 mb-6">
-                  Spara dina inställningar i fliken "Inställningar" för att generera din unika widget-kod.
+                  Spara dina inställningar i fliken "Inställningar" för att
+                  generera din unika widget-kod.
                 </p>
-                <Button onClick={() => (document.querySelector('[value="settings"]') as HTMLElement)?.click()}>
+                <Button
+                  onClick={() =>
+                    (
+                      document.querySelector(
+                        '[value="settings"]',
+                      ) as HTMLElement
+                    )?.click()
+                  }
+                >
                   Gå till inställningar
                 </Button>
               </CardContent>
@@ -607,8 +704,12 @@ window.addEventListener('message',function(e){
                 <Tabs defaultValue="html" className="w-full">
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h2 className="text-2xl font-bold tracking-tight">Integrera Widget</h2>
-                      <p className="text-slate-500">Välj hur du vill lägga till widgeten på din sida</p>
+                      <h2 className="text-2xl font-bold tracking-tight">
+                        Integrera Widget
+                      </h2>
+                      <p className="text-slate-500">
+                        Välj hur du vill lägga till widgeten på din sida
+                      </p>
                     </div>
                   </div>
 
@@ -637,13 +738,16 @@ window.addEventListener('message',function(e){
                             Direkt integration
                           </CardTitle>
                           <CardDescription>
-                            Den enklaste metoden. Fungerar på 99% av alla hemsidor.
+                            Den enklaste metoden. Fungerar på 99% av alla
+                            hemsidor.
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6 space-y-6">
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                              <Label className="text-base font-medium">Kopiera koden</Label>
+                              <Label className="text-base font-medium">
+                                Kopiera koden
+                              </Label>
                               <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">
                                 Rekommenderas
                               </span>
@@ -657,7 +761,9 @@ window.addEventListener('message',function(e){
                                     <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
                                     <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
                                   </div>
-                                  <span className="text-xs font-mono text-muted-foreground">index.html</span>
+                                  <span className="text-xs font-mono text-muted-foreground">
+                                    index.html
+                                  </span>
                                 </div>
                                 <pre className="p-4 overflow-x-auto text-sm font-mono text-blue-100 leading-relaxed selection:bg-primary/30">
                                   <code>{embedCode}</code>
@@ -677,11 +783,17 @@ window.addEventListener('message',function(e){
                             </div>
                             <div className="bg-muted/50 p-4 rounded-lg border border-border">
                               <h4 className="font-medium mb-2 flex items-center text-sm">
-                                <span className="bg-primary/20 text-primary rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">1</span>
+                                <span className="bg-primary/20 text-primary rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">
+                                  1
+                                </span>
                                 Instruktioner
                               </h4>
                               <p className="text-sm text-muted-foreground ml-7">
-                                Klistra in koden ovan precis innan <code className="bg-muted px-1 py-0.5 rounded text-foreground">&lt;/body&gt;</code>-taggen på din hemsida.
+                                Klistra in koden ovan precis innan{" "}
+                                <code className="bg-muted px-1 py-0.5 rounded text-foreground">
+                                  &lt;/body&gt;
+                                </code>
+                                -taggen på din hemsida.
                               </p>
                             </div>
                           </div>
@@ -698,13 +810,16 @@ window.addEventListener('message',function(e){
                             För AI-verktyg
                           </CardTitle>
                           <CardDescription>
-                            Använd denna prompt i Lovable, Bolt, Cursor eller Windsurf.
+                            Använd denna prompt i Lovable, Bolt, Cursor eller
+                            Windsurf.
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6 space-y-6">
                           <div className="grid gap-6 md:grid-cols-2">
                             <div className="space-y-4">
-                              <Label className="text-base font-medium">Prompt att kopiera</Label>
+                              <Label className="text-base font-medium">
+                                Prompt att kopiera
+                              </Label>
                               <div className="bg-muted/50 p-4 rounded-lg border border-border text-sm font-mono text-muted-foreground leading-relaxed whitespace-pre-line h-[300px] overflow-y-auto">
                                 {`Bädda in denna chat-widget på min hemsida.
 
@@ -717,7 +832,7 @@ Här är den färdiga widget-koden:
 
 ${embedCode}`}
                               </div>
-                              <Button 
+                              <Button
                                 className="w-full"
                                 onClick={() => {
                                   const prompt = `Bädda in denna chat-widget på min hemsida.\n\nVIKTIGT - Följ dessa instruktioner EXAKT:\n1) Kopiera HELA koden nedan och klistra in den precis före </body>\n2) Ändra INGENTING i koden - den är färdig att användas\n3) Skapa INGA egna komponenter, iframes eller widgets - använd bara koden jag ger dig\n\nHär är den färdiga widget-koden:\n\n${embedCode}`;
@@ -735,10 +850,14 @@ ${embedCode}`}
                               </div>
                               <h3 className="font-medium">Så här gör du</h3>
                               <p className="text-sm text-muted-foreground max-w-xs">
-                                1. Klicka på "Kopiera Prompt" till vänster<br/>
-                                2. Gå till ditt AI-verktyg (Lovable, etc.)<br/>
-                                3. Klistra in prompten i chatten<br/>
-                                4. AI:n kommer att implementera widgeten korrekt direkt!
+                                1. Klicka på "Kopiera Prompt" till vänster
+                                <br />
+                                2. Gå till ditt AI-verktyg (Lovable, etc.)
+                                <br />
+                                3. Klistra in prompten i chatten
+                                <br />
+                                4. AI:n kommer att implementera widgeten korrekt
+                                direkt!
                               </p>
                             </div>
                           </div>
@@ -759,38 +878,55 @@ ${embedCode}`}
                           </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6">
-                           <div className="space-y-6">
-                             <div className="bg-muted/30 border border-border rounded-lg overflow-hidden">
-                               <div className="bg-muted/50 px-4 py-3 border-b border-border flex items-center font-medium text-sm">
-                                 <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center mr-2 text-xs font-bold text-primary">1</span>
-                                 Kopiera koden
-                               </div>
-                               <div className="p-4 flex items-center gap-4">
-                                 <div className="flex-1 font-mono text-xs text-muted-foreground bg-background p-2 rounded border border-border truncate">
-                                   {embedCode.substring(0, 60)}...
-                                 </div>
-                                 <Button variant="outline" size="sm" onClick={copyEmbedCode}>
-                                   <Copy className="w-4 h-4 mr-2" />
-                                   Kopiera
-                                 </Button>
-                               </div>
-                             </div>
+                          <div className="space-y-6">
+                            <div className="bg-muted/30 border border-border rounded-lg overflow-hidden">
+                              <div className="bg-muted/50 px-4 py-3 border-b border-border flex items-center font-medium text-sm">
+                                <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center mr-2 text-xs font-bold text-primary">
+                                  1
+                                </span>
+                                Kopiera koden
+                              </div>
+                              <div className="p-4 flex items-center gap-4">
+                                <div className="flex-1 font-mono text-xs text-muted-foreground bg-background p-2 rounded border border-border truncate">
+                                  {embedCode.substring(0, 60)}...
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={copyEmbedCode}
+                                >
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Kopiera
+                                </Button>
+                              </div>
+                            </div>
 
-                             <div className="grid md:grid-cols-3 gap-4">
-                               <div className="border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-card">
-                                 <h4 className="font-medium mb-2">WordPress</h4>
-                                 <p className="text-xs text-muted-foreground">Använd blocket "Custom HTML" och klistra in koden där.</p>
-                               </div>
-                               <div className="border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-card">
-                                 <h4 className="font-medium mb-2">Wix / Squarespace</h4>
-                                 <p className="text-xs text-muted-foreground">Lägg till en "Embed Code" eller "Code Block" komponent.</p>
-                               </div>
-                               <div className="border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-card">
-                                 <h4 className="font-medium mb-2">Shopify</h4>
-                                 <p className="text-xs text-muted-foreground">Redigera temat och lägg koden i footer.liquid innan &lt;/body&gt;.</p>
-                               </div>
-                             </div>
-                           </div>
+                            <div className="grid md:grid-cols-3 gap-4">
+                              <div className="border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-card">
+                                <h4 className="font-medium mb-2">WordPress</h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Använd blocket "Custom HTML" och klistra in
+                                  koden där.
+                                </p>
+                              </div>
+                              <div className="border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-card">
+                                <h4 className="font-medium mb-2">
+                                  Wix / Squarespace
+                                </h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Lägg till en "Embed Code" eller "Code Block"
+                                  komponent.
+                                </p>
+                              </div>
+                              <div className="border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer bg-card">
+                                <h4 className="font-medium mb-2">Shopify</h4>
+                                <p className="text-xs text-muted-foreground">
+                                  Redigera temat och lägg koden i footer.liquid
+                                  innan &lt;/body&gt;.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
                     </TabsContent>
@@ -800,7 +936,6 @@ ${embedCode}`}
             </div>
           )}
         </TabsContent>
-
       </Tabs>
     </div>
   );

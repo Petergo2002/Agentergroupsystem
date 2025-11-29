@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     // basic timestamp freshness check (5 min)
     const ts = new Date(timestamp);
-    if (isNaN(ts.getTime()))
+    if (Number.isNaN(ts.getTime()))
       return NextResponse.json(
         { ok: false, error: "Invalid timestamp" },
         { status: 400 },

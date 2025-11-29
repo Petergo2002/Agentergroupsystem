@@ -95,14 +95,14 @@ export interface SimpleSectionInstance {
   definitionId: string; // Referens till SimpleSectionDefinition
   type: SimpleSectionType;
   title: string;
-  
+
   // Innehåll baserat på typ
   textContent?: TextSectionContent;
   imagesContent?: ImagesSectionContent;
-  
+
   // Status
   status: "pending" | "completed";
-  
+
   // Ordning
   order: number;
 }
@@ -111,7 +111,10 @@ export interface SimpleSectionInstance {
  * Mapping från gamla typer till nya
  * Används för bakåtkompatibilitet
  */
-export const LEGACY_TO_SIMPLE_TYPE: Record<ReportSectionType, SimpleSectionType> = {
+export const LEGACY_TO_SIMPLE_TYPE: Record<
+  ReportSectionType,
+  SimpleSectionType
+> = {
   text: "text",
   heading: "text",
   summary: "text",
@@ -133,19 +136,19 @@ export const LEGACY_TO_SIMPLE_TYPE: Record<ReportSectionType, SimpleSectionType>
 // ============================================================================
 
 export type ReportSectionType =
-  | "text"           // Brödtext
-  | "heading"        // Rubrik/kapitel
-  | "summary"        // Sammanfattning/TL;DR
-  | "basic_info"     // Grundinformation (kund, adress, etc.)
-  | "image"          // Statisk bild
-  | "image_gallery"  // Bildgalleri
-  | "image_annotated"// Annoterad bild
-  | "checklist"      // Checklista med poäng
-  | "table"          // Tabell/parametrar (mätvärden etc)
-  | "signature"      // Signatur-sektion
-  | "divider"        // Avdelare
-  | "links"          // Länkar/bilagelista
-  | "chart";         // Diagram
+  | "text" // Brödtext
+  | "heading" // Rubrik/kapitel
+  | "summary" // Sammanfattning/TL;DR
+  | "basic_info" // Grundinformation (kund, adress, etc.)
+  | "image" // Statisk bild
+  | "image_gallery" // Bildgalleri
+  | "image_annotated" // Annoterad bild
+  | "checklist" // Checklista med poäng
+  | "table" // Tabell/parametrar (mätvärden etc)
+  | "signature" // Signatur-sektion
+  | "divider" // Avdelare
+  | "links" // Länkar/bilagelista
+  | "chart"; // Diagram
 
 // ============================================================================
 // Synlighet & villkor
@@ -296,6 +299,8 @@ export interface ReportTemplate {
   name: string;
   trade: ReportTrade;
   description?: string;
+  /** Versionsfält som speglar DB-kolumnen (1,2,3). */
+  version?: number;
   /** Sektion-grupper/kapitel */
   groups?: SectionGroup[];
   sections: ReportSectionTemplate[];
@@ -359,27 +364,27 @@ export interface ReportSectionInstance {
   visibility?: SectionVisibility;
   /** Interna anteckningar (syns aldrig för kund) */
   internalNotes?: string;
-  
+
   // För image_gallery
   assetIds?: string[];
-  
+
   // För image_annotated
   assetId?: string;
   annotationData?: AnnotationShape[];
   annotatedImageUrl?: string;
-  
+
   // För checklist
   checklistData?: ReportChecklistItem[];
-  
+
   // För table
   tableData?: TableData;
-  
+
   // För signature
   signatures?: SignatureData[];
-  
+
   // För links
   links?: LinkItem[];
-  
+
   // För heading
   headingLevel?: 1 | 2 | 3;
 }
@@ -435,38 +440,175 @@ export interface Report {
   sections: ReportSectionInstance[];
   checklist: ReportChecklistItem[];
   assets: ReportAsset[];
-  
+
   // Tidsstämplar
   createdAt?: string;
   updatedAt: string;
   exportedAt?: string | null;
-  
+
   // Publik delning
   publicId?: string | null;
   publicUrl?: string | null;
-  
+
   // Kundgodkännande
   customerEmail?: string | null;
   customerApprovedAt?: string | null;
   customerApprovedBy?: string | null;
-  
+
   // Export-historik
   exportHistory?: ExportHistoryEntry[];
-  
+
   // Version
   version?: number;
-  
+
   // Interna anteckningar (global)
   internalNotes?: string;
-  
+
   // PDF-relaterat (från DB)
   pdfTemplateId?: string | null;
   coverImageUrl?: string | null;
   coverSubtitle?: string | null;
-  
+
   // Organisation/användare (från DB)
   userId?: string | null;
   organizationId?: string | null;
+}
+
+// ============================================================================
+// A6: Tunn Report Summary (för global state)
+// ============================================================================
+
+/**
+ * Tunn rapportrepresentation för global state (A6 Performance Optimization).
+ * Innehåller endast metadata som behövs för listning och filtrering.
+ * Sektioner, assets och checklist laddas on-demand.
+ */
+export interface ReportSummary {
+  id: string;
+  title: string;
+  status: ReportStatus;
+  templateId: string;
+  metadata: ReportMetadata;
+  exportedAt?: string | null;
+  updatedAt: string;
+  createdAt?: string;
+  type?: ReportTrade;
+  publicId?: string | null;
+}
+
+/**
+ * Konvertera full Report till tunn ReportSummary.
+ */
+export function toReportSummary(report: Report): ReportSummary {
+  return {
+    id: report.id,
+    title: report.title,
+    status: report.status,
+    templateId: report.templateId,
+    metadata: report.metadata,
+    exportedAt: report.exportedAt,
+    updatedAt: report.updatedAt,
+    createdAt: report.createdAt,
+    type: report.type,
+    publicId: report.publicId,
+  };
+}
+
+// ============================================================================
+// V3 Models (experimentell struktur för nästa generations rapportflöde)
+// ============================================================================
+
+/**
+ * Renare sektionsdefinition för V3-templates.
+ * Fokuserar på två grundtyper: text och images.
+ */
+export type TemplateSectionV3Type = "text" | "images";
+
+export interface TemplateSectionV3 {
+  id: string;
+  /** Stabil identifierare som kan användas av automation/AI */
+  key: string;
+  type: TemplateSectionV3Type;
+  title: string;
+  description?: string;
+  required: boolean;
+  order: number;
+  /** Förifylld text med stöd för variabler (t.ex. {{client}}, {{location}}) */
+  defaultContent?: string;
+  /** Placeholder-text som visas i editorn */
+  placeholder?: string;
+}
+
+/**
+ * V3-mall (template) med explicit version och sektioner enligt TemplateSectionV3.
+ */
+export interface ReportTemplateV3 {
+  id: string;
+  version: 3;
+  name: string;
+  trade: ReportTrade;
+  description?: string;
+  /** Vald PDF-design för denna mall */
+  designId?: "standard" | "modern_hero";
+  sections: TemplateSectionV3[];
+  checklist: ReportChecklistItem[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * V3-sektionsinstans i en rapport. Kopplar mot TemplateSectionV3 via templateSectionId.
+ */
+export interface SectionInstanceV3 {
+  id: string;
+  templateSectionId: string;
+  type: TemplateSectionV3Type;
+  status: "pending" | "completed";
+  order: number;
+
+  // Textinnehåll
+  text?: {
+    title: string;
+    body: string; // markdown eller rik text
+  };
+
+  // Bildinnehåll
+  images?: {
+    items: {
+      id: string;
+      assetId: string; // referens till ReportAsset.id
+      caption?: string;
+      annotations?: AnnotationShape[];
+    }[];
+  };
+
+  // Endast internt, visas aldrig för kund
+  internalNotes?: string;
+}
+
+/**
+ * V3-rapportmodell med strikt versionfält och V3-sektioner.
+ */
+export interface ReportV3 {
+  id: string;
+  version: 3;
+  templateId: string;
+  title: string;
+  type: ReportTrade;
+  status: ReportStatus;
+  metadata: ReportMetadata;
+  sections: SectionInstanceV3[];
+  checklist: ReportChecklistItem[];
+  assets: ReportAsset[];
+
+  createdAt?: string;
+  updatedAt: string;
+  exportedAt?: string | null;
+
+  publicId?: string | null;
+  customerEmail?: string | null;
+  customerApprovedAt?: string | null;
+  customerApprovedBy?: string | null;
 }
 
 // ============================================================================

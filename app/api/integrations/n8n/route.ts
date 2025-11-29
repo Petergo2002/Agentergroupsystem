@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -47,7 +47,7 @@ async function verifyRequest(
 
   // basic timestamp check (5 min window)
   const ts = new Date(timestamp);
-  if (isNaN(ts.getTime())) throw new Error("Ogiltig timestamp");
+  if (Number.isNaN(ts.getTime())) throw new Error("Ogiltig timestamp");
   const now = new Date();
   const diffMs = Math.abs(now.getTime() - ts.getTime());
   if (diffMs > 5 * 60 * 1000)

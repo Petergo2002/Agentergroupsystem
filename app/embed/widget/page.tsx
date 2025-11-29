@@ -3,15 +3,16 @@ import { VoiceWidgetFrame } from "@/components/widget/voice-widget-frame";
 import { createServiceClient } from "@/lib/supabase/service";
 
 type WidgetPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     publicId?: string;
-  };
+  }>;
 };
 
 export default async function EmbedWidgetPage({
   searchParams,
 }: WidgetPageProps) {
-  const publicId = searchParams?.publicId;
+  const resolvedSearchParams = await searchParams;
+  const publicId = resolvedSearchParams?.publicId;
 
   if (!publicId) {
     return <WidgetError message="Widget-ID saknas" />;

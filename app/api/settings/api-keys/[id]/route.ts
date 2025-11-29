@@ -5,7 +5,7 @@ import { createServerClient } from "@/lib/supabase/server";
  * Revoke an API key
  */
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {

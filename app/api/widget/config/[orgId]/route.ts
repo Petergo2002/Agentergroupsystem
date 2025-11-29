@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { orgId: string } | Promise<{ orgId: string }> }
+  _req: Request,
+  { params }: { params: Promise<{ orgId: string }> },
 ) {
   try {
-    const resolvedParams = await Promise.resolve(params);
+    const resolvedParams = await params;
     const { orgId } = resolvedParams;
 
     const serviceClient = createServiceClient();
@@ -19,10 +19,7 @@ export async function GET(
       .maybeSingle();
 
     if (error || !widgetConfig) {
-      return NextResponse.json(
-        { error: "Widget not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Widget not found" }, { status: 404 });
     }
 
     // IMPORTANT: Never expose API keys to the client!
@@ -32,8 +29,10 @@ export async function GET(
       primary_color: widgetConfig.primary_color || "#3b82f6",
       text_color: widgetConfig.text_color || "#ffffff",
       position: widgetConfig.position || "bottom-right",
-      welcome_message: widgetConfig.welcome_message || "Hej! Hur kan jag hjälpa dig idag?",
-      placeholder_text: widgetConfig.placeholder_text || "Skriv ditt meddelande...",
+      welcome_message:
+        widgetConfig.welcome_message || "Hej! Hur kan jag hjälpa dig idag?",
+      placeholder_text:
+        widgetConfig.placeholder_text || "Skriv ditt meddelande...",
       button_text: widgetConfig.button_text || "Chatta med oss",
       logo_url: widgetConfig.logo_url || null,
       widget_mode: widgetConfig.widget_mode || "chat",
@@ -42,7 +41,7 @@ export async function GET(
     console.error("Error fetching widget config:", error);
     return NextResponse.json(
       { error: "Failed to fetch widget config" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

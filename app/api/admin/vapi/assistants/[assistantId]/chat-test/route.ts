@@ -1,17 +1,17 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { Vapi } from "@/lib/analytics/vapi";
+import { createServerClient } from "@/lib/supabase/server";
 
 export async function POST(
   req: NextRequest,
   {
     params,
   }: {
-    params: { assistantId: string } | Promise<{ assistantId: string }>;
+    params: Promise<{ assistantId: string }>;
   },
 ) {
   try {
-    const resolvedParams = await Promise.resolve(params);
+    const resolvedParams = await params;
     const assistantId = resolvedParams.assistantId;
     if (!assistantId) {
       return NextResponse.json(

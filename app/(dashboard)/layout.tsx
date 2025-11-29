@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { DashboardLayoutClient } from "@/components/dashboard-layout-client";
+import { OnboardingProvider } from "@/components/providers/onboarding-provider";
 import {
   DEFAULT_FEATURE_FLAGS,
   type FeatureFlags,
@@ -12,15 +13,20 @@ export default async function DashboardLayout({
 }: {
   children: ReactNode;
 }) {
-  const initialFeatureFlags = await loadInitialFeatureFlags();
+  const { initialFeatureFlags, isFirstLogin } = await loadInitialData();
   return (
     <DashboardLayoutClient initialFeatureFlags={initialFeatureFlags}>
-      {children}
+      <OnboardingProvider initialIsFirstLogin={isFirstLogin}>
+        {children}
+      </OnboardingProvider>
     </DashboardLayoutClient>
   );
 }
 
-async function loadInitialFeatureFlags(): Promise<FeatureFlags> {
+async function loadInitialData(): Promise<{
+  initialFeatureFlags: FeatureFlags;
+  isFirstLogin: boolean;
+}> {
   try {
     const supabase = await createServerClient();
     const serviceClient = createServiceClient();
@@ -28,15 +34,21 @@ async function loadInitialFeatureFlags(): Promise<FeatureFlags> {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return DEFAULT_FEATURE_FLAGS;
+    if (!user) {
+      return { initialFeatureFlags: DEFAULT_FEATURE_FLAGS, isFirstLogin: false };
+    }
 
     const { data: profile } = await serviceClient
       .from("users")
-      .select("organization_id")
+      .select("organization_id, is_first_login")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (!profile?.organization_id) return DEFAULT_FEATURE_FLAGS;
+    const isFirstLogin = profile?.is_first_login ?? false;
+
+    if (!profile?.organization_id) {
+      return { initialFeatureFlags: DEFAULT_FEATURE_FLAGS, isFirstLogin };
+    }
 
     const { data: flagsRow } = await serviceClient
       .from("feature_flags")
@@ -45,11 +57,14 @@ async function loadInitialFeatureFlags(): Promise<FeatureFlags> {
       .maybeSingle();
 
     return {
-      ...DEFAULT_FEATURE_FLAGS,
-      ...(flagsRow || {}),
+      initialFeatureFlags: {
+        ...DEFAULT_FEATURE_FLAGS,
+        ...(flagsRow || {}),
+      },
+      isFirstLogin,
     };
   } catch (error) {
-    console.error("Failed to load feature flags:", error);
-    return DEFAULT_FEATURE_FLAGS;
+    console.error("Failed to load initial data:", error);
+    return { initialFeatureFlags: DEFAULT_FEATURE_FLAGS, isFirstLogin: false };
   }
 }

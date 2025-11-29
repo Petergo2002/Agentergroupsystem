@@ -13,10 +13,7 @@ export default function CustomersPage() {
 
   return (
     <>
-      <SiteHeader
-        title="Kunder"
-        showAddButton={false}
-      />
+      <SiteHeader title="Kunder" showAddButton={false} />
       <div className="space-y-6 p-6">
         <CustomerList
           onCreate={() => {

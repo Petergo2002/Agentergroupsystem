@@ -7,30 +7,40 @@ import {
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
+  isSameDay,
+  isSameMonth,
   startOfMonth,
   startOfWeek,
   subDays,
   subMonths,
   subWeeks,
-  isSameMonth,
-  isSameDay,
 } from "date-fns";
 import { sv } from "date-fns/locale";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
-import { ChevronLeft, ChevronRight, PanelRight, Search, Filter } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  PanelRight,
+  Search,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useEventsStore } from "@/lib/store";
-import { cn, SWEDEN_TZ } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { EventPopoverForm } from "./event-popover-form";
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useEventsStore } from "@/lib/store";
+import { cn, SWEDEN_TZ } from "@/lib/utils";
+import { EventPopoverForm } from "./event-popover-form";
 
 interface CalendarViewProps {
   onEventClick?: (eventId: string) => void;
@@ -41,11 +51,36 @@ interface CalendarViewProps {
 }
 
 const EVENT_COLORS = {
-  showing: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-500", label: "Visning" },
-  meeting: { bg: "bg-pink-50", text: "text-pink-700", border: "border-pink-500", label: "Möte" },
-  call: { bg: "bg-green-50", text: "text-green-700", border: "border-green-500", label: "Samtal" },
-  "open-house": { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-500", label: "Öppet hus" },
-  other: { bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-500", label: "Övrigt" },
+  showing: {
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    border: "border-blue-500",
+    label: "Visning",
+  },
+  meeting: {
+    bg: "bg-pink-50",
+    text: "text-pink-700",
+    border: "border-pink-500",
+    label: "Möte",
+  },
+  call: {
+    bg: "bg-green-50",
+    text: "text-green-700",
+    border: "border-green-500",
+    label: "Samtal",
+  },
+  "open-house": {
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    border: "border-purple-500",
+    label: "Öppet hus",
+  },
+  other: {
+    bg: "bg-orange-50",
+    text: "text-orange-700",
+    border: "border-orange-500",
+    label: "Övrigt",
+  },
 } as const;
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -66,7 +101,10 @@ interface EventWithLayout {
   endMinutes: number;
 }
 
-function getEventLayout(events: any[], fmtTz: (date: Date | string, fmt: string) => string): EventWithLayout[] {
+function getEventLayout(
+  events: any[],
+  fmtTz: (date: Date | string, fmt: string) => string,
+): EventWithLayout[] {
   if (events.length === 0) return [];
 
   // Convert events to have start/end in minutes from midnight
@@ -84,8 +122,9 @@ function getEventLayout(events: any[], fmtTz: (date: Date | string, fmt: string)
 
   // Sort by start time, then by duration (longer events first)
   eventsWithTime.sort((a, b) => {
-    if (a.startMinutes !== b.startMinutes) return a.startMinutes - b.startMinutes;
-    return (b.endMinutes - b.startMinutes) - (a.endMinutes - a.startMinutes);
+    if (a.startMinutes !== b.startMinutes)
+      return a.startMinutes - b.startMinutes;
+    return b.endMinutes - b.startMinutes - (a.endMinutes - a.startMinutes);
   });
 
   // Assign columns using a greedy algorithm
@@ -130,7 +169,10 @@ function getEventLayout(events: any[], fmtTz: (date: Date | string, fmt: string)
       const other = result[j];
       if (!other) continue;
       // Check if they overlap in time
-      if (current.startMinutes < other.endMinutes && current.endMinutes > other.startMinutes) {
+      if (
+        current.startMinutes < other.endMinutes &&
+        current.endMinutes > other.startMinutes
+      ) {
         maxColumn = Math.max(maxColumn, other.columnIndex);
       }
     }
@@ -148,15 +190,18 @@ export function CalendarView({
   sidebarOpen = true,
   onToggleSidebar,
 }: CalendarViewProps) {
-  const { events, selectedDate, viewMode, setSelectedDate, setViewMode } = useEventsStore();
+  const { events, selectedDate, viewMode, setSelectedDate, setViewMode } =
+    useEventsStore();
   const [currentDate, setCurrentDate] = useState(selectedDate);
   const [popoverOpenId, setPopoverOpenId] = useState<string | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [now, setNow] = useState<Date | null>(null);
-  
+
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilters, setActiveFilters] = useState<string[]>(Object.keys(EVENT_COLORS));
+  const [activeFilters, setActiveFilters] = useState<string[]>(
+    Object.keys(EVENT_COLORS),
+  );
 
   const fmtTz = (date: Date | string, fmt: string) =>
     formatInTimeZone(new Date(date), SWEDEN_TZ, fmt, { locale: sv });
@@ -164,9 +209,10 @@ export function CalendarView({
   // Filter events based on search and type filters
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
-      const matchesSearch = searchQuery === "" || 
+      const matchesSearch =
+        searchQuery === "" ||
         event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (event.description?.toLowerCase().includes(searchQuery.toLowerCase()));
+        event.description?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesFilter = activeFilters.includes(event.event_type || "other");
       return matchesSearch && matchesFilter;
     });
@@ -184,27 +230,44 @@ export function CalendarView({
 
   const navigateDate = (direction: "prev" | "next") => {
     if (viewMode === "month") {
-      setCurrentDate(direction === "prev" ? subMonths(currentDate, 1) : addMonths(currentDate, 1));
+      setCurrentDate(
+        direction === "prev"
+          ? subMonths(currentDate, 1)
+          : addMonths(currentDate, 1),
+      );
     } else if (viewMode === "week") {
-      setCurrentDate(direction === "prev" ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1));
+      setCurrentDate(
+        direction === "prev"
+          ? subWeeks(currentDate, 1)
+          : addWeeks(currentDate, 1),
+      );
     } else {
-      setCurrentDate(direction === "prev" ? subDays(currentDate, 1) : addDays(currentDate, 1));
+      setCurrentDate(
+        direction === "prev"
+          ? subDays(currentDate, 1)
+          : addDays(currentDate, 1),
+      );
     }
   };
 
   const getEventsForDate = (date: Date) => {
     return filteredEvents.filter(
-      (event) => fmtTz(new Date(event.start_time), "yyyy-MM-dd") === fmtTz(date, "yyyy-MM-dd")
+      (event) =>
+        fmtTz(new Date(event.start_time), "yyyy-MM-dd") ===
+        fmtTz(date, "yyyy-MM-dd"),
     );
   };
 
   const getEventStyle = (event: any) => {
-    return EVENT_COLORS[event.event_type as keyof typeof EVENT_COLORS] || EVENT_COLORS.other;
+    return (
+      EVENT_COLORS[event.event_type as keyof typeof EVENT_COLORS] ||
+      EVENT_COLORS.other
+    );
   };
 
   const toggleFilter = (type: string) => {
     setActiveFilters((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
     );
   };
 
@@ -228,26 +291,35 @@ export function CalendarView({
     const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
     const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
     const headerStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const headerDays = Array.from({ length: 7 }, (_, i) => addDays(headerStart, i));
+    const headerDays = Array.from({ length: 7 }, (_, i) =>
+      addDays(headerStart, i),
+    );
 
     return (
       <div className="flex flex-col h-full bg-background rounded-lg border border-border overflow-hidden shadow-sm">
         <div className="grid grid-cols-7 border-b border-border bg-background">
           {headerDays.map((d) => (
-            <div key={d.toISOString()} className="py-2 md:py-3 text-center text-[10px] md:text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <div
+              key={d.toISOString()}
+              className="py-2 md:py-3 text-center text-[10px] md:text-xs font-semibold text-muted-foreground uppercase tracking-wider"
+            >
               <span className="hidden md:inline">{fmtTz(d, "EEE")}</span>
               <span className="md:hidden">{fmtTz(d, "EEEEE")}</span>
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 flex-1" style={{ gridAutoRows: "1fr" }}>
+        <div
+          className="grid grid-cols-7 flex-1"
+          style={{ gridAutoRows: "1fr" }}
+        >
           {days.map((day, index) => {
             const dayEvents = getEventsForDate(day);
             const isCurrentMonth = isSameMonth(day, currentDate);
             const isToday = isSameDay(day, new Date());
             const dayId = day.toISOString();
             const isLastCol = (index + 1) % 7 === 0;
-            const isLastRow = Math.floor(index / 7) === Math.floor((days.length - 1) / 7);
+            const isLastRow =
+              Math.floor(index / 7) === Math.floor((days.length - 1) / 7);
 
             return (
               <Popover
@@ -264,7 +336,7 @@ export function CalendarView({
                       "relative p-1 md:p-2 transition-colors hover:bg-accent/5 min-h-[60px] md:min-h-[100px] cursor-pointer group",
                       !isLastCol && "border-r border-border/60",
                       !isLastRow && "border-b border-border/60",
-                      !isCurrentMonth && "bg-muted/5 text-muted-foreground"
+                      !isCurrentMonth && "bg-muted/5 text-muted-foreground",
                     )}
                     onClick={() => {
                       setSelectedDate(day);
@@ -276,7 +348,11 @@ export function CalendarView({
                       <span
                         className={cn(
                           "text-xs md:text-sm font-medium w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-full",
-                          isToday ? "bg-primary text-primary-foreground shadow-sm" : !isCurrentMonth ? "text-muted-foreground/50" : "text-foreground"
+                          isToday
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : !isCurrentMonth
+                              ? "text-muted-foreground/50"
+                              : "text-foreground",
                         )}
                       >
                         {fmtTz(day, "d")}
@@ -291,7 +367,9 @@ export function CalendarView({
                             key={event.id}
                             className={cn(
                               "w-full text-left px-1 md:px-2 py-0.5 rounded-sm text-[9px] md:text-[11px] font-medium truncate transition-all hover:brightness-95 border-l-2 md:border-l-[3px]",
-                              colors.bg, colors.text, colors.border
+                              colors.bg,
+                              colors.text,
+                              colors.border,
                             )}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -311,7 +389,12 @@ export function CalendarView({
                     </div>
                   </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-transparent border-none shadow-none" align="start" side="right" sideOffset={5}>
+                <PopoverContent
+                  className="w-auto p-0 bg-transparent border-none shadow-none"
+                  align="start"
+                  side="right"
+                  sideOffset={5}
+                >
                   <div className="bg-background border rounded-xl shadow-xl">
                     <EventPopoverForm
                       slot={editingEventId ? undefined : day}
@@ -352,10 +435,12 @@ export function CalendarView({
                   <span className="hidden md:inline">{fmtTz(d, "EEE")}</span>
                   <span className="md:hidden">{fmtTz(d, "EEEEE")}</span>
                 </div>
-                <div className={cn(
-                  "text-sm md:text-lg font-semibold mt-0.5 md:mt-1 w-6 h-6 md:w-9 md:h-9 mx-auto flex items-center justify-center rounded-full",
-                  isToday && "bg-primary text-primary-foreground"
-                )}>
+                <div
+                  className={cn(
+                    "text-sm md:text-lg font-semibold mt-0.5 md:mt-1 w-6 h-6 md:w-9 md:h-9 mx-auto flex items-center justify-center rounded-full",
+                    isToday && "bg-primary text-primary-foreground",
+                  )}
+                >
                   {fmtTz(d, "d")}
                 </div>
               </div>
@@ -363,11 +448,20 @@ export function CalendarView({
           })}
         </div>
         <div className="flex-1 overflow-auto">
-          <div className="grid grid-cols-8 relative pt-3" style={{ minHeight: `${HOURS.length * ROW_HEIGHT + 12}px` }}>
+          <div
+            className="grid grid-cols-8 relative pt-3"
+            style={{ minHeight: `${HOURS.length * ROW_HEIGHT + 12}px` }}
+          >
             <div className="border-r border-border/60">
               {HOURS.map((hour) => (
-                <div key={hour} className="pr-1 md:pr-2 text-right text-[10px] md:text-xs text-muted-foreground flex items-start justify-end" style={{ height: `${ROW_HEIGHT}px` }}>
-                  <span className="-mt-2">{String(hour).padStart(2, "0")}:00</span>
+                <div
+                  key={hour}
+                  className="pr-1 md:pr-2 text-right text-[10px] md:text-xs text-muted-foreground flex items-start justify-end"
+                  style={{ height: `${ROW_HEIGHT}px` }}
+                >
+                  <span className="-mt-2">
+                    {String(hour).padStart(2, "0")}:00
+                  </span>
                 </div>
               ))}
             </div>
@@ -377,7 +471,13 @@ export function CalendarView({
               const isLastCol = dayIndex === 6;
 
               return (
-                <div key={day.toISOString()} className={cn("relative", !isLastCol && "border-r border-border/60")}>
+                <div
+                  key={day.toISOString()}
+                  className={cn(
+                    "relative",
+                    !isLastCol && "border-r border-border/60",
+                  )}
+                >
                   {HOURS.map((hour) => {
                     const parts = fmtTz(day, "yyyy-M-d").split("-").map(Number);
                     const y = parts[0] ?? 2024;
@@ -388,20 +488,42 @@ export function CalendarView({
                     const slotId = `week-${day.toISOString()}-${hour}`;
 
                     return (
-                      <Popover key={hour} open={popoverOpenId === slotId} onOpenChange={(open) => { setPopoverOpenId(open ? slotId : null); if (!open) setEditingEventId(null); }}>
+                      <Popover
+                        key={hour}
+                        open={popoverOpenId === slotId}
+                        onOpenChange={(open) => {
+                          setPopoverOpenId(open ? slotId : null);
+                          if (!open) setEditingEventId(null);
+                        }}
+                      >
                         <PopoverTrigger asChild>
-                          <div className="border-b border-border/40 hover:bg-accent/10 cursor-pointer transition-colors" style={{ height: `${ROW_HEIGHT}px` }} />
+                          <div
+                            className="border-b border-border/40 hover:bg-accent/10 cursor-pointer transition-colors"
+                            style={{ height: `${ROW_HEIGHT}px` }}
+                          />
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-transparent border-none shadow-none" align="start" side="right" sideOffset={5}>
+                        <PopoverContent
+                          className="w-auto p-0 bg-transparent border-none shadow-none"
+                          align="start"
+                          side="right"
+                          sideOffset={5}
+                        >
                           <div className="bg-background border rounded-xl shadow-xl">
-                            <EventPopoverForm slot={slotUtc} onClose={() => setPopoverOpenId(null)} onSave={() => {}} />
+                            <EventPopoverForm
+                              slot={slotUtc}
+                              onClose={() => setPopoverOpenId(null)}
+                              onSave={() => {}}
+                            />
                           </div>
                         </PopoverContent>
                       </Popover>
                     );
                   })}
                   {isToday && now && (
-                    <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${nowTopPx}px` }}>
+                    <div
+                      className="absolute left-0 right-0 z-20 pointer-events-none"
+                      style={{ top: `${nowTopPx}px` }}
+                    >
                       <div className="flex items-center">
                         <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
                         <div className="flex-1 h-[2px] bg-red-500" />
@@ -410,43 +532,89 @@ export function CalendarView({
                   )}
                   {(() => {
                     const layoutEvents = getEventLayout(dayEvents, fmtTz);
-                    return layoutEvents.map(({ event, columnIndex, columnCount, startMinutes, endMinutes }) => {
-                      const topPx = startMinutes * (ROW_HEIGHT / 60) + EVENT_VERTICAL_GAP;
-                      const durationMin = endMinutes - startMinutes;
-                      const heightPx = Math.max(durationMin * (ROW_HEIGHT / 60) - EVENT_VERTICAL_GAP * 2, 24);
-                      const colors = getEventStyle(event);
-                      const eventSlotId = `week-event-${event.id}`;
+                    return layoutEvents.map(
+                      ({
+                        event,
+                        columnIndex,
+                        columnCount,
+                        startMinutes,
+                        endMinutes,
+                      }) => {
+                        const topPx =
+                          startMinutes * (ROW_HEIGHT / 60) + EVENT_VERTICAL_GAP;
+                        const durationMin = endMinutes - startMinutes;
+                        const heightPx = Math.max(
+                          durationMin * (ROW_HEIGHT / 60) -
+                            EVENT_VERTICAL_GAP * 2,
+                          24,
+                        );
+                        const colors = getEventStyle(event);
+                        const eventSlotId = `week-event-${event.id}`;
 
-                      // Calculate horizontal position for side-by-side layout
-                      const columnWidth = (100 - ((EVENT_PADDING_LEFT + EVENT_PADDING_RIGHT) / 10)) / columnCount;
-                      const leftPercent = EVENT_PADDING_LEFT / 10 + columnIndex * columnWidth;
-                      const widthPercent = columnWidth - (EVENT_HORIZONTAL_GAP / 10);
+                        // Calculate horizontal position for side-by-side layout
+                        const columnWidth =
+                          (100 -
+                            (EVENT_PADDING_LEFT + EVENT_PADDING_RIGHT) / 10) /
+                          columnCount;
+                        const leftPercent =
+                          EVENT_PADDING_LEFT / 10 + columnIndex * columnWidth;
+                        const widthPercent =
+                          columnWidth - EVENT_HORIZONTAL_GAP / 10;
 
-                      return (
-                        <Popover key={event.id} open={popoverOpenId === eventSlotId} onOpenChange={(open) => { setPopoverOpenId(open ? eventSlotId : null); if (open) setEditingEventId(event.id); else setEditingEventId(null); }}>
-                          <PopoverTrigger asChild>
-                            <button
-                              type="button"
-                              className={cn("absolute rounded-md px-1 md:px-2 py-0.5 md:py-1 text-[9px] md:text-xs font-medium overflow-hidden z-10 border-l-2 md:border-l-[3px] shadow-sm cursor-pointer hover:brightness-95 hover:shadow-md transition-all text-left", colors.bg, colors.text, colors.border)}
-                              style={{ 
-                                top: `${topPx}px`, 
-                                height: `${heightPx}px`,
-                                left: `${leftPercent}%`,
-                                width: `${widthPercent}%`,
-                              }}
+                        return (
+                          <Popover
+                            key={event.id}
+                            open={popoverOpenId === eventSlotId}
+                            onOpenChange={(open) => {
+                              setPopoverOpenId(open ? eventSlotId : null);
+                              if (open) setEditingEventId(event.id);
+                              else setEditingEventId(null);
+                            }}
+                          >
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                className={cn(
+                                  "absolute rounded-md px-1 md:px-2 py-0.5 md:py-1 text-[9px] md:text-xs font-medium overflow-hidden z-10 border-l-2 md:border-l-[3px] shadow-sm cursor-pointer hover:brightness-95 hover:shadow-md transition-all text-left",
+                                  colors.bg,
+                                  colors.text,
+                                  colors.border,
+                                )}
+                                style={{
+                                  top: `${topPx}px`,
+                                  height: `${heightPx}px`,
+                                  left: `${leftPercent}%`,
+                                  width: `${widthPercent}%`,
+                                }}
+                              >
+                                <div className="truncate">{event.title}</div>
+                                <div className="text-[8px] md:text-[10px] opacity-70 hidden md:block">
+                                  {fmtTz(event.start_time, "HH:mm")} -{" "}
+                                  {fmtTz(event.end_time, "HH:mm")}
+                                </div>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-0 bg-transparent border-none shadow-none"
+                              align="start"
+                              side="right"
+                              sideOffset={5}
                             >
-                              <div className="truncate">{event.title}</div>
-                              <div className="text-[8px] md:text-[10px] opacity-70 hidden md:block">{fmtTz(event.start_time, "HH:mm")} - {fmtTz(event.end_time, "HH:mm")}</div>
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0 bg-transparent border-none shadow-none" align="start" side="right" sideOffset={5}>
-                            <div className="bg-background border rounded-xl shadow-xl">
-                              <EventPopoverForm eventId={event.id} onClose={() => { setPopoverOpenId(null); setEditingEventId(null); }} onSave={() => {}} />
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      );
-                    });
+                              <div className="bg-background border rounded-xl shadow-xl">
+                                <EventPopoverForm
+                                  eventId={event.id}
+                                  onClose={() => {
+                                    setPopoverOpenId(null);
+                                    setEditingEventId(null);
+                                  }}
+                                  onSave={() => {}}
+                                />
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        );
+                      },
+                    );
                   })()}
                 </div>
               );
@@ -468,24 +636,44 @@ export function CalendarView({
     return (
       <div className="flex flex-col h-full bg-background rounded-lg border border-border overflow-hidden shadow-sm">
         <div className="py-3 md:py-4 px-4 md:px-6 border-b border-border bg-background text-center shrink-0">
-          <div className="text-xs md:text-sm font-medium text-muted-foreground uppercase">{fmtTz(currentDate, "EEEE")}</div>
-          <div className={cn("text-2xl md:text-3xl font-bold mt-1 w-10 h-10 md:w-14 md:h-14 mx-auto flex items-center justify-center rounded-full", isToday && "bg-primary text-primary-foreground")}>
+          <div className="text-xs md:text-sm font-medium text-muted-foreground uppercase">
+            {fmtTz(currentDate, "EEEE")}
+          </div>
+          <div
+            className={cn(
+              "text-2xl md:text-3xl font-bold mt-1 w-10 h-10 md:w-14 md:h-14 mx-auto flex items-center justify-center rounded-full",
+              isToday && "bg-primary text-primary-foreground",
+            )}
+          >
             {fmtTz(currentDate, "d")}
           </div>
-          <div className="text-xs md:text-sm text-muted-foreground mt-1">{fmtTz(currentDate, "MMMM yyyy")}</div>
+          <div className="text-xs md:text-sm text-muted-foreground mt-1">
+            {fmtTz(currentDate, "MMMM yyyy")}
+          </div>
         </div>
         <div className="flex-1 overflow-auto">
-          <div className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] relative pt-3" style={{ minHeight: `${HOURS.length * ROW_HEIGHT + 12}px` }}>
+          <div
+            className="grid grid-cols-[60px_1fr] md:grid-cols-[80px_1fr] relative pt-3"
+            style={{ minHeight: `${HOURS.length * ROW_HEIGHT + 12}px` }}
+          >
             <div className="border-r border-border/60">
               {HOURS.map((hour) => (
-                <div key={hour} className="pr-2 md:pr-3 text-right text-[10px] md:text-xs text-muted-foreground flex items-start justify-end" style={{ height: `${ROW_HEIGHT}px` }}>
-                  <span className="-mt-2">{String(hour).padStart(2, "0")}:00</span>
+                <div
+                  key={hour}
+                  className="pr-2 md:pr-3 text-right text-[10px] md:text-xs text-muted-foreground flex items-start justify-end"
+                  style={{ height: `${ROW_HEIGHT}px` }}
+                >
+                  <span className="-mt-2">
+                    {String(hour).padStart(2, "0")}:00
+                  </span>
                 </div>
               ))}
             </div>
             <div className="relative">
               {HOURS.map((hour) => {
-                const parts = fmtTz(currentDate, "yyyy-M-d").split("-").map(Number);
+                const parts = fmtTz(currentDate, "yyyy-M-d")
+                  .split("-")
+                  .map(Number);
                 const y = parts[0] ?? 2024;
                 const mm = parts[1] ?? 1;
                 const dd = parts[2] ?? 1;
@@ -494,20 +682,41 @@ export function CalendarView({
                 const slotId = `day-${currentDate.toISOString()}-${hour}`;
 
                 return (
-                  <Popover key={hour} open={popoverOpenId === slotId} onOpenChange={(open) => setPopoverOpenId(open ? slotId : null)}>
+                  <Popover
+                    key={hour}
+                    open={popoverOpenId === slotId}
+                    onOpenChange={(open) =>
+                      setPopoverOpenId(open ? slotId : null)
+                    }
+                  >
                     <PopoverTrigger asChild>
-                      <div className="border-b border-border/40 hover:bg-accent/10 cursor-pointer transition-colors" style={{ height: `${ROW_HEIGHT}px` }} />
+                      <div
+                        className="border-b border-border/40 hover:bg-accent/10 cursor-pointer transition-colors"
+                        style={{ height: `${ROW_HEIGHT}px` }}
+                      />
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-transparent border-none shadow-none" align="start" side="right" sideOffset={5}>
+                    <PopoverContent
+                      className="w-auto p-0 bg-transparent border-none shadow-none"
+                      align="start"
+                      side="right"
+                      sideOffset={5}
+                    >
                       <div className="bg-background border rounded-xl shadow-xl">
-                        <EventPopoverForm slot={slotUtc} onClose={() => setPopoverOpenId(null)} onSave={() => {}} />
+                        <EventPopoverForm
+                          slot={slotUtc}
+                          onClose={() => setPopoverOpenId(null)}
+                          onSave={() => {}}
+                        />
                       </div>
                     </PopoverContent>
                   </Popover>
                 );
               })}
               {isToday && now && (
-                <div className="absolute left-0 right-0 z-20 pointer-events-none" style={{ top: `${nowTopPx}px` }}>
+                <div
+                  className="absolute left-0 right-0 z-20 pointer-events-none"
+                  style={{ top: `${nowTopPx}px` }}
+                >
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full bg-red-500 -ml-1.5 border-2 border-white shadow" />
                     <div className="flex-1 h-[2px] bg-red-500" />
@@ -516,44 +725,94 @@ export function CalendarView({
               )}
               {(() => {
                 const layoutEvents = getEventLayout(dayEvents, fmtTz);
-                return layoutEvents.map(({ event, columnIndex, columnCount, startMinutes, endMinutes }) => {
-                  const topPx = startMinutes * (ROW_HEIGHT / 60) + EVENT_VERTICAL_GAP;
-                  const durationMin = endMinutes - startMinutes;
-                  const heightPx = Math.max(durationMin * (ROW_HEIGHT / 60) - EVENT_VERTICAL_GAP * 2, 30);
-                  const colors = getEventStyle(event);
-                  const eventSlotId = `day-event-${event.id}`;
+                return layoutEvents.map(
+                  ({
+                    event,
+                    columnIndex,
+                    columnCount,
+                    startMinutes,
+                    endMinutes,
+                  }) => {
+                    const topPx =
+                      startMinutes * (ROW_HEIGHT / 60) + EVENT_VERTICAL_GAP;
+                    const durationMin = endMinutes - startMinutes;
+                    const heightPx = Math.max(
+                      durationMin * (ROW_HEIGHT / 60) - EVENT_VERTICAL_GAP * 2,
+                      30,
+                    );
+                    const colors = getEventStyle(event);
+                    const eventSlotId = `day-event-${event.id}`;
 
-                  // Calculate horizontal position for side-by-side layout
-                  const columnWidth = (100 - ((EVENT_PADDING_LEFT + EVENT_PADDING_RIGHT) / 10)) / columnCount;
-                  const leftPercent = EVENT_PADDING_LEFT / 10 + columnIndex * columnWidth;
-                  const widthPercent = columnWidth - (EVENT_HORIZONTAL_GAP / 10);
+                    // Calculate horizontal position for side-by-side layout
+                    const columnWidth =
+                      (100 - (EVENT_PADDING_LEFT + EVENT_PADDING_RIGHT) / 10) /
+                      columnCount;
+                    const leftPercent =
+                      EVENT_PADDING_LEFT / 10 + columnIndex * columnWidth;
+                    const widthPercent =
+                      columnWidth - EVENT_HORIZONTAL_GAP / 10;
 
-                  return (
-                    <Popover key={event.id} open={popoverOpenId === eventSlotId} onOpenChange={(open) => { setPopoverOpenId(open ? eventSlotId : null); if (open) setEditingEventId(event.id); else setEditingEventId(null); }}>
-                      <PopoverTrigger asChild>
-                        <button
-                          type="button"
-                          className={cn("absolute rounded-lg px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm font-medium overflow-hidden z-10 border-l-[3px] md:border-l-[4px] shadow-md cursor-pointer hover:brightness-95 hover:shadow-lg transition-all text-left", colors.bg, colors.text, colors.border)}
-                          style={{ 
-                            top: `${topPx}px`, 
-                            height: `${heightPx}px`,
-                            left: `${leftPercent}%`,
-                            width: `${widthPercent}%`,
-                          }}
+                    return (
+                      <Popover
+                        key={event.id}
+                        open={popoverOpenId === eventSlotId}
+                        onOpenChange={(open) => {
+                          setPopoverOpenId(open ? eventSlotId : null);
+                          if (open) setEditingEventId(event.id);
+                          else setEditingEventId(null);
+                        }}
+                      >
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "absolute rounded-lg px-2 md:px-3 py-1 md:py-2 text-xs md:text-sm font-medium overflow-hidden z-10 border-l-[3px] md:border-l-[4px] shadow-md cursor-pointer hover:brightness-95 hover:shadow-lg transition-all text-left",
+                              colors.bg,
+                              colors.text,
+                              colors.border,
+                            )}
+                            style={{
+                              top: `${topPx}px`,
+                              height: `${heightPx}px`,
+                              left: `${leftPercent}%`,
+                              width: `${widthPercent}%`,
+                            }}
+                          >
+                            <div className="font-semibold truncate">
+                              {event.title}
+                            </div>
+                            <div className="text-[10px] md:text-xs opacity-70 mt-0.5">
+                              {fmtTz(event.start_time, "HH:mm")} -{" "}
+                              {fmtTz(event.end_time, "HH:mm")}
+                            </div>
+                            {event.description && heightPx > 60 && (
+                              <div className="text-[10px] md:text-xs opacity-60 mt-1 line-clamp-2 hidden md:block">
+                                {event.description}
+                              </div>
+                            )}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-auto p-0 bg-transparent border-none shadow-none"
+                          align="start"
+                          side="right"
+                          sideOffset={5}
                         >
-                          <div className="font-semibold truncate">{event.title}</div>
-                          <div className="text-[10px] md:text-xs opacity-70 mt-0.5">{fmtTz(event.start_time, "HH:mm")} - {fmtTz(event.end_time, "HH:mm")}</div>
-                          {event.description && heightPx > 60 && <div className="text-[10px] md:text-xs opacity-60 mt-1 line-clamp-2 hidden md:block">{event.description}</div>}
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 bg-transparent border-none shadow-none" align="start" side="right" sideOffset={5}>
-                        <div className="bg-background border rounded-xl shadow-xl">
-                          <EventPopoverForm eventId={event.id} onClose={() => { setPopoverOpenId(null); setEditingEventId(null); }} onSave={() => {}} />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  );
-                });
+                          <div className="bg-background border rounded-xl shadow-xl">
+                            <EventPopoverForm
+                              eventId={event.id}
+                              onClose={() => {
+                                setPopoverOpenId(null);
+                                setEditingEventId(null);
+                              }}
+                              onSave={() => {}}
+                            />
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  },
+                );
               })()}
             </div>
           </div>
@@ -573,13 +832,31 @@ export function CalendarView({
             {getViewTitle()}
           </h2>
           <div className="flex items-center bg-muted/30 rounded-lg p-0.5 border border-border/50">
-            <Button variant="ghost" size="icon" className="h-6 w-6 md:h-7 md:w-7 rounded-md hover:bg-background hover:shadow-sm" onClick={() => navigateDate("prev")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 md:h-7 md:w-7 rounded-md hover:bg-background hover:shadow-sm"
+              onClick={() => navigateDate("prev")}
+            >
               <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-6 md:h-7 px-2 md:px-3 text-[10px] md:text-xs font-medium rounded-md hover:bg-background hover:shadow-sm" onClick={() => { setCurrentDate(new Date()); setSelectedDate(new Date()); }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 md:h-7 px-2 md:px-3 text-[10px] md:text-xs font-medium rounded-md hover:bg-background hover:shadow-sm"
+              onClick={() => {
+                setCurrentDate(new Date());
+                setSelectedDate(new Date());
+              }}
+            >
               Idag
             </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 md:h-7 md:w-7 rounded-md hover:bg-background hover:shadow-sm" onClick={() => navigateDate("next")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 md:h-7 md:w-7 rounded-md hover:bg-background hover:shadow-sm"
+              onClick={() => navigateDate("next")}
+            >
               <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </div>
@@ -601,7 +878,11 @@ export function CalendarView({
           {/* Filter Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 md:h-8 md:w-8 text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 md:h-8 md:w-8 text-muted-foreground hover:text-foreground"
+              >
                 <Filter className="h-3.5 w-3.5 md:h-4 md:w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -613,7 +894,12 @@ export function CalendarView({
                   onCheckedChange={() => toggleFilter(key)}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={cn("h-3 w-3 rounded-full", val.border.replace("border-", "bg-"))} />
+                    <div
+                      className={cn(
+                        "h-3 w-3 rounded-full",
+                        val.border.replace("border-", "bg-"),
+                      )}
+                    />
                     {val.label}
                   </div>
                 </DropdownMenuCheckboxItem>
@@ -629,7 +915,9 @@ export function CalendarView({
                 onClick={() => setViewMode(mode)}
                 className={cn(
                   "px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-sm font-medium rounded-md transition-all",
-                  viewMode === mode ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  viewMode === mode
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {mode === "day" ? "Dag" : mode === "week" ? "Vecka" : "Månad"}
@@ -641,7 +929,12 @@ export function CalendarView({
           <Button
             variant="ghost"
             size="icon"
-            className={cn("h-7 w-7 md:h-8 md:w-8 hidden md:flex", sidebarOpen ? "text-muted-foreground" : "bg-accent/50 text-foreground")}
+            className={cn(
+              "h-7 w-7 md:h-8 md:w-8 hidden md:flex",
+              sidebarOpen
+                ? "text-muted-foreground"
+                : "bg-accent/50 text-foreground",
+            )}
             onClick={onToggleSidebar}
           >
             <PanelRight className="h-4 w-4 md:h-5 md:w-5" />

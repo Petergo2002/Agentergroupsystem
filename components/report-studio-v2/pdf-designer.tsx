@@ -2,45 +2,83 @@
 
 /**
  * PDF Designer Component
- * 
+ *
  * Visar hur PDF:en kommer att se ut med den valda mallen.
  * Inkluderar PDF-nedladdning och förhandsvisning.
  */
 
-import { useMemo, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { 
-  IconPrinter, 
-  IconDownload, 
-  IconEye, 
-  IconLoader2,
+import {
+  IconEye,
   IconFileTypePdf,
-  IconCheck,
+  IconLoader2,
+  IconPrinter,
 } from "@tabler/icons-react";
-import { useSimpleReportStore } from "@/stores/simpleReportStore";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { getTradeColors } from "@/lib/constants/colors";
+import { type PdfProfile, usePdfProfileStore } from "@/lib/pdf-profile-store";
 import { PDF_DESIGNS, type PdfDesignId } from "@/lib/rapport/pdfDesigns";
+import { useSimpleReportStore } from "@/stores/simpleReportStore";
+
+// A5: Debounce delay för PDF preview (ms)
+const PREVIEW_DEBOUNCE_MS = 250;
 
 export function PdfDesigner() {
   const { getActiveTemplate } = useSimpleReportStore();
+  const { profile, loadProfile } = usePdfProfileStore();
   const template = getActiveTemplate();
   const [downloading, setDownloading] = useState(false);
 
-  // Generera preview HTML
-  const previewHtml = useMemo(() => {
+  // A5: Debounced preview HTML state
+  const [debouncedPreviewHtml, setDebouncedPreviewHtml] = useState("");
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Ladda profil vid mount
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  // A5: Generera preview HTML med debounce för att undvika för många re-renders
+  const rawPreviewHtml = useMemo(() => {
     if (!template) return "";
-    return generatePreviewHtml(template.name, template.sections, template.trade, template.designId);
-  }, [template]);
+    return generatePreviewHtml(
+      template.name,
+      template.sections,
+      template.trade,
+      template.designId,
+      profile,
+    );
+  }, [template, profile]);
+
+  // A5: Debounce preview HTML uppdateringar
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedPreviewHtml(rawPreviewHtml);
+    }, PREVIEW_DEBOUNCE_MS);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [rawPreviewHtml]);
+
+  // Använd debounced HTML för rendering, men raw för actions (print/download)
+  const previewHtml = debouncedPreviewHtml || rawPreviewHtml;
 
   if (!template) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <IconEye className="w-16 h-16 mx-auto text-gray-500 mb-4" />
-          <p className="text-gray-400">Välj en mall för att se förhandsvisning</p>
+          <p className="text-gray-400">
+            Välj en mall för att se förhandsvisning
+          </p>
         </div>
       </div>
     );
@@ -83,12 +121,14 @@ export function PdfDesigner() {
               document.body.appendChild(overlay);
             };
           </script>
-          </body>`
+          </body>`,
         );
         printWindow.document.write(htmlWithInstructions);
         printWindow.document.close();
       }
-      toast.success("PDF-förhandsvisning öppnad - välj 'Spara som PDF' i utskriftsdialogen");
+      toast.success(
+        "PDF-förhandsvisning öppnad - välj 'Spara som PDF' i utskriftsdialogen",
+      );
     } catch (error) {
       console.error("Failed to generate PDF:", error);
       toast.error("Kunde inte generera PDF");
@@ -97,20 +137,22 @@ export function PdfDesigner() {
     }
   };
 
-  const selectedDesign = template.designId ? PDF_DESIGNS[template.designId] : PDF_DESIGNS.standard;
+  const selectedDesign = template.designId
+    ? PDF_DESIGNS[template.designId]
+    : PDF_DESIGNS.standard;
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">PDF-förhandsvisning</h2>
+          <h2 className="text-lg font-semibold text-white">
+            PDF-förhandsvisning
+          </h2>
           <p className="text-sm text-gray-400 mt-1">
             {template.name} • Design: {selectedDesign.name}
             {template.designId && (
-              <span className="ml-2 text-emerald-400">
-                • Aktiv design
-              </span>
+              <span className="ml-2 text-emerald-400">• Aktiv design</span>
             )}
           </p>
         </div>
@@ -123,9 +165,9 @@ export function PdfDesigner() {
             <IconPrinter className="w-4 h-4 mr-2" />
             Skriv ut
           </Button>
-          <Button 
-            size="sm" 
-            onClick={handleDownloadPdf} 
+          <Button
+            size="sm"
+            onClick={handleDownloadPdf}
             disabled={downloading}
             className="bg-emerald-600 hover:bg-emerald-700"
           >
@@ -143,9 +185,9 @@ export function PdfDesigner() {
       <div className="flex-1 overflow-auto p-4 bg-gray-900">
         <div className="max-w-3xl mx-auto">
           {/* A4 Preview Container */}
-          <div 
+          <div
             className="bg-white rounded-lg shadow-2xl overflow-hidden"
-            style={{ 
+            style={{
               aspectRatio: "210 / 297",
               maxHeight: "calc(100vh - 200px)",
             }}
@@ -167,20 +209,33 @@ export function PdfDesigner() {
 // ============================================================================
 
 function generatePreviewHtml(
-  templateName: string, 
+  templateName: string,
   sections: Array<{ type: string; title: string; description?: string }>,
   trade: string = "bygg",
-  designId?: PdfDesignId
+  designId?: PdfDesignId,
+  profile?: PdfProfile,
 ): string {
-  const colors = getTradeColors(trade);
-  const selectedDesign = designId ? PDF_DESIGNS[designId] : PDF_DESIGNS.standard;
-  
+  const tradeColors = getTradeColors(trade);
+  const selectedDesign = designId
+    ? PDF_DESIGNS[designId]
+    : PDF_DESIGNS.standard;
+
+  // Använd profile-färger om de finns, annars trade-färger
+  const colors = {
+    primary: profile?.brandColor || tradeColors.primary,
+    secondary: profile?.accentColor || tradeColors.secondary,
+    accent: tradeColors.accent,
+  };
+
   // Generera sektioner HTML
-  const sectionsHtml = sections.map((section, index) => {
-    const isText = section.type === "text";
-    const isGrundinfo = section.title.toLowerCase().includes("grundinformation");
-    
-    return `
+  const sectionsHtml = sections
+    .map((section, _index) => {
+      const isText = section.type === "text";
+      const isGrundinfo = section.title
+        .toLowerCase()
+        .includes("grundinformation");
+
+      return `
       <div style="
         margin-bottom: 24px;
         border-radius: 8px;
@@ -202,7 +257,7 @@ function generatePreviewHtml(
           ${section.description ? `<span style="opacity: 0.8; font-size: 12px;">• ${section.description}</span>` : ""}
         </div>
         <div style="
-          background: ${isGrundinfo ? colors.accent : (isText ? "#f8fafc" : "#faf5ff")};
+          background: ${isGrundinfo ? colors.accent : isText ? "#f8fafc" : "#faf5ff"};
           padding: 16px;
           min-height: 60px;
           display: flex;
@@ -211,12 +266,13 @@ function generatePreviewHtml(
           color: ${isGrundinfo ? colors.primary : "#6b7280"};
           font-size: 13px;
         ">
-          ${isText ? 
-            `<div style="text-align: center;">
+          ${
+            isText
+              ? `<div style="text-align: center;">
               <div style="opacity: 0.6;">Här kommer textinnehållet att visas...</div>
               <div style="margin-top: 4px; font-size: 11px; opacity: 0.4;">${section.description || "Textsektion"}</div>
-            </div>` : 
-            `<div style="text-align: center;">
+            </div>`
+              : `<div style="text-align: center;">
               <div style="opacity: 0.6;">📷 Bildgalleri</div>
               <div style="margin-top: 4px; font-size: 11px; opacity: 0.4;">${section.description || "Bildsektion"}</div>
             </div>`
@@ -224,7 +280,8 @@ function generatePreviewHtml(
         </div>
       </div>
     `;
-  }).join("");
+    })
+    .join("");
 
   // Skapa mock report för design-rendering
   const mockReport = {
@@ -232,8 +289,8 @@ function generatePreviewHtml(
     title: templateName,
     status: "draft" as const,
     templateId: "preview-template",
-    metadata: { 
-      client: "Exempelkund", 
+    metadata: {
+      client: "Exempelkund",
       location: "Exempeladress",
       projectReference: "PROJ-001",
       assignedTo: "Exempeltekniker",
@@ -243,13 +300,13 @@ function generatePreviewHtml(
       scheduledAt: new Date().toISOString(),
       dueAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       priority: "medium" as const,
-      designId: designId
+      designId: designId,
     },
     sections: [],
     checklist: [],
     assets: [],
     updatedAt: new Date().toISOString(),
-    type: trade as any
+    type: trade as any,
   };
 
   // Använd den valda designen för att rendera HTML
@@ -257,14 +314,24 @@ function generatePreviewHtml(
     report: mockReport,
     sectionsHtml,
     metadata: {
-      "Kund": mockReport.metadata.client,
-      "Adress": mockReport.metadata.location,
-      "Projekt": mockReport.metadata.projectReference,
-      "Tekniker": mockReport.metadata.assignedTo,
-      "Datum": new Date().toLocaleDateString("sv-SE")
+      Kund: mockReport.metadata.client,
+      Adress: mockReport.metadata.location,
+      Projekt: mockReport.metadata.projectReference,
+      Tekniker: mockReport.metadata.assignedTo,
+      Datum: new Date().toLocaleDateString("sv-SE"),
     },
     colors,
-    profile: undefined
+    profile: profile
+      ? {
+          brandColor: profile.brandColor,
+          accentColor: profile.accentColor,
+          logoUrl: profile.logoUrl,
+          displayLogo: profile.displayLogo,
+          headerText: profile.headerText,
+          footerText: profile.footerText,
+          displayInternalNotes: profile.displayInternalNotes,
+        }
+      : undefined,
   });
 }
 

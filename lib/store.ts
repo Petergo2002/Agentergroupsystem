@@ -6,8 +6,29 @@ import {
   mockReports,
   mockReportTemplates,
 } from "./mocks/rapport";
+import {
+  useReportSectionsStore as _useReportSectionsStore,
+  useReportsStore as _useReportsStore,
+  useReportTemplatesStore as _useReportTemplatesStore,
+  useReportById,
+  useReportSummaries,
+  useReportSummaryById,
+  // A6: Summary store
+  useReportSummaryStore,
+  // A1: Selectors
+  useReports,
+  useReportsInitialized,
+  useReportsLoading,
+  useSectionById,
+  useSections,
+  useSectionsInitialized,
+  useSectionsLoading,
+  useTemplateById,
+  useTemplates,
+  useTemplatesInitialized,
+  useTemplatesLoading,
+} from "./stores/rapportStores";
 import { createSupabaseClient, IS_DEMO_MODE } from "./supabase";
-import type { Customer, Invoice, Job, Lead, Quote } from "./types/contractor";
 import type {
   Report,
   ReportSectionDefinition,
@@ -15,68 +36,41 @@ import type {
   ReportTemplate,
 } from "./types/rapport";
 
-type CustomerRow = {
-  id: string;
-  user_id: string | null;
-  organization_id: string | null;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  company: string | null;
-  notes: string | null;
-  channel: "phone" | "email" | "sms" | "web" | "referral" | null;
-  customer_type: "residential" | "commercial" | "public-sector" | null;
-  lifecycle_stage: "prospect" | "active" | "repeat" | "inactive" | null;
-  service_area: string | null;
-  preferred_contact_method: string | null;
-  tags: string[] | null;
-  created_at: string | null;
-  updated_at: string | null;
-  is_lead: boolean | null;
-  lead_quality: number | null;
-  lead_source: string | null;
-  budget_min: number | null;
-  budget_max: number | null;
-  property_type: string | null;
-  bedrooms_min: number | null;
-  bathrooms_min: number | null;
-  location_preference: string | null;
-  timeline: string | null;
-  financing_status: string | null;
-  current_home_owner: boolean | null;
-  motivation_score: number | null;
+export const useReportsStore = _useReportsStore;
+export const useReportTemplatesStore = _useReportTemplatesStore;
+export const useReportSectionsStore = _useReportSectionsStore;
+
+// A1: Re-export selectors
+export {
+  useReports,
+  useReportsLoading,
+  useReportsInitialized,
+  useReportById,
+  useTemplates,
+  useTemplatesLoading,
+  useTemplatesInitialized,
+  useTemplateById,
+  useSections,
+  useSectionsLoading,
+  useSectionsInitialized,
+  useSectionById,
+  // A6: Summary store
+  useReportSummaryStore,
+  useReportSummaries,
+  useReportSummaryById,
 };
+
+// CRM row types - derived from Database types for consistency
+// Note: Some stores use slightly different field names for legacy compatibility
+type CustomerRow = Database["public"]["Tables"]["contacts"]["Row"];
 type LeadRow = Database["public"]["Tables"]["leads"]["Row"];
 type JobRow = Database["public"]["Tables"]["jobs"]["Row"];
 type QuoteRow = Database["public"]["Tables"]["quotes"]["Row"];
 type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
-type EventRow = {
-  id: string;
-  user_id: string | null;
-  organization_id: string | null;
-  title: string;
-  description: string | null;
-  start_time: string;
-  end_time: string;
-  status: "busy" | "available";
-  contact_id: string | null;
-  property_id: string | null;
-  event_type: "showing" | "meeting" | "call" | "open-house" | "other" | null;
-  created_at: string | null;
-  updated_at: string | null;
-};
-type TaskRow = {
-  id: string;
-  user_id: string | null;
-  organization_id: string | null;
-  title: string;
-  due_date: string | null;
-  status: "todo" | "in-progress" | "done";
-  contact_id: string | null;
-  event_id: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-};
+type EventRow = Database["public"]["Tables"]["events"]["Row"];
+type TaskRow = Database["public"]["Tables"]["tasks"]["Row"];
+type DealRow = Database["public"]["Tables"]["deals"]["Row"];
+type PropertyRow = Database["public"]["Tables"]["properties"]["Row"];
 
 type ReportRow = Database["public"]["Tables"]["reports"]["Row"];
 type ReportTemplateRow =
@@ -174,38 +168,6 @@ interface CreateReportInput {
   sections?: Report["sections"];
   checklist?: Report["checklist"];
   assets?: Report["assets"];
-}
-
-interface ReportsStore {
-  reports: Report[];
-  loading: boolean;
-  initialized: boolean;
-  setReports: (reports: Report[]) => void;
-  upsertReport: (report: Report) => void;
-  setLoading: (loading: boolean) => void;
-  setInitialized: (initialized: boolean) => void;
-}
-
-interface ReportTemplatesStore {
-  templates: ReportTemplate[];
-  loading: boolean;
-  initialized: boolean;
-  setTemplates: (templates: ReportTemplate[]) => void;
-  upsertTemplate: (template: ReportTemplate) => void;
-  setLoading: (loading: boolean) => void;
-  setInitialized: (initialized: boolean) => void;
-}
-
-interface ReportSectionsStore {
-  sections: ReportSectionDefinition[];
-  loading: boolean;
-  initialized: boolean;
-  setSections: (sections: ReportSectionDefinition[]) => void;
-  addSection: (section: ReportSectionDefinition) => void;
-  updateSection: (id: string, section: ReportSectionDefinition) => void;
-  removeSection: (id: string) => void;
-  setLoading: (loading: boolean) => void;
-  setInitialized: (initialized: boolean) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -345,74 +307,6 @@ export const useTasksStore = create<TasksStore>((set) => ({
       tasks: state.tasks.filter((task) => task.id !== id),
     })),
   setLoading: (loading) => set({ loading }),
-}));
-
-export const useReportsStore = create<ReportsStore>((set) => ({
-  reports: [],
-  loading: false,
-  initialized: false,
-  setReports: (reports) => set({ reports, initialized: true }),
-  upsertReport: (report) =>
-    set((state) => {
-      const exists = state.reports.some((item) => item.id === report.id);
-      if (exists) {
-        return {
-          reports: state.reports.map((item) =>
-            item.id === report.id ? report : item,
-          ),
-          initialized: true,
-        };
-      }
-      return { reports: [report, ...state.reports], initialized: true };
-    }),
-  setLoading: (loading) => set({ loading }),
-  setInitialized: (initialized) => set({ initialized }),
-}));
-
-export const useReportTemplatesStore = create<ReportTemplatesStore>((set) => ({
-  templates: [],
-  loading: false,
-  initialized: false,
-  setTemplates: (templates) => set({ templates, initialized: true }),
-  upsertTemplate: (template) =>
-    set((state) => {
-      const exists = state.templates.some((item) => item.id === template.id);
-      if (exists) {
-        return {
-          templates: state.templates.map((item) =>
-            item.id === template.id ? template : item,
-          ),
-          initialized: true,
-        };
-      }
-      return { templates: [template, ...state.templates], initialized: true };
-    }),
-  setLoading: (loading) => set({ loading }),
-  setInitialized: (initialized) => set({ initialized }),
-}));
-
-export const useReportSectionsStore = create<ReportSectionsStore>((set) => ({
-  sections: [],
-  loading: false,
-  initialized: false,
-  setSections: (sections) => set({ sections, initialized: true }),
-  addSection: (section) =>
-    set((state) => ({
-      sections: [section, ...state.sections],
-      initialized: true,
-    })),
-  updateSection: (id, section) =>
-    set((state) => ({
-      sections: state.sections.map((item) => (item.id === id ? section : item)),
-      initialized: true,
-    })),
-  removeSection: (id) =>
-    set((state) => ({
-      sections: state.sections.filter((section) => section.id !== id),
-      initialized: true,
-    })),
-  setLoading: (loading) => set({ loading }),
-  setInitialized: (initialized) => set({ initialized }),
 }));
 
 // Data fetching helpers
@@ -586,6 +480,8 @@ const mapReportTemplateRow = (row: ReportTemplateRow): ReportTemplate => ({
   name: row.name,
   trade: (row.trade ?? "bygg") as ReportTemplate["trade"],
   description: row.description ?? undefined,
+  version: row.version ?? undefined,
+  designId: (row.design_id as ReportTemplate["designId"]) ?? undefined,
   sections: normalizeTemplateSections(row.sections as any[] | null | undefined),
   checklist: (row.checklist as ReportTemplate["checklist"] | null) ?? [],
   assetGuidelines:
@@ -594,7 +490,7 @@ const mapReportTemplateRow = (row: ReportTemplateRow): ReportTemplate => ({
     (row.visibility_rules as ReportTemplate["visibilityRules"] | null) ?? [],
 });
 
-const mapReportRow = (row: ReportRow): Report => ({
+export const mapReportRow = (row: ReportRow): Report => ({
   id: row.id,
   title: row.title,
   status: (row.status ?? "draft") as Report["status"],
@@ -619,16 +515,17 @@ const mapReportRow = (row: ReportRow): Report => ({
   assets: (row.assets as Report["assets"] | null) ?? [],
   createdAt: row.created_at ?? undefined,
   updatedAt: row.updated_at ?? row.created_at ?? new Date().toISOString(),
-  exportedAt: (row as any).exported_at ?? null,
-  publicId: (row as any).public_id ?? null,
-  customerEmail: (row as any).customer_email ?? null,
-  customerApprovedAt: (row as any).customer_approved_at ?? null,
-  customerApprovedBy: (row as any).customer_approved_by ?? null,
-  pdfTemplateId: (row as any).pdf_template_id ?? null,
-  coverImageUrl: (row as any).cover_image_url ?? null,
-  coverSubtitle: (row as any).cover_subtitle ?? null,
+  exportedAt: row.exported_at ?? null,
+  publicId: row.public_id ?? null,
+  customerEmail: row.customer_email ?? null,
+  customerApprovedAt: row.customer_approved_at ?? null,
+  customerApprovedBy: row.customer_approved_by ?? null,
+  pdfTemplateId: row.pdf_template_id ?? null,
+  coverImageUrl: row.cover_image_url ?? null,
+  coverSubtitle: row.cover_subtitle ?? null,
   userId: row.user_id ?? null,
   organizationId: row.organization_id ?? null,
+  version: row.version ?? undefined,
 });
 
 const mapReportSectionRow = (
@@ -667,17 +564,19 @@ export const fetchReportTemplates = async (): Promise<ReportTemplate[]> => {
 
   try {
     const supabase = createSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       console.warn("No authenticated user");
       return mockReportTemplates;
     }
 
+    // RLS handles org-level filtering
     const { data, error } = await supabase
       .from("report_templates")
       .select("*")
-      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -696,17 +595,19 @@ export const fetchReportSections = async (): Promise<
 
   try {
     const supabase = createSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       console.warn("No authenticated user");
       return mockReportSections;
     }
 
+    // RLS handles org-level filtering
     const { data, error } = await supabase
       .from("report_sections")
       .select("*")
-      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -722,17 +623,19 @@ export const fetchReports = async (): Promise<Report[]> => {
 
   try {
     const supabase = createSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       console.warn("No authenticated user");
       return mockReports;
     }
 
+    // RLS handles org-level filtering
     const { data, error } = await supabase
       .from("reports")
       .select("*")
-      .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
     if (error) throw error;
@@ -762,6 +665,15 @@ export const createReportSectionRecord = async (
     return section;
   }
 
+  // Get organization_id for RLS compliance
+  const { data: profile } = await supabase
+    .from("users")
+    .select("organization_id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const organizationId = profile?.organization_id;
+
   const { data, error } = await supabase
     .from("report_sections")
     .insert({
@@ -774,6 +686,7 @@ export const createReportSectionRecord = async (
       is_default_section: input.isDefaultSection ?? false,
       questions: [],
       user_id: userId,
+      organization_id: organizationId,
     })
     .select("*")
     .single();
@@ -846,7 +759,7 @@ export const deleteReportSectionRecord = async (id: string) => {
 };
 
 export const createReportTemplateRecord = async (
-  input: Pick<ReportTemplate, "name" | "trade" | "description"> & {
+  input: Pick<ReportTemplate, "name" | "trade" | "description" | "designId"> & {
     sections?: ReportTemplate["sections"];
     checklist?: ReportTemplate["checklist"];
   },
@@ -860,6 +773,7 @@ export const createReportTemplateRecord = async (
       name: input.name,
       trade: input.trade,
       description: input.description,
+      designId: input.designId,
       sections,
       checklist,
       assetGuidelines: [],
@@ -878,6 +792,7 @@ export const createReportTemplateRecord = async (
       name: input.name,
       trade: input.trade,
       description: input.description,
+      designId: input.designId,
       sections,
       checklist,
       assetGuidelines: [],
@@ -886,6 +801,15 @@ export const createReportTemplateRecord = async (
     useReportTemplatesStore.getState().upsertTemplate(template);
     return template;
   }
+
+  // Get organization_id for RLS compliance
+  const { data: profile } = await supabase
+    .from("users")
+    .select("organization_id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const organizationId = profile?.organization_id;
 
   const { data, error } = await supabase
     .from("report_templates")
@@ -897,7 +821,9 @@ export const createReportTemplateRecord = async (
       checklist: checklist,
       asset_guidelines: [],
       visibility_rules: [],
+      design_id: input.designId ?? null,
       user_id: userId,
+      organization_id: organizationId,
     })
     .select("*")
     .single();
@@ -909,6 +835,7 @@ export const createReportTemplateRecord = async (
       name: input.name,
       trade: input.trade,
       description: input.description,
+      designId: input.designId,
       sections,
       checklist,
       assetGuidelines: [],
@@ -949,6 +876,7 @@ export const updateReportTemplateRecord = async (
     payload.asset_guidelines = updates.assetGuidelines;
   if (updates.visibilityRules !== undefined)
     payload.visibility_rules = updates.visibilityRules;
+  if (updates.designId !== undefined) payload.design_id = updates.designId;
 
   const { data, error } = await supabase
     .from("report_templates")
@@ -981,7 +909,9 @@ export const createReport = async (
   // Hämta mallens designId om en templateId finns
   let designId: string | undefined;
   if (input.templateId) {
-    const template = useReportTemplatesStore.getState().templates.find(t => t.id === input.templateId);
+    const template = useReportTemplatesStore
+      .getState()
+      .templates.find((t) => t.id === input.templateId);
     designId = template?.designId;
   }
 
@@ -1023,10 +953,20 @@ export const createReport = async (
     return baseReport;
   }
 
+  // Get organization_id for RLS compliance
+  const { data: profile } = await supabase
+    .from("users")
+    .select("organization_id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const organizationId = profile?.organization_id;
+
   const { data, error } = await supabase
     .from("reports")
     .insert({
       user_id: userId,
+      organization_id: organizationId,
       title: baseReport.title,
       template_id: baseReport.templateId,
       trade: baseReport.type,
@@ -1082,24 +1022,34 @@ export const updateReport = async (
   const updatePayload: Record<string, any> = {
     updated_at: nowIso,
   };
-  
+
   if (updates.title !== undefined) updatePayload.title = updates.title;
   if (updates.status !== undefined) updatePayload.status = updates.status;
   if (updates.metadata !== undefined) {
     updatePayload.metadata = updates.metadata;
-    if (updates.metadata.priority) updatePayload.priority = updates.metadata.priority;
+    if (updates.metadata.priority)
+      updatePayload.priority = updates.metadata.priority;
   }
   if (updates.sections !== undefined) updatePayload.sections = updates.sections;
-  if (updates.checklist !== undefined) updatePayload.checklist = updates.checklist;
+  if (updates.checklist !== undefined)
+    updatePayload.checklist = updates.checklist;
   if (updates.assets !== undefined) updatePayload.assets = updates.assets;
-  if (updates.exportedAt !== undefined) updatePayload.exported_at = updates.exportedAt;
-  if (updates.publicId !== undefined) updatePayload.public_id = updates.publicId;
-  if (updates.customerEmail !== undefined) updatePayload.customer_email = updates.customerEmail;
-  if (updates.customerApprovedAt !== undefined) updatePayload.customer_approved_at = updates.customerApprovedAt;
-  if (updates.customerApprovedBy !== undefined) updatePayload.customer_approved_by = updates.customerApprovedBy;
-  if (updates.pdfTemplateId !== undefined) updatePayload.pdf_template_id = updates.pdfTemplateId;
-  if (updates.coverImageUrl !== undefined) updatePayload.cover_image_url = updates.coverImageUrl;
-  if (updates.coverSubtitle !== undefined) updatePayload.cover_subtitle = updates.coverSubtitle;
+  if (updates.exportedAt !== undefined)
+    updatePayload.exported_at = updates.exportedAt;
+  if (updates.publicId !== undefined)
+    updatePayload.public_id = updates.publicId;
+  if (updates.customerEmail !== undefined)
+    updatePayload.customer_email = updates.customerEmail;
+  if (updates.customerApprovedAt !== undefined)
+    updatePayload.customer_approved_at = updates.customerApprovedAt;
+  if (updates.customerApprovedBy !== undefined)
+    updatePayload.customer_approved_by = updates.customerApprovedBy;
+  if (updates.pdfTemplateId !== undefined)
+    updatePayload.pdf_template_id = updates.pdfTemplateId;
+  if (updates.coverImageUrl !== undefined)
+    updatePayload.cover_image_url = updates.coverImageUrl;
+  if (updates.coverSubtitle !== undefined)
+    updatePayload.cover_subtitle = updates.coverSubtitle;
 
   const { data, error } = await supabase
     .from("reports")
@@ -1125,15 +1075,14 @@ export const updateReport = async (
 export const deleteReport = async (id: string): Promise<void> => {
   if (IS_DEMO_MODE) {
     const currentReports = useReportsStore.getState().reports;
-    useReportsStore.getState().setReports(currentReports.filter(r => r.id !== id));
+    useReportsStore
+      .getState()
+      .setReports(currentReports.filter((r) => r.id !== id));
     return;
   }
 
   const supabase = createSupabaseClient();
-  const { error } = await supabase
-    .from("reports")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("reports").delete().eq("id", id);
 
   if (error) {
     console.error("Failed to delete report", error);
@@ -1141,7 +1090,9 @@ export const deleteReport = async (id: string): Promise<void> => {
   }
 
   const currentReports = useReportsStore.getState().reports;
-  useReportsStore.getState().setReports(currentReports.filter(r => r.id !== id));
+  useReportsStore
+    .getState()
+    .setReports(currentReports.filter((r) => r.id !== id));
 };
 
 /**
@@ -1165,7 +1116,7 @@ export const exportReportAsPdf = async (
 ): Promise<Report> => {
   const nowIso = new Date().toISOString();
   const publicId = report.publicId || generatePublicId();
-  
+
   // Uppdatera rapport med exportdatum, public_id och godkänd status
   const updatedReport = await updateReport(report.id, {
     ...report,
@@ -1236,6 +1187,24 @@ export const createEvent = async (input: {
     }
 
     const supabase = createSupabaseClient();
+
+    // Get user and their organization_id for RLS compliance
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error("No authenticated user");
+    }
+
+    const { data: profile } = await supabase
+      .from("users")
+      .select("organization_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const organizationId = profile?.organization_id;
+
     const { data, error } = await supabase
       .from("events")
       .insert({
@@ -1247,13 +1216,16 @@ export const createEvent = async (input: {
         contact_id: input.contact_id ?? null,
         property_id: input.property_id ?? null,
         event_type: input.event_type ?? "other",
+        user_id: user.id,
+        organization_id: organizationId,
       })
       .select("*")
       .single();
 
     if (error) throw error;
     return data as EventRow;
-  } catch (error) {
+  } catch (_error) {
+    console.error("Failed to create event:", _error);
     const id = Math.random().toString(36).slice(2);
     const nowIso = new Date().toISOString();
     const fallback: EventRow = {
@@ -1306,9 +1278,7 @@ export const updateEventById = async (
 ) => {
   if (IS_DEMO_MODE) {
     useEventsStore.getState().updateEvent(id, updates as Partial<EventRow>);
-    return (
-      useEventsStore.getState().events.find((e) => e.id === id) ?? null
-    );
+    return useEventsStore.getState().events.find((e) => e.id === id) ?? null;
   }
 
   const supabase = createSupabaseClient();
@@ -1317,9 +1287,11 @@ export const updateEventById = async (
   if (updates.start_time !== undefined) payload.start_time = updates.start_time;
   if (updates.end_time !== undefined) payload.end_time = updates.end_time;
   if (updates.status !== undefined) payload.status = updates.status;
-  if (updates.description !== undefined) payload.description = updates.description;
+  if (updates.description !== undefined)
+    payload.description = updates.description;
   if (updates.contact_id !== undefined) payload.contact_id = updates.contact_id;
-  if (updates.property_id !== undefined) payload.property_id = updates.property_id;
+  if (updates.property_id !== undefined)
+    payload.property_id = updates.property_id;
   if (updates.event_type !== undefined) payload.event_type = updates.event_type;
 
   const { data, error } = await supabase

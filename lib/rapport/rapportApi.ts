@@ -1,36 +1,41 @@
 /**
  * Rapport API Client
- * 
+ *
  * Centraliserad API-klient för alla rapportrelaterade operationer.
  * Hanterar CRUD, export, filtrering och caching.
  */
 
 import {
-  createReport as storeCreateReport,
-  updateReport as storeUpdateReport,
-  deleteReport as storeDeleteReport,
-  fetchReports as storeFetchReports,
-  fetchReportTemplates as storeFetchTemplates,
-  fetchReportSections as storeFetchSections,
-  exportReportAsPdf as storeExportReport,
-  createReportTemplateRecord,
-  updateReportTemplateRecord,
   createReportSectionRecord,
+  createReportTemplateRecord,
   deleteReportSectionRecord,
+  createReport as storeCreateReport,
+  deleteReport as storeDeleteReport,
+  exportReportAsPdf as storeExportReport,
+  fetchReports as storeFetchReports,
+  fetchReportSections as storeFetchSections,
+  fetchReportTemplates as storeFetchTemplates,
+  updateReport as storeUpdateReport,
+  updateReportTemplateRecord,
+  useReportSectionsStore,
   useReportsStore,
   useReportTemplatesStore,
-  useReportSectionsStore,
 } from "@/lib/store";
 import type {
   Report,
-  ReportTemplate,
-  ReportSectionDefinition,
-  ReportStatus,
   ReportMetadata,
+  ReportSectionDefinition,
   ReportSectionInstance,
+  ReportStatus,
+  ReportTemplate,
 } from "@/lib/types/rapport";
+import {
+  generatePdfHtml,
+  openPdfPreview,
+  type PdfProfile,
+  type PdfViewMode,
+} from "./pdfGenerator";
 import { renderTemplate, type TemplateContext } from "./templateEngine";
-import { generatePdfHtml, openPdfPreview, type PdfProfile, type PdfViewMode } from "./pdfGenerator";
 
 // ============================================================================
 // Types
@@ -104,7 +109,7 @@ export const rapportApi = {
   async getReports(
     filter?: ReportFilter,
     sort?: ReportSortOptions,
-    pagination?: PaginationOptions
+    pagination?: PaginationOptions,
   ): Promise<ReportListResult> {
     // Hämta alla rapporter från store
     let reports = await storeFetchReports();
@@ -205,7 +210,7 @@ export const rapportApi = {
 
   /**
    * Exporterar en rapport som PDF och arkiverar den.
-   * 
+   *
    * Flödet:
    * 1. Öppnar PDF i nytt fönster för utskrift/nedladdning
    * 2. Markerar rapporten som exporterad (sätter exportedAt)
@@ -215,7 +220,11 @@ export const rapportApi = {
   async exportReport(
     report: Report,
     customerEmail?: string,
-    options?: { viewMode?: PdfViewMode; pdfProfile?: PdfProfile; skipPdfOpen?: boolean }
+    options?: {
+      viewMode?: PdfViewMode;
+      pdfProfile?: PdfProfile;
+      skipPdfOpen?: boolean;
+    },
   ): Promise<Report> {
     // Hämta template och sections för PDF-generering
     const template = await this.getTemplate(report.templateId);
@@ -242,7 +251,7 @@ export const rapportApi = {
    */
   async previewReport(
     report: Report,
-    options?: { viewMode?: PdfViewMode; pdfProfile?: PdfProfile }
+    options?: { viewMode?: PdfViewMode; pdfProfile?: PdfProfile },
   ): Promise<void> {
     const template = await this.getTemplate(report.templateId);
     const sections = await this.getSections();
@@ -268,7 +277,7 @@ export const rapportApi = {
    */
   async openPdf(
     reportId: string,
-    options?: { viewMode?: PdfViewMode; pdfProfile?: PdfProfile }
+    options?: { viewMode?: PdfViewMode; pdfProfile?: PdfProfile },
   ): Promise<void> {
     const report = await this.getReport(reportId);
     if (!report) {
@@ -292,7 +301,7 @@ export const rapportApi = {
    */
   async generatePdfHtml(
     reportId: string,
-    options?: { viewMode?: PdfViewMode; pdfProfile?: PdfProfile }
+    options?: { viewMode?: PdfViewMode; pdfProfile?: PdfProfile },
   ): Promise<string> {
     const report = await this.getReport(reportId);
     if (!report) {
@@ -320,7 +329,7 @@ export const rapportApi = {
    */
   createSectionsFromTemplate(
     template: ReportTemplate,
-    metadata: Partial<ReportMetadata>
+    metadata: Partial<ReportMetadata>,
   ): ReportSectionInstance[] {
     // Skapa template context för variabel-ersättning
     const context: TemplateContext = {
@@ -388,7 +397,7 @@ export const rapportApi = {
    * Skapar en ny mall
    */
   async createTemplate(
-    input: Pick<ReportTemplate, "name" | "trade" | "description">
+    input: Pick<ReportTemplate, "name" | "trade" | "description">,
   ): Promise<ReportTemplate> {
     return createReportTemplateRecord(input);
   },
@@ -398,7 +407,7 @@ export const rapportApi = {
    */
   async updateTemplate(
     id: string,
-    updates: Partial<ReportTemplate>
+    updates: Partial<ReportTemplate>,
   ): Promise<ReportTemplate | null> {
     return updateReportTemplateRecord(id, updates);
   },
@@ -418,7 +427,7 @@ export const rapportApi = {
    * Skapar en ny sektionsdefinition
    */
   async createSection(
-    input: Omit<ReportSectionDefinition, "id">
+    input: Omit<ReportSectionDefinition, "id">,
   ): Promise<ReportSectionDefinition> {
     return createReportSectionRecord(input);
   },
@@ -493,7 +502,7 @@ export const rapportApi = {
       // Date range filter
       if (filter.dateFrom || filter.dateTo) {
         const reportDate = new Date(
-          report.metadata.scheduledAt || report.updatedAt
+          report.metadata.scheduledAt || report.updatedAt,
         );
         if (filter.dateFrom && reportDate < new Date(filter.dateFrom)) {
           return false;
@@ -551,16 +560,18 @@ export const rapportApi = {
         case "client":
           comparison = a.metadata.client.localeCompare(b.metadata.client, "sv");
           break;
-        case "status":
+        case "status": {
           const statusOrder = { draft: 0, review: 1, approved: 2 };
           comparison = statusOrder[a.status] - statusOrder[b.status];
           break;
-        case "priority":
+        }
+        case "priority": {
           const priorityOrder = { high: 0, medium: 1, low: 2 };
           comparison =
             priorityOrder[a.metadata.priority] -
             priorityOrder[b.metadata.priority];
           break;
+        }
       }
 
       return comparison * direction;
@@ -595,9 +606,8 @@ export const rapportApi = {
       inReview: reports.filter((r) => r.status === "review").length,
       approved: reports.filter((r) => r.status === "approved").length,
       exported: reports.filter((r) => !!r.exportedAt).length,
-      thisMonth: reports.filter(
-        (r) => new Date(r.updatedAt) >= startOfMonth
-      ).length,
+      thisMonth: reports.filter((r) => new Date(r.updatedAt) >= startOfMonth)
+        .length,
       byPriority: {
         high: reports.filter((r) => r.metadata.priority === "high").length,
         medium: reports.filter((r) => r.metadata.priority === "medium").length,
@@ -624,20 +634,14 @@ export const rapportSelectors = {
 
   // Computed selectors
   useDraftReports: () =>
-    useReportsStore((state) =>
-      state.reports.filter((r) => !r.exportedAt)
-    ),
+    useReportsStore((state) => state.reports.filter((r) => !r.exportedAt)),
   useArchivedReports: () =>
-    useReportsStore((state) =>
-      state.reports.filter((r) => !!r.exportedAt)
-    ),
+    useReportsStore((state) => state.reports.filter((r) => !!r.exportedAt)),
   useReportById: (id: string) =>
-    useReportsStore((state) =>
-      state.reports.find((r) => r.id === id) ?? null
-    ),
+    useReportsStore((state) => state.reports.find((r) => r.id === id) ?? null),
   useTemplateById: (id: string) =>
-    useReportTemplatesStore((state) =>
-      state.templates.find((t) => t.id === id) ?? null
+    useReportTemplatesStore(
+      (state) => state.templates.find((t) => t.id === id) ?? null,
     ),
 };
 

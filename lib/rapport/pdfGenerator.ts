@@ -1,19 +1,23 @@
 /**
  * PDF Generator för Rapport-systemet
- * 
+ *
  * Genererar HTML för PDF-export baserat på vald design.
  */
 
 import type {
-  Report,
-  ReportTemplate,
-  ReportSectionInstance,
-  ReportSectionDefinition,
   PdfProfile,
+  Report,
   ReportAsset,
+  ReportSectionDefinition,
+  ReportSectionInstance,
+  ReportTemplate,
 } from "@/lib/types/rapport";
+
+// Re-export PdfProfile for consumers
+export type { PdfProfile };
+
+import { getTradeColors } from "@/lib/constants/colors";
 import { getPdfDesign } from "./pdfDesigns";
-import { getTradeColors, DEFAULT_TRADE_COLORS } from "@/lib/constants/colors";
 
 // ============================================================================
 // Types
@@ -34,12 +38,7 @@ export interface PdfGeneratorOptions {
 // ============================================================================
 
 export function generatePdfHtml(options: PdfGeneratorOptions): string {
-  const {
-    report,
-    template,
-    pdfProfile,
-    viewMode = "customer",
-  } = options;
+  const { report, template, pdfProfile, viewMode = "customer" } = options;
 
   // Determine colors
   const baseColors = getTradeColors(report.type);
@@ -53,20 +52,24 @@ export function generatePdfHtml(options: PdfGeneratorOptions): string {
 
   // Filter sections
   const visibleSections = report.sections.filter((section) => {
-    if (!isInternal && section.visibility?.audience === "internal") return false;
+    if (!isInternal && section.visibility?.audience === "internal")
+      return false;
     return true;
   });
 
   // Generate sections HTML
-  const sectionsHtml = visibleSections.map((section, index) => 
-    renderSectionContent(section, index + 1, colors, isInternal, report)
-  ).join("");
+  const sectionsHtml = visibleSections
+    .map((section, index) =>
+      renderSectionContent(section, index + 1, colors, isInternal, report),
+    )
+    .join("");
 
   // Get metadata values
   const metadata = getMetadataFromReport(report);
 
   // Select design renderer
-  const designId = pdfProfile?.designId || report.metadata.designId || "standard";
+  const designId =
+    pdfProfile?.designId || report.metadata.designId || "standard";
   const design = getPdfDesign(designId);
 
   // Render full HTML using the design template
@@ -88,52 +91,67 @@ function renderSectionContent(
   index: number,
   colors: { primary: string; secondary: string; accent: string },
   isInternal: boolean,
-  report: Report
+  report: Report,
 ): string {
   const title = escapeHtml(section.title);
-  const isImage = section.type === "image" || section.type === "image_gallery" || section.type === "image_annotated";
-  
+  const isImage =
+    section.type === "image" ||
+    section.type === "image_gallery" ||
+    section.type === "image_annotated";
+
   // Styling vars
   const bgColor = isImage ? "#faf5ff" : "#f8fafc";
   const borderColor = isImage ? "#a855f7" : colors.secondary;
-  
+
   let contentHtml = "";
 
   if (isImage) {
-    const assetIds = section.assetIds || (section.assetId ? [section.assetId] : []);
+    const assetIds =
+      section.assetIds || (section.assetId ? [section.assetId] : []);
     // Lookup assets
-    const assets = assetIds.map(id => report.assets?.find(a => a.id === id)).filter(Boolean) as ReportAsset[];
+    const assets = assetIds
+      .map((id) => report.assets?.find((a) => a.id === id))
+      .filter(Boolean) as ReportAsset[];
 
     if (assets.length === 0) {
       contentHtml = `<div style="color: #64748b; font-style: italic;">Inga bilder valda</div>`;
     } else {
       contentHtml = `
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-          ${assets.map(asset => `
+          ${assets
+            .map(
+              (asset) => `
             <div>
-              <img src="${asset.url}" alt="${escapeHtml(asset.label || '')}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #e5e7eb;" />
+              <img src="${asset.url}" alt="${escapeHtml(asset.label || "")}" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid #e5e7eb;" />
               ${asset.label ? `<div style="font-size: 12px; color: #6b7280; margin-top: 4px; text-align: center;">${escapeHtml(asset.label)}</div>` : ""}
             </div>
-          `).join("")}
+          `,
+            )
+            .join("")}
         </div>
       `;
     }
   } else {
     const content = section.content || "";
-    contentHtml = content ? `
+    contentHtml = content
+      ? `
       <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #e5e7eb; white-space: pre-wrap;">${escapeHtml(content)}</div>
-    ` : `
+    `
+      : `
       <div style="color: #64748b; font-style: italic;">Ingen text angiven</div>
     `;
   }
 
   // Internal Notes
-  const notesHtml = isInternal && section.internalNotes ? `
+  const notesHtml =
+    isInternal && section.internalNotes
+      ? `
     <div style="margin-top: 16px; padding: 12px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;">
       <div style="font-size: 10px; font-weight: 700; color: #b45309; text-transform: uppercase; margin-bottom: 4px;">INTERN ANTECKNING</div>
       <div style="color: #92400e; font-size: 13px;">${escapeHtml(section.internalNotes)}</div>
     </div>
-  ` : "";
+  `
+      : "";
 
   return `
     <div class="section-block" style="margin-bottom: 24px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -155,13 +173,13 @@ function renderSectionContent(
 
 function getMetadataFromReport(report: Report): Record<string, string> {
   return {
-    "Kund": report.metadata.client || "",
-    "Adress": report.metadata.location || "",
-    "Kontaktperson": report.metadata.assignedTo || "",
-    "Projektreferens": report.metadata.projectReference || "",
-    "Datum": formatDate(report.metadata.scheduledAt),
-    "Utredare": report.metadata.investigator || "",
-    "Telefon": report.metadata.phone || "",
+    Kund: report.metadata.client || "",
+    Adress: report.metadata.location || "",
+    Kontaktperson: report.metadata.assignedTo || "",
+    Projektreferens: report.metadata.projectReference || "",
+    Datum: formatDate(report.metadata.scheduledAt),
+    Utredare: report.metadata.investigator || "",
+    Telefon: report.metadata.phone || "",
     "E-post": report.metadata.email || "",
   };
 }
@@ -190,7 +208,7 @@ function formatDate(dateString: string | undefined): string {
  */
 export function openPdfPreview(options: PdfGeneratorOptions): Window | null {
   const html = generatePdfHtml(options);
-  
+
   const htmlWithInstructions = html.replace(
     "</body>",
     `
@@ -211,16 +229,16 @@ export function openPdfPreview(options: PdfGeneratorOptions): Window | null {
         </div>
       </div>
     </div>
-    </body>`
+    </body>`,
   );
-  
+
   const win = window.open("", "_blank");
   if (win) {
     win.document.write(htmlWithInstructions);
     win.document.close();
     win.focus();
   }
-  
+
   return win;
 }
 

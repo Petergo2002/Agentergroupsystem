@@ -3,28 +3,26 @@
 import {
   AlertOctagon,
   Calendar,
+  ChevronRight,
   Clock,
   Filter,
-  Headphones,
+  Lock,
   Phone,
+  PhoneIncoming,
+  PhoneOutgoing,
+  Play,
   TrendingDown,
   TrendingUp,
   X,
-  ChevronRight,
-  PhoneIncoming,
-  PhoneOutgoing,
-  PhoneMissed,
-  Play,
-  Lock,
 } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
+import { SiteHeader } from "@/components/site-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useVapiAnalytics, useVapiAssistants } from "@/lib/analytics/useVapi";
 import { useFeatureFlags } from "@/lib/hooks/use-feature-flags";
-import { SiteHeader } from "@/components/site-header";
 
 const RANGE_TO_DAYS: Record<string, number> = {
   "24h": 1,
@@ -48,7 +46,7 @@ interface CallLog {
   recordingUrl?: string;
   transcription?: string;
   summary?: string;
-  analysis?: any;
+  analysis?: Record<string, unknown>;
 }
 
 export default function CallAnalyticsPage() {
@@ -63,6 +61,19 @@ export default function CallAnalyticsPage() {
     return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   }, [timeRange]);
 
+  // Convert filter to assistantId for API
+  const selectedAssistantId =
+    assistantFilter === "all" ? "__all__" : assistantFilter;
+
+  // Hooks must be called unconditionally before any early returns
+  const { assistants } = useVapiAssistants();
+  const { logs, metrics, isLoading, error } = useVapiAnalytics({
+    startDate,
+    endDate,
+    assistantId: selectedAssistantId,
+    limit: 200,
+  });
+
   if (!flagsLoading && !flags?.call_analytics_enabled) {
     return (
       <div className="flex flex-1 flex-col">
@@ -71,24 +82,14 @@ export default function CallAnalyticsPage() {
           <Alert className="max-w-md">
             <Lock className="h-4 w-4" />
             <AlertDescription>
-              Denna funktion är inte tillgänglig. Kontakta administratören för att aktivera AI Analytics – Call.
+              Denna funktion är inte tillgänglig. Kontakta administratören för
+              att aktivera AI Analytics – Call.
             </AlertDescription>
           </Alert>
         </div>
       </div>
     );
   }
-
-  // Convert filter to assistantId for API
-  const selectedAssistantId = assistantFilter === "all" ? "__all__" : assistantFilter;
-
-  const { assistants } = useVapiAssistants();
-  const { logs, metrics, isLoading, error } = useVapiAnalytics({
-    startDate,
-    endDate,
-    assistantId: selectedAssistantId,
-    limit: 200,
-  });
 
   if (isLoading) {
     return (
@@ -127,12 +128,15 @@ export default function CallAnalyticsPage() {
                 <div className="mt-3 space-y-2">
                   <p>Möjliga orsaker:</p>
                   <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>Vapi-integration är inte konfigurerad för din organisation</li>
+                    <li>
+                      Vapi-integration är inte konfigurerad för din organisation
+                    </li>
                     <li>Vapi API-nyckel saknas eller är ogiltig</li>
                     <li>Vapi API svarar inte (timeout)</li>
                   </ul>
                   <p className="mt-3">
-                    Kontakta din administratör för att konfigurera Vapi-integration.
+                    Kontakta din administratör för att konfigurera
+                    Vapi-integration.
                   </p>
                 </div>
               </div>
@@ -260,61 +264,91 @@ export default function CallAnalyticsPage() {
             {logs.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full p-8 text-center text-muted-foreground">
                 <Phone className="w-12 h-12 mb-3 opacity-20" />
-                <p className="text-sm">Inga samtal hittades för denna period.</p>
+                <p className="text-sm">
+                  Inga samtal hittades för denna period.
+                </p>
               </div>
             ) : (
               <div className="divide-y divide-border/50">
                 {logs.map((log: CallLog) => {
                   const isSelected = selectedCall?.id === log.id;
                   const durationMin = Math.round((log.duration || 0) / 60);
-                  
+
                   return (
                     <button
+                      type="button"
                       key={log.id}
                       onClick={() => setSelectedCall(log)}
                       className={`w-full text-left px-4 py-4 hover:bg-muted/50 transition-all flex items-start gap-3 group ${
-                        isSelected ? "bg-muted border-l-2 border-primary pl-[14px]" : "pl-4 border-l-2 border-transparent"
+                        isSelected
+                          ? "bg-muted border-l-2 border-primary pl-[14px]"
+                          : "pl-4 border-l-2 border-transparent"
                       }`}
                     >
-                      <div className={`flex-shrink-0 mt-0.5 w-10 h-10 rounded-full flex items-center justify-center shadow-sm border ${
-                        log.status === "ended" || log.status === "completed" ? "bg-green-50 border-green-100 text-green-600" : 
-                        log.status === "failed" || log.status === "no-answer" ? "bg-red-50 border-red-100 text-red-600" : "bg-gray-50 border-gray-100 text-gray-500"
-                      }`}>
+                      <div
+                        className={`flex-shrink-0 mt-0.5 w-10 h-10 rounded-full flex items-center justify-center shadow-sm border ${
+                          log.status === "ended" || log.status === "completed"
+                            ? "bg-green-50 border-green-100 text-green-600"
+                            : log.status === "failed" ||
+                                log.status === "no-answer"
+                              ? "bg-red-50 border-red-100 text-red-600"
+                              : "bg-gray-50 border-gray-100 text-gray-500"
+                        }`}
+                      >
                         {log.direction === "inbound" ? (
                           <PhoneIncoming className="w-5 h-5" />
                         ) : (
                           <PhoneOutgoing className="w-5 h-5" />
                         )}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold text-foreground truncate">
-                            {log.direction === "inbound" ? (log.from || "Okänt nummer") : (log.to || "Okänt nummer")}
+                            {log.direction === "inbound"
+                              ? log.from || "Okänt nummer"
+                              : log.to || "Okänt nummer"}
                           </span>
                           <span className="text-xs text-muted-foreground flex-shrink-0 tabular-nums">
-                            {new Date(log.startTime).toLocaleDateString("sv-SE", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
+                            {new Date(log.startTime).toLocaleDateString(
+                              "sv-SE",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
                           </span>
                         </div>
-                        
-                        <p className={`text-sm truncate line-clamp-1 ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground/80"}`}>
-                          {assistants.find((a) => a.id === log.assistantId)?.name || "AI Assistent"}
+
+                        <p
+                          className={`text-sm truncate line-clamp-1 ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground/80"}`}
+                        >
+                          {assistants.find((a) => a.id === log.assistantId)
+                            ?.name || "AI Assistent"}
                         </p>
-                        
+
                         <div className="flex items-center gap-2 pt-1">
-                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                            log.status === "ended" || log.status === "completed" ? "bg-green-50 text-green-700 border-green-200" : 
-                            log.status === "failed" || log.status === "no-answer" ? "bg-red-50 text-red-700 border-red-200" : 
-                            "bg-gray-50 text-gray-700 border-gray-200"
-                          }`}>
-                            {log.status === "ended" || log.status === "completed" ? "Slutförd" : 
-                             log.status === "failed" ? "Misslyckad" : 
-                             log.status === "no-answer" ? "Inget svar" : log.status}
+                          <span
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                              log.status === "ended" ||
+                              log.status === "completed"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : log.status === "failed" ||
+                                    log.status === "no-answer"
+                                  ? "bg-red-50 text-red-700 border-red-200"
+                                  : "bg-gray-50 text-gray-700 border-gray-200"
+                            }`}
+                          >
+                            {log.status === "ended" ||
+                            log.status === "completed"
+                              ? "Slutförd"
+                              : log.status === "failed"
+                                ? "Misslyckad"
+                                : log.status === "no-answer"
+                                  ? "Inget svar"
+                                  : log.status}
                           </span>
                           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                             <Clock className="w-3 h-3" />
@@ -322,7 +356,9 @@ export default function CallAnalyticsPage() {
                           </span>
                         </div>
                       </div>
-                      <ChevronRight className={`w-4 h-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+                      <ChevronRight
+                        className={`w-4 h-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      />
                     </button>
                   );
                 })}
@@ -340,8 +376,8 @@ export default function CallAnalyticsPage() {
                 <span className="font-semibold text-base">Samtalsdetaljer</span>
               </div>
               {selectedCall && (
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   onClick={() => setSelectedCall(null)}
@@ -357,7 +393,9 @@ export default function CallAnalyticsPage() {
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
                   <Phone className="w-8 h-8 text-muted-foreground/50" />
                 </div>
-                <h3 className="text-lg font-medium text-foreground mb-1">Inget samtal valt</h3>
+                <h3 className="text-lg font-medium text-foreground mb-1">
+                  Inget samtal valt
+                </h3>
                 <p className="text-sm text-muted-foreground">
                   Välj ett samtal från listan till vänster för att se detaljerna
                 </p>
@@ -367,7 +405,9 @@ export default function CallAnalyticsPage() {
                 {/* Call Info Bar */}
                 <div className="bg-muted/30 border-b px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-y-2 gap-x-4 text-xs">
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Riktning</span>
+                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                      Riktning
+                    </span>
                     <span className="font-medium truncate flex items-center gap-1">
                       {selectedCall.direction === "inbound" ? (
                         <>
@@ -383,24 +423,47 @@ export default function CallAnalyticsPage() {
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Längd</span>
+                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                      Längd
+                    </span>
                     <span className="font-medium truncate">
                       {Math.round((selectedCall.duration || 0) / 60)} min
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">Status</span>
-                    <span className={`font-medium px-1.5 py-0.5 rounded-md inline-flex w-fit items-center gap-1 ${
-                      selectedCall.status === "ended" || selectedCall.status === "completed" ? "bg-green-50 text-green-700" : 
-                      selectedCall.status === "failed" || selectedCall.status === "no-answer" ? "bg-red-50 text-red-700" : "bg-gray-100"
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${
-                        selectedCall.status === "ended" || selectedCall.status === "completed" ? "bg-green-500" : 
-                        selectedCall.status === "failed" || selectedCall.status === "no-answer" ? "bg-red-500" : "bg-gray-500"
-                      }`} />
-                      {selectedCall.status === "ended" || selectedCall.status === "completed" ? "Slutförd" : 
-                       selectedCall.status === "failed" ? "Misslyckad" : 
-                       selectedCall.status === "no-answer" ? "Inget svar" : selectedCall.status}
+                    <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                      Status
+                    </span>
+                    <span
+                      className={`font-medium px-1.5 py-0.5 rounded-md inline-flex w-fit items-center gap-1 ${
+                        selectedCall.status === "ended" ||
+                        selectedCall.status === "completed"
+                          ? "bg-green-50 text-green-700"
+                          : selectedCall.status === "failed" ||
+                              selectedCall.status === "no-answer"
+                            ? "bg-red-50 text-red-700"
+                            : "bg-gray-100"
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          selectedCall.status === "ended" ||
+                          selectedCall.status === "completed"
+                            ? "bg-green-500"
+                            : selectedCall.status === "failed" ||
+                                selectedCall.status === "no-answer"
+                              ? "bg-red-500"
+                              : "bg-gray-500"
+                        }`}
+                      />
+                      {selectedCall.status === "ended" ||
+                      selectedCall.status === "completed"
+                        ? "Slutförd"
+                        : selectedCall.status === "failed"
+                          ? "Misslyckad"
+                          : selectedCall.status === "no-answer"
+                            ? "Inget svar"
+                            : selectedCall.status}
                     </span>
                   </div>
                 </div>
@@ -410,31 +473,53 @@ export default function CallAnalyticsPage() {
                   {/* Additional Call Info */}
                   <Card className="bg-background">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium">Samtalsinformation</CardTitle>
+                      <CardTitle className="text-sm font-medium">
+                        Samtalsinformation
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Från:</span>
-                        <span className="font-medium">{selectedCall.from || "Okänt"}</span>
+                        <span className="font-medium">
+                          {selectedCall.from || "Okänt"}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Till:</span>
-                        <span className="font-medium">{selectedCall.to || "Okänt"}</span>
+                        <span className="font-medium">
+                          {selectedCall.to || "Okänt"}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Assistent:</span>
+                        <span className="text-muted-foreground">
+                          Assistent:
+                        </span>
                         <span className="font-medium">
-                          {assistants.find((a) => a.id === selectedCall.assistantId)?.name || selectedCall.assistantId || "Okänd"}
+                          {assistants.find(
+                            (a) => a.id === selectedCall.assistantId,
+                          )?.name ||
+                            selectedCall.assistantId ||
+                            "Okänd"}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Startad:</span>
-                        <span>{new Date(selectedCall.startTime).toLocaleString("sv-SE")}</span>
+                        <span>
+                          {new Date(selectedCall.startTime).toLocaleString(
+                            "sv-SE",
+                          )}
+                        </span>
                       </div>
                       {selectedCall.endTime && (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Avslutad:</span>
-                          <span>{new Date(selectedCall.endTime).toLocaleString("sv-SE")}</span>
+                          <span className="text-muted-foreground">
+                            Avslutad:
+                          </span>
+                          <span>
+                            {new Date(selectedCall.endTime).toLocaleString(
+                              "sv-SE",
+                            )}
+                          </span>
                         </div>
                       )}
                     </CardContent>
@@ -450,7 +535,16 @@ export default function CallAnalyticsPage() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <audio controls className="w-full" src={selectedCall.recordingUrl}>
+                        <audio
+                          controls
+                          className="w-full"
+                          src={selectedCall.recordingUrl}
+                        >
+                          <track
+                            kind="captions"
+                            srcLang="sv"
+                            label="Transkription av samtalet"
+                          />
                           Din webbläsare stödjer inte ljuduppspelning.
                         </audio>
                       </CardContent>
@@ -461,10 +555,14 @@ export default function CallAnalyticsPage() {
                   {selectedCall.summary && (
                     <Card className="bg-background">
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Sammanfattning</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Sammanfattning
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{selectedCall.summary}</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                          {selectedCall.summary}
+                        </p>
                       </CardContent>
                     </Card>
                   )}
@@ -473,23 +571,30 @@ export default function CallAnalyticsPage() {
                   {selectedCall.transcription && (
                     <Card className="bg-background">
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">Transkription</CardTitle>
+                        <CardTitle className="text-sm font-medium">
+                          Transkription
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="max-h-[200px] overflow-y-auto">
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{selectedCall.transcription}</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                            {selectedCall.transcription}
+                          </p>
                         </div>
                       </CardContent>
                     </Card>
                   )}
 
-                  {!selectedCall.recordingUrl && !selectedCall.summary && !selectedCall.transcription && (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                      <p className="text-sm text-muted-foreground">
-                        Ingen inspelning eller transkription tillgänglig för detta samtal.
-                      </p>
-                    </div>
-                  )}
+                  {!selectedCall.recordingUrl &&
+                    !selectedCall.summary &&
+                    !selectedCall.transcription && (
+                      <div className="flex flex-col items-center justify-center h-full text-center">
+                        <p className="text-sm text-muted-foreground">
+                          Ingen inspelning eller transkription tillgänglig för
+                          detta samtal.
+                        </p>
+                      </div>
+                    )}
                 </div>
               </>
             )}

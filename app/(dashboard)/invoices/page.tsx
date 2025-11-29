@@ -11,10 +11,7 @@ export default function InvoicesPage() {
 
   return (
     <>
-      <SiteHeader
-        title="Fakturor"
-        showAddButton={false}
-      />
+      <SiteHeader title="Fakturor" showAddButton={false} />
       <div className="space-y-6 p-6">
         <InvoiceList
           onCreate={() => {

@@ -26,7 +26,10 @@ export async function GET() {
       .single();
 
     if (!currentUser?.is_super_admin) {
-      return NextResponse.json({ error: "Forbidden - Super admin only" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden - Super admin only" },
+        { status: 403 },
+      );
     }
 
     // Use service client to bypass RLS
@@ -51,7 +54,7 @@ export async function GET() {
       console.error("Error fetching organizations:", error);
       return NextResponse.json(
         { error: "Failed to fetch organizations", details: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -91,7 +94,7 @@ export async function GET() {
     console.error("Error in debug API:", error);
     return NextResponse.json(
       { error: "Internal server error", details: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

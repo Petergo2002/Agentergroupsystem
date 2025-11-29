@@ -1,23 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useVapiStore } from "@/lib/vapiStore";
-import type {
-  VapiAssistant,
-  VapiCallInitiateResponse,
-  VapiCallStatus,
-} from "./vapi";
+import type { VapiAssistant } from "./vapi";
 
 const jsonFetcher = async (url: string, init?: RequestInit) => {
   // Add timeout to prevent hanging requests
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-  
+
   try {
-    const r = await fetch(url, { 
-      ...init, 
-      signal: controller.signal 
+    const r = await fetch(url, {
+      ...init,
+      signal: controller.signal,
     });
     clearTimeout(timeoutId);
-    
+
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
       const msg = (data as any)?.error || r.statusText || "Request failed";
@@ -28,8 +24,10 @@ const jsonFetcher = async (url: string, init?: RequestInit) => {
     return data;
   } catch (error: any) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      const err: any = new Error('Request timeout - Vapi API is not responding. Please check your Vapi configuration.');
+    if (error.name === "AbortError") {
+      const err: any = new Error(
+        "Request timeout - Vapi API is not responding. Please check your Vapi configuration.",
+      );
       err.status = 408;
       throw err;
     }
@@ -46,7 +44,7 @@ export function useVapiKey() {
   return { apiKey, orgId, setApiKey, setOrgId, clearApiKey };
 }
 
-function withKeyHeaders(apiKey: string | null) {
+function _withKeyHeaders(apiKey: string | null) {
   return apiKey
     ? { headers: { "x-vapi-key": apiKey } as Record<string, string> }
     : {};

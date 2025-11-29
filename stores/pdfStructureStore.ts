@@ -2,46 +2,57 @@
  * PDF Structure Store - Zustand store för PDF-strukturhantering
  */
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type {
-  PDFStructure,
   PDFSection,
+  PDFStructure,
   PDFStyling,
-} from '@/lib/types/pdf-structure';
+} from "@/lib/types/pdf-structure";
 import {
-  DEFAULT_PDF_STYLING,
   DEFAULT_PDF_SECTIONS,
-} from '@/lib/types/pdf-structure';
+  DEFAULT_PDF_STYLING,
+} from "@/lib/types/pdf-structure";
 
 interface PDFStructureStore {
   // State
   structures: PDFStructure[];
   activeStructureId: string | null;
-  
+
   // Getters
   getActiveStructure: () => PDFStructure | null;
-  
+
   // Actions
   createStructure: (name: string, description?: string) => PDFStructure;
   setActiveStructure: (id: string) => void;
   updateStructure: (id: string, updates: Partial<PDFStructure>) => void;
   deleteStructure: (id: string) => void;
-  
+
   // Section actions
-  updateSection: (structureId: string, sectionId: string, updates: Partial<PDFSection>) => void;
-  reorderSections: (structureId: string, fromIndex: number, toIndex: number) => void;
+  updateSection: (
+    structureId: string,
+    sectionId: string,
+    updates: Partial<PDFSection>,
+  ) => void;
+  reorderSections: (
+    structureId: string,
+    fromIndex: number,
+    toIndex: number,
+  ) => void;
   toggleSectionVisibility: (structureId: string, sectionId: string) => void;
-  
+
   // Styling actions
   updateStyling: (structureId: string, updates: Partial<PDFStyling>) => void;
-  
+
   // Reset
   resetToDefault: () => void;
 }
 
 // Create default structure
-function createDefaultStructure(name: string, description?: string): PDFStructure {
+function createDefaultStructure(
+  name: string,
+  description?: string,
+): PDFStructure {
   const now = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
@@ -62,9 +73,14 @@ export const usePdfStructureStore = create<PDFStructureStore>()(
   persist(
     (set, get) => ({
       // Initial state
-      structures: [createDefaultStructure('Standard läckagerapport', 'Standard mall för läckagerapporter')],
+      structures: [
+        createDefaultStructure(
+          "Standard läckagerapport",
+          "Standard mall för läckagerapporter",
+        ),
+      ],
       activeStructureId: null,
-      
+
       // Getters
       getActiveStructure: () => {
         const { structures, activeStructureId } = get();
@@ -77,82 +93,83 @@ export const usePdfStructureStore = create<PDFStructureStore>()(
           }
           return null;
         }
-        return structures.find(s => s.id === activeStructureId) || null;
+        return structures.find((s) => s.id === activeStructureId) || null;
       },
-      
+
       // Actions
       createStructure: (name, description) => {
         const newStructure = createDefaultStructure(name, description);
-        set(state => ({
+        set((state) => ({
           structures: [...state.structures, newStructure],
           activeStructureId: newStructure.id,
         }));
         return newStructure;
       },
-      
+
       setActiveStructure: (id) => {
         set({ activeStructureId: id });
       },
-      
+
       updateStructure: (id, updates) => {
-        set(state => ({
-          structures: state.structures.map(s =>
+        set((state) => ({
+          structures: state.structures.map((s) =>
             s.id === id
               ? { ...s, ...updates, updatedAt: new Date().toISOString() }
-              : s
+              : s,
           ),
         }));
       },
-      
+
       deleteStructure: (id) => {
-        set(state => {
-          const newStructures = state.structures.filter(s => s.id !== id);
-          const newActiveId = state.activeStructureId === id
-            ? (newStructures[0]?.id || null)
-            : state.activeStructureId;
+        set((state) => {
+          const newStructures = state.structures.filter((s) => s.id !== id);
+          const newActiveId =
+            state.activeStructureId === id
+              ? newStructures[0]?.id || null
+              : state.activeStructureId;
           return {
             structures: newStructures,
             activeStructureId: newActiveId,
           };
         });
       },
-      
+
       // Section actions
       updateSection: (structureId, sectionId, updates) => {
-        set(state => ({
-          structures: state.structures.map(structure =>
+        set((state) => ({
+          structures: state.structures.map((structure) =>
             structure.id === structureId
               ? {
                   ...structure,
-                  sections: structure.sections.map(section =>
+                  sections: structure.sections.map((section) =>
                     section.id === sectionId
                       ? { ...section, ...updates }
-                      : section
+                      : section,
                   ),
                   updatedAt: new Date().toISOString(),
                 }
-              : structure
+              : structure,
           ),
         }));
       },
-      
+
       reorderSections: (structureId, fromIndex, toIndex) => {
-        set(state => ({
-          structures: state.structures.map(structure => {
+        set((state) => ({
+          structures: state.structures.map((structure) => {
             if (structure.id !== structureId) return structure;
-            
+
             const sections = [...structure.sections];
             const [movedSection] = sections.splice(fromIndex, 1);
             if (!movedSection) return structure; // Guard against undefined
-            
+
             sections.splice(toIndex, 0, movedSection);
-            
+
             // Update order property
             const reorderedSections = sections.map((section, index) => ({
               ...section,
               order: index,
             }));
-            
+
             return {
               ...structure,
               sections: reorderedSections,
@@ -161,50 +178,55 @@ export const usePdfStructureStore = create<PDFStructureStore>()(
           }),
         }));
       },
-      
+
       toggleSectionVisibility: (structureId, sectionId) => {
-        set(state => ({
-          structures: state.structures.map(structure =>
+        set((state) => ({
+          structures: state.structures.map((structure) =>
             structure.id === structureId
               ? {
                   ...structure,
-                  sections: structure.sections.map(section =>
+                  sections: structure.sections.map((section) =>
                     section.id === sectionId
                       ? { ...section, visible: !section.visible }
-                      : section
+                      : section,
                   ),
                   updatedAt: new Date().toISOString(),
                 }
-              : structure
+              : structure,
           ),
         }));
       },
-      
+
       // Styling actions
       updateStyling: (structureId, updates) => {
-        set(state => ({
-          structures: state.structures.map(structure =>
+        set((state) => ({
+          structures: state.structures.map((structure) =>
             structure.id === structureId
               ? {
                   ...structure,
                   styling: { ...structure.styling, ...updates },
                   updatedAt: new Date().toISOString(),
                 }
-              : structure
+              : structure,
           ),
         }));
       },
-      
+
       // Reset
       resetToDefault: () => {
         set({
-          structures: [createDefaultStructure('Standard läckagerapport', 'Standard mall för läckagerapporter')],
+          structures: [
+            createDefaultStructure(
+              "Standard läckagerapport",
+              "Standard mall för läckagerapporter",
+            ),
+          ],
           activeStructureId: null,
         });
       },
     }),
     {
-      name: 'pdf-structure-store',
-    }
-  )
+      name: "pdf-structure-store",
+    },
+  ),
 );

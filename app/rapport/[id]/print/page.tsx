@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { IconDownload, IconLoader2, IconPrinter } from "@tabler/icons-react";
 import { useParams, useSearchParams } from "next/navigation";
-import { IconLoader2, IconPrinter, IconDownload } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { generatePdfHtml, type PdfViewMode } from "@/lib/rapport/pdfGenerator";
 import { usePdfProfileStore } from "@/lib/pdf-profile-store";
+import { generatePdfHtml, type PdfViewMode } from "@/lib/rapport/pdfGenerator";
 import { fetchReportSections, fetchReportTemplates } from "@/lib/store";
-import type { Report, ReportTemplate, ReportSectionDefinition } from "@/lib/types/rapport";
+import type {
+  Report,
+  ReportSectionDefinition,
+  ReportTemplate,
+} from "@/lib/types/rapport";
 
 // Mock fetch report - i produktion hämtas detta från API/Supabase
 async function fetchReport(id: string): Promise<Report | null> {
@@ -120,8 +124,14 @@ export default function PrintReportPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <p className="text-destructive">{error || "Rapporten kunde inte hittas"}</p>
-          <Button variant="outline" className="mt-4" onClick={() => window.history.back()}>
+          <p className="text-destructive">
+            {error || "Rapporten kunde inte hittas"}
+          </p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => window.history.back()}
+          >
             Gå tillbaka
           </Button>
         </div>

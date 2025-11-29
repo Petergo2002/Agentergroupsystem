@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { AuthUser } from "@/lib/auth";
 import { useAuthStore } from "@/lib/store";
 import { createSupabaseClient } from "@/lib/supabase";
 
@@ -45,10 +46,12 @@ export default function ProfilePage() {
 
       if (dbError) throw dbError;
 
-      setUser(authData.user as any);
+      setUser(authData.user as AuthUser | null);
       toast.success("Profile updated successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update profile");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update profile";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

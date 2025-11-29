@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { mapReportRow } from "@/lib/store";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ publicId: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ publicId: string }> },
 ) {
   try {
     const { publicId } = await params;
@@ -20,7 +21,7 @@ export async function GET(
     if (reportError || !reportData) {
       return NextResponse.json(
         { error: "Rapport hittades inte" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -35,40 +36,44 @@ export async function GET(
 
     const templateRow = templateData as any;
 
-    // Mappa till frontend-format
+    // Normalisera rapport med samma logik som mapReportRow, men exponera bara publika fält
+    const fullReport = mapReportRow(reportRow);
+
     const mappedReport = {
-      id: reportRow.id,
-      title: reportRow.title,
-      status: reportRow.status,
-      type: reportRow.type,
-      templateId: reportRow.template_id,
-      metadata: reportRow.metadata,
-      sections: reportRow.sections,
-      checklist: reportRow.checklist,
-      assets: reportRow.assets,
-      updatedAt: reportRow.updated_at,
-      exportedAt: reportRow.exported_at,
-      publicId: reportRow.public_id,
-      customerEmail: reportRow.customer_email,
-      customerApprovedAt: reportRow.customer_approved_at,
-      customerApprovedBy: reportRow.customer_approved_by,
+      id: fullReport.id,
+      title: fullReport.title,
+      status: fullReport.status,
+      type: fullReport.type,
+      templateId: fullReport.templateId,
+      metadata: fullReport.metadata,
+      sections: fullReport.sections,
+      checklist: fullReport.checklist,
+      assets: fullReport.assets,
+      updatedAt: fullReport.updatedAt,
+      exportedAt: fullReport.exportedAt,
+      publicId: fullReport.publicId,
+      customerEmail: fullReport.customerEmail,
+      customerApprovedAt: fullReport.customerApprovedAt,
+      customerApprovedBy: fullReport.customerApprovedBy,
     };
 
-    const mappedTemplate = templateRow ? {
-      id: templateRow.id,
-      name: templateRow.name,
-      description: templateRow.description,
-      trade: templateRow.trade,
-      sections: templateRow.sections,
-      checklist: templateRow.checklist,
-    } : null;
+    const mappedTemplate = templateRow
+      ? {
+          id: templateRow.id,
+          name: templateRow.name,
+          description: templateRow.description,
+          trade: templateRow.trade,
+          sections: templateRow.sections,
+          checklist: templateRow.checklist,
+        }
+      : null;
 
-    return NextResponse.json({ report: mappedReport, template: mappedTemplate });
+    return NextResponse.json({
+      report: mappedReport,
+      template: mappedTemplate,
+    });
   } catch (error) {
     console.error("Error fetching public report:", error);
-    return NextResponse.json(
-      { error: "Internt serverfel" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internt serverfel" }, { status: 500 });
   }
 }

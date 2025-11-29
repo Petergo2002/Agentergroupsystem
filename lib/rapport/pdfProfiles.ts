@@ -1,6 +1,6 @@
 /**
  * PDF Profiles - Fördefinierade stilprofiler för PDF-export
- * 
+ *
  * Dessa profiler kan användas för att snabbt skapa professionella rapporter
  * med olika visuella stilar.
  */

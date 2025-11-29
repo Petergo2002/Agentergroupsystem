@@ -1,5 +1,4 @@
-import type { Report, ReportSectionInstance, PdfProfile } from "@/lib/types/rapport";
-import { getTradeColors } from "@/lib/constants/colors";
+import type { PdfProfile, Report } from "@/lib/types/rapport";
 
 // ============================================================================
 // Types
@@ -51,15 +50,39 @@ function formatDate(dateString: string | undefined): string {
 const StandardDesign: PdfDesignRenderer = {
   name: "Standard",
   description: "Klassisk och professionell layout med tydlig struktur.",
-  render: ({ report, sectionsHtml, metadata, colors }) => {
+  render: ({ report, sectionsHtml, metadata, colors, profile }) => {
     // Check for cover image
-    const coverAsset = report.assets.find(a => a.tags?.includes("cover") || a.label?.toLowerCase().includes("omslag"));
-    
-    const coverHtml = coverAsset ? `
+    const coverAsset = report.assets.find(
+      (a) =>
+        a.tags?.includes("cover") || a.label?.toLowerCase().includes("omslag"),
+    );
+
+    const coverHtml = coverAsset
+      ? `
       <div style="margin-top: 24px;">
         <img src="${coverAsset.url}" alt="Omslagsbild" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 12px;" />
       </div>
-    ` : "";
+    `
+      : "";
+
+    // Branding från profile
+    const headerText = profile?.headerText || "RAPPORT";
+    const footerText =
+      profile?.footerText ||
+      `Genererad ${formatDate(new Date().toISOString())}`;
+    const showLogo = profile?.displayLogo && profile?.logoUrl;
+    const logoUrl = profile?.logoUrl || "";
+    const brandColor = profile?.brandColor || colors.primary;
+    const accentColor = profile?.accentColor || colors.secondary;
+
+    // Logo HTML
+    const logoHtml = showLogo
+      ? `
+      <img src="${logoUrl}" alt="Logo" style="height: 40px; max-width: 120px; object-fit: contain;" />
+    `
+      : `
+      <div style="width: 48px; height: 48px; background: ${accentColor}; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px;">R</div>
+    `;
 
     return `
 <!DOCTYPE html>
@@ -76,11 +99,11 @@ const StandardDesign: PdfDesignRenderer = {
 </head>
 <body>
   <!-- Header -->
-  <header style="background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.primary}dd 100%); color: white; padding: 24px 40px; display: flex; justify-content: space-between; align-items: center;">
+  <header style="background: linear-gradient(135deg, ${brandColor} 0%, ${brandColor}dd 100%); color: white; padding: 24px 40px; display: flex; justify-content: space-between; align-items: center;">
     <div style="display: flex; align-items: center; gap: 16px;">
-      <div style="width: 48px; height: 48px; background: ${colors.secondary}; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px;">R</div>
+      ${logoHtml}
       <div>
-        <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px;">RAPPORT</div>
+        <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px;">${escapeHtml(headerText)}</div>
         <div style="font-size: 18px; font-weight: 600;">${escapeHtml(report.type)}</div>
       </div>
     </div>
@@ -91,36 +114,40 @@ const StandardDesign: PdfDesignRenderer = {
 
   <!-- Title Section -->
   <div style="padding: 40px; border-bottom: 1px solid #e5e7eb;">
-    <h1 style="font-size: 28px; font-weight: 700; color: ${colors.primary}; margin-bottom: 8px;">${escapeHtml(report.title)}</h1>
-    <p style="color: #64748b; font-size: 15px;">${escapeHtml(metadata.client)} • ${escapeHtml(metadata.location)}</p>
+    <h1 style="font-size: 28px; font-weight: 700; color: ${brandColor}; margin-bottom: 8px;">${escapeHtml(report.title)}</h1>
+    <p style="color: #64748b; font-size: 15px;">${escapeHtml(metadata.Kund || metadata.client)} • ${escapeHtml(metadata.Adress || metadata.location)}</p>
     ${coverHtml}
   </div>
 
   <!-- Metadata Grid -->
   <div style="padding: 24px 40px; background: #f8fafc; border-bottom: 1px solid #e5e7eb; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-    ${Object.entries(metadata).map(([key, value]) => `
+    ${Object.entries(metadata)
+      .map(
+        ([key, value]) => `
       <div>
         <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">${key}</div>
         <div style="font-size: 14px; font-weight: 500; color: #1f2937; margin-top: 2px;">${escapeHtml(value) || "-"}</div>
       </div>
-    `).join("")}
+    `,
+      )
+      .join("")}
   </div>
 
   <!-- Sections -->
   <div style="padding: 40px;">
-    <h2 style="font-size: 18px; font-weight: 600; color: ${colors.primary}; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e5e7eb;">Innehåll</h2>
+    <h2 style="font-size: 18px; font-weight: 600; color: ${brandColor}; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e5e7eb;">Innehåll</h2>
     ${sectionsHtml}
   </div>
 
   <!-- Footer -->
-  <footer style="background: ${colors.primary}; color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-top: auto;">
-    <div style="opacity: 0.8;">Genererad ${formatDate(new Date().toISOString())}</div>
+  <footer style="background: ${brandColor}; color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-top: auto;">
+    <div style="opacity: 0.8;">${escapeHtml(footerText)}</div>
     <div style="opacity: 0.8;">Sida 1</div>
   </footer>
 </body>
 </html>
     `;
-  }
+  },
 };
 
 // ============================================================================
@@ -130,10 +157,31 @@ const StandardDesign: PdfDesignRenderer = {
 const ModernHeroDesign: PdfDesignRenderer = {
   name: "Modern Hero",
   description: "Modern design med stor omslagsbild och diagonal layout.",
-  render: ({ report, sectionsHtml, metadata, colors }) => {
+  render: ({ report, sectionsHtml, metadata, colors, profile }) => {
     // Check for cover image - use a default city/building image if none exists to match the vibe
-    const coverAsset = report.assets.find(a => a.tags?.includes("cover") || a.label?.toLowerCase().includes("omslag"));
-    const coverUrl = coverAsset ? coverAsset.url : "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2000&q=80"; // Fallback city image
+    const coverAsset = report.assets.find(
+      (a) =>
+        a.tags?.includes("cover") || a.label?.toLowerCase().includes("omslag"),
+    );
+    const coverUrl = coverAsset
+      ? coverAsset.url
+      : "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2000&q=80"; // Fallback city image
+
+    // Branding från profile
+    const headerText = profile?.headerText || "Agenter Rapport System";
+    const showLogo = profile?.displayLogo && profile?.logoUrl;
+    const logoUrl = profile?.logoUrl || "";
+    const brandColor = profile?.brandColor || colors.primary;
+    const accentColor = profile?.accentColor || colors.secondary;
+
+    // Logo HTML för Modern Hero (visas i title-container)
+    const logoHtml = showLogo
+      ? `
+      <div style="margin-bottom: 20px;">
+        <img src="${logoUrl}" alt="Logo" style="height: 50px; max-width: 180px; object-fit: contain;" />
+      </div>
+    `
+      : "";
 
     return `
 <!DOCTYPE html>
@@ -183,7 +231,7 @@ const ModernHeroDesign: PdfDesignRenderer = {
       font-weight: 300; /* Thin */
       text-transform: uppercase;
       line-height: 1.1;
-      color: ${colors.primary};
+      color: ${brandColor};
       letter-spacing: 2px;
       margin-bottom: 10px;
     }
@@ -193,7 +241,7 @@ const ModernHeroDesign: PdfDesignRenderer = {
       font-weight: 700; /* Bold */
       text-transform: uppercase;
       line-height: 1.1;
-      color: ${colors.primary};
+      color: ${brandColor};
       letter-spacing: 2px;
       margin-bottom: 30px;
     }
@@ -201,7 +249,7 @@ const ModernHeroDesign: PdfDesignRenderer = {
     .separator {
       width: 80px;
       height: 6px;
-      background-color: ${colors.secondary};
+      background-color: ${accentColor};
       margin-bottom: 30px;
     }
     
@@ -231,7 +279,7 @@ const ModernHeroDesign: PdfDesignRenderer = {
     .section-number {
       font-size: 48px;
       font-weight: 300;
-      color: ${colors.secondary};
+      color: ${accentColor};
       line-height: 1;
     }
     
@@ -239,7 +287,7 @@ const ModernHeroDesign: PdfDesignRenderer = {
       font-size: 24px;
       font-weight: 600;
       text-transform: uppercase;
-      color: ${colors.primary};
+      color: ${brandColor};
       letter-spacing: 1px;
     }
     
@@ -258,7 +306,7 @@ const ModernHeroDesign: PdfDesignRenderer = {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      color: ${colors.secondary};
+      color: ${accentColor};
       margin-bottom: 5px;
     }
     
@@ -276,7 +324,8 @@ const ModernHeroDesign: PdfDesignRenderer = {
   </div>
   
   <div class="title-container">
-    <div class="company-label">Agenter Rapport System</div>
+    ${logoHtml}
+    <div class="company-label">${escapeHtml(headerText)}</div>
     <div class="main-title">Utrednings</div>
     <div class="sub-title">Rapport</div>
     <div class="separator"></div>
@@ -286,12 +335,16 @@ const ModernHeroDesign: PdfDesignRenderer = {
     
     <!-- Modern Meta Grid -->
     <div class="modern-meta-grid">
-      ${Object.entries(metadata).map(([key, value]) => `
+      ${Object.entries(metadata)
+        .map(
+          ([key, value]) => `
         <div class="meta-item">
           <label>${key}</label>
           <div>${escapeHtml(value) || "-"}</div>
         </div>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </div>
   </div>
 
@@ -302,7 +355,7 @@ const ModernHeroDesign: PdfDesignRenderer = {
 </body>
 </html>
     `;
-  }
+  },
 };
 
 // ============================================================================

@@ -1,6 +1,6 @@
 /**
  * Centrala färgdefinitioner för rapportsystemet
- * 
+ *
  * Alla komponenter som behöver branschfärger ska importera härifrån
  * för att säkerställa konsistens.
  */
@@ -24,20 +24,20 @@ export interface TradeColorScheme {
  * - elektriker: Blått tema (tekniskt, pålitligt)
  */
 export const TRADE_COLORS: Record<ReportTrade, TradeColorScheme> = {
-  läckage: { 
-    primary: "#065f46", 
-    secondary: "#10b981", 
-    accent: "#d1fae5" 
+  läckage: {
+    primary: "#065f46",
+    secondary: "#10b981",
+    accent: "#d1fae5",
   },
-  bygg: { 
-    primary: "#78350f", 
-    secondary: "#d97706", 
-    accent: "#fef3c7" 
+  bygg: {
+    primary: "#78350f",
+    secondary: "#d97706",
+    accent: "#fef3c7",
   },
-  elektriker: { 
-    primary: "#1e3a5f", 
-    secondary: "#3b82f6", 
-    accent: "#dbeafe" 
+  elektriker: {
+    primary: "#1e3a5f",
+    secondary: "#3b82f6",
+    accent: "#dbeafe",
   },
 };
 

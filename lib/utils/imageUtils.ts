@@ -10,10 +10,10 @@ export async function fileToBase64(file: File | Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result === 'string') {
+      if (typeof reader.result === "string") {
         resolve(reader.result);
       } else {
-        reject(new Error('Failed to convert file to base64'));
+        reject(new Error("Failed to convert file to base64"));
       }
     };
     reader.onerror = reject;
@@ -30,7 +30,7 @@ export async function blobUrlToBase64(blobUrl: string): Promise<string> {
     const blob = await response.blob();
     return await fileToBase64(blob);
   } catch (error) {
-    console.error('Failed to convert blob URL to base64:', error);
+    console.error("Failed to convert blob URL to base64:", error);
     throw error;
   }
 }
@@ -38,19 +38,21 @@ export async function blobUrlToBase64(blobUrl: string): Promise<string> {
 /**
  * Konverterar en array av bild-URLs (blob eller http) till base64
  */
-export async function convertImagesToBase64(imageUrls: string[]): Promise<string[]> {
+export async function convertImagesToBase64(
+  imageUrls: string[],
+): Promise<string[]> {
   const promises = imageUrls.map(async (url) => {
     // Om det är en blob URL, konvertera till base64
-    if (url.startsWith('blob:')) {
+    if (url.startsWith("blob:")) {
       return await blobUrlToBase64(url);
     }
     // Om det är en data URL, returnera som den är
-    if (url.startsWith('data:')) {
+    if (url.startsWith("data:")) {
       return url;
     }
     // Om det är en http URL, returnera som den är (PDF-renderer kan hantera det)
     return url;
   });
-  
+
   return await Promise.all(promises);
 }

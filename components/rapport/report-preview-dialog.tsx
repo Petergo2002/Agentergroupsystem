@@ -1,7 +1,12 @@
 "use client";
 
-import { IconDownload, IconPrinter, IconX, IconEye, IconEyeOff } from "@tabler/icons-react";
-import { useRef, useEffect, useState } from "react";
+import {
+  IconDownload,
+  IconEye,
+  IconEyeOff,
+  IconPrinter,
+} from "@tabler/icons-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,8 +15,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import type { Report, ReportSectionDefinition, ReportTemplate } from "@/lib/types/rapport";
+import type {
+  Report,
+  ReportSectionDefinition,
+  ReportTemplate,
+} from "@/lib/types/rapport";
 import { renderReportToIframe } from "./rapport-container";
 
 interface ReportPreviewDialogProps {
@@ -55,7 +63,7 @@ export function ReportPreviewDialog({
         template,
         sectionDefinitions,
         pdfProfile,
-        viewMode
+        viewMode,
       );
     }
   }, [open, report, template, sectionDefinitions, pdfProfile, viewMode]);
@@ -80,7 +88,9 @@ export function ReportPreviewDialog({
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <div className="flex items-start justify-between">
             <div>
-              <DialogTitle className="text-2xl">Förhandsgranska rapport</DialogTitle>
+              <DialogTitle className="text-2xl">
+                Förhandsgranska rapport
+              </DialogTitle>
               <DialogDescription className="mt-1">
                 Så här kommer rapporten att se ut som PDF
               </DialogDescription>
@@ -116,11 +126,7 @@ export function ReportPreviewDialog({
                 Skriv ut
               </Button>
               {showExportButton && (
-                <Button
-                  size="sm"
-                  onClick={handleExportPDF}
-                  className="gap-2"
-                >
+                <Button size="sm" onClick={handleExportPDF} className="gap-2">
                   <IconDownload className="h-4 w-4" />
                   Exportera & Arkivera
                 </Button>

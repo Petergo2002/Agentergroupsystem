@@ -50,10 +50,10 @@ export function processChatSessions(sessions: VapiChatSession[]): ChatMetrics {
 
     // Check if conversation was answered (has at least one assistant message)
     const hasAssistantReply =
-      session.messages?.some((m) => m.role === "assistant") || 
+      session.messages?.some((m) => m.role === "assistant") ||
       messageCount > 1 ||
       session.status === "completed";
-    
+
     if (hasAssistantReply) {
       metrics.answeredConversations++;
     }
@@ -76,7 +76,7 @@ export function processChatSessions(sessions: VapiChatSession[]): ChatMetrics {
     // Group by day - handle invalid dates gracefully
     try {
       const sessionDate = new Date(session.startTime);
-      if (!isNaN(sessionDate.getTime())) {
+      if (!Number.isNaN(sessionDate.getTime())) {
         const day = sessionDate.toLocaleDateString("sv-SE");
         metrics.conversationsByDay[day] =
           (metrics.conversationsByDay[day] || 0) + 1;
@@ -86,8 +86,11 @@ export function processChatSessions(sessions: VapiChatSession[]): ChatMetrics {
         metrics.conversationsByHour[hour] =
           (metrics.conversationsByHour[hour] || 0) + 1;
       }
-    } catch (e) {
-      console.warn(`Invalid date for session ${session.id}:`, session.startTime);
+    } catch (_e) {
+      console.warn(
+        `Invalid date for session ${session.id}:`,
+        session.startTime,
+      );
     }
 
     // Status distribution
@@ -110,22 +113,28 @@ export function processChatSessions(sessions: VapiChatSession[]): ChatMetrics {
   // Calculate averages and rates
   metrics.averageMessagesPerConversation =
     metrics.totalConversations > 0
-      ? Math.round((metrics.totalMessages / metrics.totalConversations) * 10) / 10
+      ? Math.round((metrics.totalMessages / metrics.totalConversations) * 10) /
+        10
       : 0;
 
   metrics.answerRate =
     metrics.totalConversations > 0
-      ? Math.round((metrics.answeredConversations / metrics.totalConversations) * 1000) / 10
+      ? Math.round(
+          (metrics.answeredConversations / metrics.totalConversations) * 1000,
+        ) / 10
       : 0;
 
   metrics.conversionRate =
     metrics.totalConversations > 0
-      ? Math.round((metrics.meetingsBooked / metrics.totalConversations) * 1000) / 10
+      ? Math.round(
+          (metrics.meetingsBooked / metrics.totalConversations) * 1000,
+        ) / 10
       : 0;
 
   metrics.averageCostPerConversation =
     metrics.totalConversations > 0 && metrics.totalCost
-      ? Math.round((metrics.totalCost / metrics.totalConversations) * 10000) / 10000
+      ? Math.round((metrics.totalCost / metrics.totalConversations) * 10000) /
+        10000
       : 0;
 
   console.log("📊 Final metrics:", {

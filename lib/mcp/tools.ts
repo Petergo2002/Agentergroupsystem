@@ -111,7 +111,8 @@ export const MCP_TOOLS: MCPTool[] = [
         },
         job_description: {
           type: "string",
-          description: "Description of the job or project the customer needs help with",
+          description:
+            "Description of the job or project the customer needs help with",
         },
         job_address: {
           type: "string",

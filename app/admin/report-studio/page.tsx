@@ -1,11 +1,30 @@
 "use client";
 
-import { DesignsManager } from "@/components/report-studio-v2/designs-manager";
-import { IconPalette } from "@tabler/icons-react";
+import { IconLoader2, IconPalette } from "@tabler/icons-react";
+import dynamic from "next/dynamic";
+
+// A4: Lazy load DesignsManager för snabbare initial sidladdning
+const DesignsManager = dynamic(
+  () =>
+    import("@/components/report-studio-v2/designs-manager").then(
+      (mod) => mod.DesignsManager,
+    ),
+  {
+    loading: () => (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <IconLoader2 className="w-8 h-8 animate-spin text-emerald-500 mx-auto mb-4" />
+          <p className="text-gray-400">Laddar PDF Designs...</p>
+        </div>
+      </div>
+    ),
+    ssr: false,
+  },
+);
 
 /**
  * Admin - PDF Designs Manager
- * 
+ *
  * Admins hanterar globala PDF-designs här.
  * Mallar hanteras nu av användare i deras egna dashboards.
  */
@@ -31,7 +50,7 @@ export default function AdminPdfDesignsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
-        <DesignsManager />
+        <DesignsManager isAdmin={true} />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { Calendar, Database, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -15,7 +16,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { MCP_TOOLS } from "@/lib/mcp/tools";
-import { Activity, Calendar, Database, Home, Search } from "lucide-react";
 
 // Define categories and icons
 const CATEGORIES = {
@@ -70,7 +70,10 @@ export function McpEndpointsTab() {
                   >
                     <div className="p-4 border-b border-white/5 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-500/10 text-blue-400 border-blue-500/20"
+                        >
                           {tool.name}
                         </Badge>
                       </div>
@@ -89,15 +92,28 @@ export function McpEndpointsTab() {
                             <Table>
                               <TableHeader>
                                 <TableRow className="hover:bg-transparent border-white/5">
-                                  <TableHead className="text-gray-400 h-9">Name</TableHead>
-                                  <TableHead className="text-gray-400 h-9">Type</TableHead>
-                                  <TableHead className="text-gray-400 h-9">Required</TableHead>
-                                  <TableHead className="text-gray-400 h-9">Description</TableHead>
+                                  <TableHead className="text-gray-400 h-9">
+                                    Name
+                                  </TableHead>
+                                  <TableHead className="text-gray-400 h-9">
+                                    Type
+                                  </TableHead>
+                                  <TableHead className="text-gray-400 h-9">
+                                    Required
+                                  </TableHead>
+                                  <TableHead className="text-gray-400 h-9">
+                                    Description
+                                  </TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {Object.entries(tool.inputSchema.properties).map(
-                                  ([paramName, paramDetails]: [string, any]) => (
+                                {Object.entries(
+                                  tool.inputSchema.properties,
+                                ).map(
+                                  ([paramName, paramDetails]: [
+                                    string,
+                                    any,
+                                  ]) => (
                                     <TableRow
                                       key={paramName}
                                       className="hover:bg-white/5 border-white/5"
@@ -115,20 +131,25 @@ export function McpEndpointsTab() {
                                       </TableCell>
                                       <TableCell className="py-2">
                                         {tool.inputSchema.required?.includes(
-                                          paramName
+                                          paramName,
                                         ) ? (
-                                          <Badge variant="secondary" className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border-0 text-[10px]">
+                                          <Badge
+                                            variant="secondary"
+                                            className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border-0 text-[10px]"
+                                          >
                                             Required
                                           </Badge>
                                         ) : (
-                                          <span className="text-gray-600 text-xs">Optional</span>
+                                          <span className="text-gray-600 text-xs">
+                                            Optional
+                                          </span>
                                         )}
                                       </TableCell>
                                       <TableCell className="text-gray-400 text-sm py-2">
                                         {paramDetails.description}
                                       </TableCell>
                                     </TableRow>
-                                  )
+                                  ),
                                 )}
                               </TableBody>
                             </Table>

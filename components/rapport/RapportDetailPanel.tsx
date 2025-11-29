@@ -3,8 +3,6 @@
 import {
   IconCalendarEvent,
   IconCheck,
-  IconChevronRight,
-  IconClock,
   IconEdit,
   IconFileText,
   IconMapPin,
@@ -73,8 +71,14 @@ const PRIORITY_CONFIG: Record<
   { label: string; className: string }
 > = {
   high: { label: "Hög", className: "text-red-600 bg-red-50 border-red-200" },
-  medium: { label: "Medel", className: "text-amber-600 bg-amber-50 border-amber-200" },
-  low: { label: "Låg", className: "text-slate-600 bg-slate-50 border-slate-200" },
+  medium: {
+    label: "Medel",
+    className: "text-amber-600 bg-amber-50 border-amber-200",
+  },
+  low: {
+    label: "Låg",
+    className: "text-slate-600 bg-slate-50 border-slate-200",
+  },
 };
 
 const TRADE_LABELS: Record<Report["type"], string> = {
@@ -138,9 +142,12 @@ export function RapportDetailPanel({
 
   const statusConfig = STATUS_CONFIG[report.status];
   const priorityConfig = PRIORITY_CONFIG[report.metadata.priority];
-  const completedSections = report.sections.filter((s) => s.status === "completed").length;
+  const completedSections = report.sections.filter(
+    (s) => s.status === "completed",
+  ).length;
   const totalSections = report.sections.length;
-  const progressPercent = totalSections > 0 ? (completedSections / totalSections) * 100 : 0;
+  const progressPercent =
+    totalSections > 0 ? (completedSections / totalSections) * 100 : 0;
 
   const handleEditClick = () => {
     router.push(`/rapport/${report.id}/edit`);
@@ -186,7 +193,7 @@ export function RapportDetailPanel({
           <span className="inline-flex items-center gap-1.5">
             <IconCalendarEvent className="size-4" />
             {new Date(
-              report.metadata.scheduledAt || report.updatedAt
+              report.metadata.scheduledAt || report.updatedAt,
             ).toLocaleDateString("sv-SE", {
               year: "numeric",
               month: "short",
@@ -271,7 +278,7 @@ export function RapportDetailPanel({
                     "text-xs",
                     section.status === "completed"
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-slate-200 bg-slate-50 text-slate-600"
+                      : "border-slate-200 bg-slate-50 text-slate-600",
                   )}
                 >
                   {section.status === "completed" && (
@@ -295,7 +302,9 @@ export function RapportDetailPanel({
             <dl className="space-y-2.5 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Kund</dt>
-                <dd className="font-medium text-right">{report.metadata.client}</dd>
+                <dd className="font-medium text-right">
+                  {report.metadata.client}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Projektreferens</dt>
@@ -305,7 +314,9 @@ export function RapportDetailPanel({
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Plats</dt>
-                <dd className="font-medium text-right">{report.metadata.location}</dd>
+                <dd className="font-medium text-right">
+                  {report.metadata.location}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Senast uppdaterad</dt>
@@ -333,13 +344,17 @@ export function RapportDetailPanel({
                 <dt className="text-muted-foreground">Deadline</dt>
                 <dd className="font-medium text-right">
                   {report.metadata.dueAt
-                    ? new Date(report.metadata.dueAt).toLocaleDateString("sv-SE")
+                    ? new Date(report.metadata.dueAt).toLocaleDateString(
+                        "sv-SE",
+                      )
                     : "—"}
                 </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Prioritet</dt>
-                <dd className="font-medium text-right">{priorityConfig.label}</dd>
+                <dd className="font-medium text-right">
+                  {priorityConfig.label}
+                </dd>
               </div>
               {report.exportedAt && (
                 <div className="flex justify-between">
@@ -368,7 +383,9 @@ export function RapportDetailPanel({
               label="Ifyllda"
               value={completedSections}
               icon={<IconCheck className="size-4" />}
-              highlight={completedSections === totalSections && totalSections > 0}
+              highlight={
+                completedSections === totalSections && totalSections > 0
+              }
             />
             <StatCard
               label="Checklistor"
@@ -385,10 +402,7 @@ export function RapportDetailPanel({
 
         {/* Actions */}
         <div className="flex flex-col gap-2 pt-2">
-          <Button
-            className="w-full gap-2"
-            onClick={onPreview}
-          >
+          <Button className="w-full gap-2" onClick={onPreview}>
             <IconFileText className="size-4" />
             Förhandsgranska rapport
           </Button>
@@ -424,13 +438,15 @@ function StatCard({ label, value, icon, highlight }: StatCardProps) {
     <div
       className={cn(
         "rounded-lg border p-3 text-center",
-        highlight && "border-emerald-200 bg-emerald-50"
+        highlight && "border-emerald-200 bg-emerald-50",
       )}
     >
       <div
         className={cn(
           "mx-auto mb-1 flex size-8 items-center justify-center rounded-full",
-          highlight ? "bg-emerald-100 text-emerald-600" : "bg-muted text-muted-foreground"
+          highlight
+            ? "bg-emerald-100 text-emerald-600"
+            : "bg-muted text-muted-foreground",
         )}
       >
         {icon}

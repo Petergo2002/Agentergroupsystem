@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
 import {
   IconArrowUpRight,
+  IconCheck,
   IconCircle,
   IconEraser,
-  IconCheck,
-  IconX,
   IconTrash,
+  IconX,
 } from "@tabler/icons-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -85,19 +85,25 @@ export function ImageAnnotator({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
-  
-  const [annotations, setAnnotations] = useState<Annotation[]>(initialAnnotations);
+
+  const [annotations, setAnnotations] =
+    useState<Annotation[]>(initialAnnotations);
   const [activeTool, setActiveTool] = useState<AnnotationTool>("arrow");
   const [activeColor, setActiveColor] = useState(COLORS[0]?.value ?? "#ef4444");
   const [isDrawing, setIsDrawing] = useState(false);
-  const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
-  const [currentPoint, setCurrentPoint] = useState<{ x: number; y: number } | null>(null);
+  const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(
+    null,
+  );
+  const [currentPoint, setCurrentPoint] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // Load image
   useEffect(() => {
     if (!open) return;
-    
+
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
@@ -105,7 +111,7 @@ export function ImageAnnotator({
       setImageLoaded(true);
     };
     img.src = imageUrl;
-    
+
     return () => {
       setImageLoaded(false);
     };
@@ -116,14 +122,14 @@ export function ImageAnnotator({
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     const img = imageRef.current;
-    
+
     if (!canvas || !ctx || !img) return;
 
     // Set canvas size to match image
     const maxWidth = 800;
     const maxHeight = 600;
     const scale = Math.min(maxWidth / img.width, maxHeight / img.height, 1);
-    
+
     canvas.width = img.width * scale;
     canvas.height = img.height * scale;
 
@@ -138,15 +144,30 @@ export function ImageAnnotator({
     // Draw current annotation being created
     if (isDrawing && startPoint && currentPoint) {
       if (activeTool === "arrow") {
-        drawArrow(ctx, startPoint.x, startPoint.y, currentPoint.x, currentPoint.y, activeColor);
+        drawArrow(
+          ctx,
+          startPoint.x,
+          startPoint.y,
+          currentPoint.x,
+          currentPoint.y,
+          activeColor,
+        );
       } else if (activeTool === "circle") {
         const radius = Math.sqrt(
-          Math.pow(currentPoint.x - startPoint.x, 2) + Math.pow(currentPoint.y - startPoint.y, 2)
+          (currentPoint.x - startPoint.x) ** 2 +
+            (currentPoint.y - startPoint.y) ** 2,
         );
         drawCircle(ctx, startPoint.x, startPoint.y, radius, activeColor);
       }
     }
-  }, [annotations, isDrawing, startPoint, currentPoint, activeTool, activeColor]);
+  }, [
+    annotations,
+    isDrawing,
+    startPoint,
+    currentPoint,
+    activeTool,
+    activeColor,
+  ]);
 
   useEffect(() => {
     if (imageLoaded) {
@@ -155,10 +176,12 @@ export function ImageAnnotator({
   }, [imageLoaded, drawCanvas]);
 
   // Get mouse position relative to canvas
-  const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>): { x: number; y: number } => {
+  const getMousePos = (
+    e: React.MouseEvent<HTMLCanvasElement>,
+  ): { x: number; y: number } => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
-    
+
     const rect = canvas.getBoundingClientRect();
     return {
       x: e.clientX - rect.left,
@@ -169,16 +192,18 @@ export function ImageAnnotator({
   // Mouse handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const pos = getMousePos(e);
-    
+
     if (activeTool === "eraser") {
       // Find and remove annotation at this position
       const annotationToRemove = findAnnotationAtPoint(pos.x, pos.y);
       if (annotationToRemove) {
-        setAnnotations((prev) => prev.filter((a) => a.id !== annotationToRemove.id));
+        setAnnotations((prev) =>
+          prev.filter((a) => a.id !== annotationToRemove.id),
+        );
       }
       return;
     }
-    
+
     setIsDrawing(true);
     setStartPoint(pos);
     setCurrentPoint(pos);
@@ -210,7 +235,8 @@ export function ImageAnnotator({
       setAnnotations((prev) => [...prev, newAnnotation]);
     } else if (activeTool === "circle") {
       const radius = Math.sqrt(
-        Math.pow(currentPoint.x - startPoint.x, 2) + Math.pow(currentPoint.y - startPoint.y, 2)
+        (currentPoint.x - startPoint.x) ** 2 +
+          (currentPoint.y - startPoint.y) ** 2,
       );
       if (radius > 5) {
         const newAnnotation: CircleAnnotation = {
@@ -235,11 +261,12 @@ export function ImageAnnotator({
     for (let i = annotations.length - 1; i >= 0; i--) {
       const annotation = annotations[i];
       if (!annotation) continue;
-      
+
       if (annotation.type === "circle") {
         const circleAnnotation = annotation as CircleAnnotation;
         const dist = Math.sqrt(
-          Math.pow(x - circleAnnotation.centerX, 2) + Math.pow(y - circleAnnotation.centerY, 2)
+          (x - circleAnnotation.centerX) ** 2 +
+            (y - circleAnnotation.centerY) ** 2,
         );
         if (Math.abs(dist - circleAnnotation.radius) < 10) {
           return annotation;
@@ -248,9 +275,12 @@ export function ImageAnnotator({
         const arrowAnnotation = annotation as ArrowAnnotation;
         // Check if point is near the arrow line
         const dist = distanceToLine(
-          x, y,
-          arrowAnnotation.startX, arrowAnnotation.startY,
-          arrowAnnotation.endX, arrowAnnotation.endY
+          x,
+          y,
+          arrowAnnotation.startX,
+          arrowAnnotation.startY,
+          arrowAnnotation.endX,
+          arrowAnnotation.endY,
         );
         if (dist < 10) {
           return annotation;
@@ -264,7 +294,7 @@ export function ImageAnnotator({
   const handleSave = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     // Generate data URL of annotated image
     const annotatedImageUrl = canvas.toDataURL("image/png");
     onSave(annotations, annotatedImageUrl);
@@ -311,7 +341,9 @@ export function ImageAnnotator({
                 onClick={() => setActiveColor(color.value)}
                 className={cn(
                   "size-6 rounded-full border-2 transition-transform",
-                  activeColor === color.value ? "scale-110 border-foreground" : "border-transparent"
+                  activeColor === color.value
+                    ? "scale-110 border-foreground"
+                    : "border-transparent",
                 )}
                 style={{ backgroundColor: color.value }}
                 title={color.name}
@@ -322,14 +354,22 @@ export function ImageAnnotator({
           <div className="w-px h-6 bg-border" />
 
           {/* Clear */}
-          <Button variant="ghost" size="sm" onClick={handleClearAll} className="text-destructive">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearAll}
+            className="text-destructive"
+          >
             <IconTrash className="size-4 mr-2" />
             Rensa alla
           </Button>
         </div>
 
         {/* Canvas */}
-        <div ref={containerRef} className="p-6 flex items-center justify-center bg-muted/50 overflow-auto">
+        <div
+          ref={containerRef}
+          className="p-6 flex items-center justify-center bg-muted/50 overflow-auto"
+        >
           {imageLoaded ? (
             <canvas
               ref={canvasRef}
@@ -351,7 +391,10 @@ export function ImageAnnotator({
             <IconX className="size-4 mr-2" />
             Avbryt
           </Button>
-          <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
+          <Button
+            onClick={handleSave}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             <IconCheck className="size-4 mr-2" />
             Spara annoteringar
           </Button>
@@ -365,7 +408,11 @@ export function ImageAnnotator({
 // Drawing Helpers
 // ============================================================================
 
-function drawAnnotation(ctx: CanvasRenderingContext2D, annotation: Annotation, scale: number) {
+function drawAnnotation(
+  ctx: CanvasRenderingContext2D,
+  annotation: Annotation,
+  _scale: number,
+) {
   if (annotation.type === "arrow") {
     drawArrow(
       ctx,
@@ -373,10 +420,16 @@ function drawAnnotation(ctx: CanvasRenderingContext2D, annotation: Annotation, s
       annotation.startY,
       annotation.endX,
       annotation.endY,
-      annotation.color
+      annotation.color,
     );
   } else if (annotation.type === "circle") {
-    drawCircle(ctx, annotation.centerX, annotation.centerY, annotation.radius, annotation.color);
+    drawCircle(
+      ctx,
+      annotation.centerX,
+      annotation.centerY,
+      annotation.radius,
+      annotation.color,
+    );
   }
 }
 
@@ -386,7 +439,7 @@ function drawArrow(
   startY: number,
   endX: number,
   endY: number,
-  color: string
+  color: string,
 ) {
   const headLength = 15;
   const angle = Math.atan2(endY - startY, endX - startX);
@@ -408,11 +461,11 @@ function drawArrow(
   ctx.moveTo(endX, endY);
   ctx.lineTo(
     endX - headLength * Math.cos(angle - Math.PI / 6),
-    endY - headLength * Math.sin(angle - Math.PI / 6)
+    endY - headLength * Math.sin(angle - Math.PI / 6),
   );
   ctx.lineTo(
     endX - headLength * Math.cos(angle + Math.PI / 6),
-    endY - headLength * Math.sin(angle + Math.PI / 6)
+    endY - headLength * Math.sin(angle + Math.PI / 6),
   );
   ctx.closePath();
   ctx.fill();
@@ -423,7 +476,7 @@ function drawCircle(
   centerX: number,
   centerY: number,
   radius: number,
-  color: string
+  color: string,
 ) {
   ctx.strokeStyle = color;
   ctx.lineWidth = 3;
@@ -438,7 +491,7 @@ function distanceToLine(
   x1: number,
   y1: number,
   x2: number,
-  y2: number
+  y2: number,
 ): number {
   const A = px - x1;
   const B = py - y1;

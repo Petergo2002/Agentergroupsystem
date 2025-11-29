@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, X, MessageCircle } from "lucide-react";
+import { MessageCircle, Send, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type WidgetMessage = {
@@ -163,7 +163,7 @@ export function ChatWidgetFrame({
     }
   }, [input, isSending, disabled, publicId, updateAssistantMessage]);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const _handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       handleSend();
@@ -276,10 +276,24 @@ export function ChatWidgetFrame({
           </div>
         )}
         <div style={{ flex: 1 }}>
-          <p style={{ margin: 0, fontWeight: 600, fontSize: "14px", color: headerTextColor }}>
+          <p
+            style={{
+              margin: 0,
+              fontWeight: 600,
+              fontSize: "14px",
+              color: headerTextColor,
+            }}
+          >
             {headerContent}
           </p>
-          <p style={{ margin: 0, fontSize: "12px", opacity: 0.8, color: headerTextColor }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "12px",
+              opacity: 0.8,
+              color: headerTextColor,
+            }}
+          >
             {disabled ? "Inte konfigurerad" : "Svarar inom några sekunder"}
           </p>
         </div>
@@ -320,7 +334,8 @@ export function ChatWidgetFrame({
             key={message.id}
             style={{
               display: "flex",
-              justifyContent: message.role === "user" ? "flex-end" : "flex-start",
+              justifyContent:
+                message.role === "user" ? "flex-end" : "flex-start",
             }}
           >
             <div

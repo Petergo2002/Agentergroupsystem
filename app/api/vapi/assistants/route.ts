@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getOrganizationVapiConfig } from "@/lib/server/vapi-org-config";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     // Get Vapi config from user's organization (server-side only)
     const { vapi, config, error } = await getOrganizationVapiConfig();

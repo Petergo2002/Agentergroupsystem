@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     if (!organizationId) {
       return NextResponse.json(
         { error: "Organization ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (!vapiApiKey) {
       return NextResponse.json(
         { error: "VAPI_API_KEY not configured in environment" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       console.error("Error enabling VAPI:", error);
       return NextResponse.json(
         { error: "Failed to enable VAPI", details: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     console.error("Error in POST /api/admin/organizations/enable-vapi:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

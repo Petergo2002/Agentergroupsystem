@@ -1,22 +1,26 @@
 /**
  * Fördefinierade designmallar för olika branscher
- * 
+ *
  * Dessa mallar innehåller:
  * - Sektioner med förifylld text och variabler
  * - Checklistor anpassade för branschen
  * - Styling-profiler
  */
 
-import type { ReportTemplate, ReportSectionTemplate, ReportChecklistItem } from "@/lib/types/rapport";
+import type { ReportTemplate } from "@/lib/types/rapport";
 
 // ============================================================================
 // Läckage – Designmall
 // ============================================================================
 
-export const LACKAGE_DESIGN_TEMPLATE: Omit<ReportTemplate, "id" | "createdAt" | "updatedAt"> = {
+export const LACKAGE_DESIGN_TEMPLATE: Omit<
+  ReportTemplate,
+  "id" | "createdAt" | "updatedAt"
+> = {
   name: "Läckage – Designmall",
   trade: "läckage",
-  description: "Professionell mall för läckagerapporter med alla nödvändiga sektioner för dokumentation av vattenskador.",
+  description:
+    "Professionell mall för läckagerapporter med alla nödvändiga sektioner för dokumentation av vattenskador.",
   sections: [
     {
       id: "lackage-intro",
@@ -113,11 +117,36 @@ Vid frågor, kontakta oss gärna.`,
     },
   ],
   checklist: [
-    { id: "ck-1", label: "Fuktmätning genomförd", required: true, completed: false },
-    { id: "ck-2", label: "Fotografering före åtgärd", required: true, completed: false },
-    { id: "ck-3", label: "Läckagekälla identifierad", required: true, completed: false },
-    { id: "ck-4", label: "Åtgärder dokumenterade", required: true, completed: false },
-    { id: "ck-5", label: "Fotografering efter åtgärd", required: false, completed: false },
+    {
+      id: "ck-1",
+      label: "Fuktmätning genomförd",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-2",
+      label: "Fotografering före åtgärd",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-3",
+      label: "Läckagekälla identifierad",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-4",
+      label: "Åtgärder dokumenterade",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-5",
+      label: "Fotografering efter åtgärd",
+      required: false,
+      completed: false,
+    },
     { id: "ck-6", label: "Kund informerad", required: true, completed: false },
   ],
   visibilityRules: [],
@@ -128,10 +157,14 @@ Vid frågor, kontakta oss gärna.`,
 // Bygg – Designmall
 // ============================================================================
 
-export const BYGG_DESIGN_TEMPLATE: Omit<ReportTemplate, "id" | "createdAt" | "updatedAt"> = {
+export const BYGG_DESIGN_TEMPLATE: Omit<
+  ReportTemplate,
+  "id" | "createdAt" | "updatedAt"
+> = {
   name: "Bygg – Designmall",
   trade: "bygg",
-  description: "Komplett mall för byggrapporter med projektinfo, arbetsbeskrivning, materiallista och dokumentation.",
+  description:
+    "Komplett mall för byggrapporter med projektinfo, arbetsbeskrivning, materiallista och dokumentation.",
   sections: [
     {
       id: "bygg-projektinfo",
@@ -219,13 +252,48 @@ Vid frågor eller reklamationer, kontakta oss.`,
     },
   ],
   checklist: [
-    { id: "ck-b1", label: "Arbetsplats säkrad", required: true, completed: false },
-    { id: "ck-b2", label: "Material kontrollerat", required: true, completed: false },
-    { id: "ck-b3", label: "Före-dokumentation klar", required: true, completed: false },
-    { id: "ck-b4", label: "Arbete utfört enligt ritning", required: true, completed: false },
-    { id: "ck-b5", label: "Städning genomförd", required: true, completed: false },
-    { id: "ck-b6", label: "Efter-dokumentation klar", required: true, completed: false },
-    { id: "ck-b7", label: "Kund godkänt arbetet", required: true, completed: false },
+    {
+      id: "ck-b1",
+      label: "Arbetsplats säkrad",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-b2",
+      label: "Material kontrollerat",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-b3",
+      label: "Före-dokumentation klar",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-b4",
+      label: "Arbete utfört enligt ritning",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-b5",
+      label: "Städning genomförd",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-b6",
+      label: "Efter-dokumentation klar",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-b7",
+      label: "Kund godkänt arbetet",
+      required: true,
+      completed: false,
+    },
   ],
   visibilityRules: [],
   assetGuidelines: [],
@@ -235,10 +303,14 @@ Vid frågor eller reklamationer, kontakta oss.`,
 // Elektriker – Designmall
 // ============================================================================
 
-export const ELEKTRIKER_DESIGN_TEMPLATE: Omit<ReportTemplate, "id" | "createdAt" | "updatedAt"> = {
+export const ELEKTRIKER_DESIGN_TEMPLATE: Omit<
+  ReportTemplate,
+  "id" | "createdAt" | "updatedAt"
+> = {
   name: "Elektriker – Designmall",
   trade: "elektriker",
-  description: "Mall för elinstallationsrapporter med säkerhetskontroller, mätvärden och certifiering.",
+  description:
+    "Mall för elinstallationsrapporter med säkerhetskontroller, mätvärden och certifiering.",
   sections: [
     {
       id: "el-info",
@@ -316,12 +388,42 @@ Giltig till: [Datum]`,
     },
   ],
   checklist: [
-    { id: "ck-e1", label: "Anläggningen spänningslös vid arbete", required: true, completed: false },
-    { id: "ck-e2", label: "Isolationsmätning utförd", required: true, completed: false },
-    { id: "ck-e3", label: "Jordfelsskydd testat", required: true, completed: false },
-    { id: "ck-e4", label: "Märkning korrekt", required: true, completed: false },
-    { id: "ck-e5", label: "Dokumentation uppdaterad", required: true, completed: false },
-    { id: "ck-e6", label: "Slutkontroll genomförd", required: true, completed: false },
+    {
+      id: "ck-e1",
+      label: "Anläggningen spänningslös vid arbete",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-e2",
+      label: "Isolationsmätning utförd",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-e3",
+      label: "Jordfelsskydd testat",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-e4",
+      label: "Märkning korrekt",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-e5",
+      label: "Dokumentation uppdaterad",
+      required: true,
+      completed: false,
+    },
+    {
+      id: "ck-e6",
+      label: "Slutkontroll genomförd",
+      required: true,
+      completed: false,
+    },
   ],
   visibilityRules: [],
   assetGuidelines: [],
@@ -349,7 +451,7 @@ export function getDesignTemplateForTrade(trade: string) {
  */
 export function createTemplateFromDesign(
   design: typeof LACKAGE_DESIGN_TEMPLATE,
-  overrides?: Partial<ReportTemplate>
+  overrides?: Partial<ReportTemplate>,
 ): Omit<ReportTemplate, "id" | "createdAt" | "updatedAt"> {
   return {
     ...design,

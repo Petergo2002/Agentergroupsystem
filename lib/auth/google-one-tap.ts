@@ -4,7 +4,16 @@ export const initializeGoogleOneTap = async (
   onSuccess: () => void,
   onError: (error: Error) => void,
 ) => {
-  const { google } = window as unknown as { google?: { accounts: { id: { initialize: (config: any) => void; prompt: (callback: (notification: any) => void) => void } } } };
+  const { google } = window as unknown as {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          prompt: (callback: (notification: any) => void) => void;
+        };
+      };
+    };
+  };
 
   if (!google) {
     onError(new Error("Google API not loaded"));

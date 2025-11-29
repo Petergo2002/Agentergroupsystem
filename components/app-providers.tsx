@@ -16,7 +16,10 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps) {
   const pathname = usePathname();
 
-  const isEmbedRoute = useMemo(() => pathname?.startsWith("/embed"), [pathname]);
+  const isEmbedRoute = useMemo(
+    () => pathname?.startsWith("/embed"),
+    [pathname],
+  );
 
   if (isEmbedRoute) {
     // Widgets should not be forced through auth redirects.

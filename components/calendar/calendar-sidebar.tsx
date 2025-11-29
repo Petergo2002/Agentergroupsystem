@@ -43,7 +43,6 @@ export function CalendarSidebar() {
           }}
         />
       </div>
-
     </div>
   );
 }

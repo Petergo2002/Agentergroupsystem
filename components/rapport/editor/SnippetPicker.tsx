@@ -33,9 +33,9 @@ import {
   getSnippetsByCategory,
   getVariablesByCategory,
   renderTemplatePreview,
-  type TextSnippet,
-  type TemplateVariable,
   type TemplateContext,
+  type TemplateVariable,
+  type TextSnippet,
 } from "@/lib/rapport/templateEngine";
 import type { Report, ReportTemplate } from "@/lib/types/rapport";
 import { cn } from "@/lib/utils";
@@ -93,7 +93,10 @@ export function SnippetPicker({
   const [activeTab, setActiveTab] = useState("snippets");
 
   // Get snippets and variables
-  const snippetsByCategory = useMemo(() => getSnippetsByCategory(trade), [trade]);
+  const snippetsByCategory = useMemo(
+    () => getSnippetsByCategory(trade),
+    [trade],
+  );
   const variablesByCategory = useMemo(() => getVariablesByCategory(), []);
 
   // Template context for preview
@@ -102,7 +105,7 @@ export function SnippetPicker({
       report,
       template,
     }),
-    [report, template]
+    [report, template],
   );
 
   // Filter snippets by search
@@ -117,7 +120,7 @@ export function SnippetPicker({
         (s) =>
           s.title.toLowerCase().includes(needle) ||
           s.content.toLowerCase().includes(needle) ||
-          s.description?.toLowerCase().includes(needle)
+          s.description?.toLowerCase().includes(needle),
       );
       if (matches.length > 0) {
         filtered[category] = matches;
@@ -139,7 +142,7 @@ export function SnippetPicker({
         (v) =>
           v.key.toLowerCase().includes(needle) ||
           v.label.toLowerCase().includes(needle) ||
-          v.description.toLowerCase().includes(needle)
+          v.description.toLowerCase().includes(needle),
       );
       if (matches.length > 0) {
         filtered[category] = matches;
@@ -194,7 +197,11 @@ export function SnippetPicker({
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 flex flex-col min-h-0"
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="snippets" className="gap-2">
               <IconFileText className="size-4" />
@@ -210,41 +217,46 @@ export function SnippetPicker({
           <TabsContent value="snippets" className="flex-1 min-h-0 mt-4">
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-6">
-                {Object.entries(filteredSnippets).map(([category, snippets]) => (
-                  <div key={category}>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                      {CATEGORY_LABELS[category] || category}
-                    </h4>
-                    <div className="space-y-2">
-                      {snippets.map((snippet) => (
-                        <button
-                          key={snippet.id}
-                          onClick={() => handleInsertSnippet(snippet)}
-                          className="w-full text-left rounded-lg border p-3 hover:bg-accent transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <p className="font-medium">{snippet.title}</p>
-                              {snippet.description && (
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {snippet.description}
-                                </p>
+                {Object.entries(filteredSnippets).map(
+                  ([category, snippets]) => (
+                    <div key={category}>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                        {CATEGORY_LABELS[category] || category}
+                      </h4>
+                      <div className="space-y-2">
+                        {snippets.map((snippet) => (
+                          <button
+                            key={snippet.id}
+                            onClick={() => handleInsertSnippet(snippet)}
+                            className="w-full text-left rounded-lg border p-3 hover:bg-accent transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="font-medium">{snippet.title}</p>
+                                {snippet.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {snippet.description}
+                                  </p>
+                                )}
+                              </div>
+                              {snippet.trade && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs shrink-0"
+                                >
+                                  {snippet.trade}
+                                </Badge>
                               )}
                             </div>
-                            {snippet.trade && (
-                              <Badge variant="outline" className="text-xs shrink-0">
-                                {snippet.trade}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                            {renderTemplatePreview(snippet.content, context)}
-                          </p>
-                        </button>
-                      ))}
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                              {renderTemplatePreview(snippet.content, context)}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
 
                 {Object.keys(filteredSnippets).length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
@@ -259,35 +271,40 @@ export function SnippetPicker({
           <TabsContent value="variables" className="flex-1 min-h-0 mt-4">
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-6">
-                {Object.entries(filteredVariables).map(([category, variables]) => (
-                  <div key={category}>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                      {CATEGORY_LABELS[category] || category}
-                    </h4>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {variables.map((variable) => (
-                        <button
-                          key={variable.key}
-                          onClick={() => handleInsertVariable(variable)}
-                          className="text-left rounded-lg border p-3 hover:bg-accent transition-colors"
-                        >
-                          <div className="flex items-center gap-2">
-                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                              {`{{${variable.key}}}`}
-                            </code>
-                          </div>
-                          <p className="font-medium text-sm mt-1">{variable.label}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {variable.description}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Exempel: <span className="italic">{variable.example}</span>
-                          </p>
-                        </button>
-                      ))}
+                {Object.entries(filteredVariables).map(
+                  ([category, variables]) => (
+                    <div key={category}>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                        {CATEGORY_LABELS[category] || category}
+                      </h4>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {variables.map((variable) => (
+                          <button
+                            key={variable.key}
+                            onClick={() => handleInsertVariable(variable)}
+                            className="text-left rounded-lg border p-3 hover:bg-accent transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                                {`{{${variable.key}}}`}
+                              </code>
+                            </div>
+                            <p className="font-medium text-sm mt-1">
+                              {variable.label}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {variable.description}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Exempel:{" "}
+                              <span className="italic">{variable.example}</span>
+                            </p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
 
                 {Object.keys(filteredVariables).length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
@@ -307,13 +324,20 @@ export function SnippetPicker({
 // Quick Variable Picker (Dropdown)
 // ============================================================================
 
-export function QuickVariablePicker({ onInsert, className }: VariablePickerProps) {
+export function QuickVariablePicker({
+  onInsert,
+  className,
+}: VariablePickerProps) {
   const variablesByCategory = useMemo(() => getVariablesByCategory(), []);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className={cn("gap-1 h-7 px-2", className)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn("gap-1 h-7 px-2", className)}
+        >
           <IconVariable className="size-3.5" />
           <IconChevronDown className="size-3 opacity-50" />
         </Button>

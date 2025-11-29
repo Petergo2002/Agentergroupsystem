@@ -5,12 +5,15 @@ import { getOrganizationVapiConfig } from "@/lib/server/vapi-org-config";
 export async function GET(req: NextRequest) {
   try {
     console.log("📞 Call Analytics API called");
-    
+
     // Get Vapi config from user's organization (server-side only)
     const { vapi, organizationId, error } = await getOrganizationVapiConfig();
 
     if (error || !vapi) {
-      console.log("❌ Call Analytics: No Vapi config", { error, organizationId });
+      console.log("❌ Call Analytics: No Vapi config", {
+        error,
+        organizationId,
+      });
       return NextResponse.json(
         {
           error: error || "AI integration not configured for your organization",
@@ -19,21 +22,24 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    console.log("✅ Call Analytics: Vapi config loaded for org", organizationId);
+    console.log(
+      "✅ Call Analytics: Vapi config loaded for org",
+      organizationId,
+    );
 
     const { searchParams } = new URL(req.url);
     let startDate = searchParams.get("startDate") || undefined;
     let endDate = searchParams.get("endDate") || undefined;
     const requestedAssistant = searchParams.get("assistantId");
-    
+
     // Only set assistantId if we have a valid value
-    let assistantId: string | undefined = undefined;
+    let assistantId: string | undefined;
     if (requestedAssistant === "__all__") {
       assistantId = undefined; // Fetch all assistants
-    } else if (requestedAssistant && requestedAssistant.trim()) {
+    } else if (requestedAssistant?.trim()) {
       assistantId = requestedAssistant;
     }
-    
+
     const limit = searchParams.get("limit")
       ? Number(searchParams.get("limit"))
       : 100; // Default to 100 to get more data
@@ -58,21 +64,27 @@ export async function GET(req: NextRequest) {
 
     // Fetch call logs using organization's Vapi config
     const rawLogs = await vapi.getCallLogs({ assistantId, limit });
-    
+
     console.log(`📞 Call Analytics: Got ${rawLogs.length} logs from Vapi`);
-    
+
     // Normalize logs to ensure consistent field names
     const normalizedLogs = rawLogs.map((log: any) => ({
       ...log,
       // Normalize timestamp fields
-      startTime: log.startTime || log.createdAt || log.startedAt || log.created_at,
+      startTime:
+        log.startTime || log.createdAt || log.startedAt || log.created_at,
       endTime: log.endTime || log.endedAt || log.ended_at,
       // Normalize other fields
       duration: log.duration || 0,
       status: log.status || "unknown",
-      direction: log.type === "inboundPhoneCall" ? "inbound" : 
-                 log.type === "outboundPhoneCall" ? "outbound" : 
-                 log.type === "webCall" ? "web" : log.type,
+      direction:
+        log.type === "inboundPhoneCall"
+          ? "inbound"
+          : log.type === "outboundPhoneCall"
+            ? "outbound"
+            : log.type === "webCall"
+              ? "web"
+              : log.type,
       from: log.customer?.number || log.phoneNumber?.number || log.from,
       to: log.phoneNumber?.number || log.to,
       cost: log.cost,
@@ -80,7 +92,7 @@ export async function GET(req: NextRequest) {
       transcription: log.transcript || log.artifact?.transcript,
       summary: log.summary || log.analysis?.summary || log.artifact?.summary,
     }));
-    
+
     // Filter logs by date range on server side
     const logs = normalizedLogs.filter((log: any) => {
       if (!startDate || !endDate) return true;
@@ -91,9 +103,9 @@ export async function GET(req: NextRequest) {
         return true; // Include logs with invalid dates
       }
     });
-    
+
     console.log(`📞 Call Analytics: ${logs.length} logs after date filter`);
-    
+
     const metrics = processCallLogs(logs);
 
     console.log("📞 Call Analytics: Response ready", {

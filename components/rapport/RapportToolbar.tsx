@@ -2,15 +2,13 @@
 
 import {
   IconCheck,
-  IconChevronDown,
   IconCopy,
   IconDeviceFloppy,
-  IconDownload,
   IconDots,
+  IconDownload,
   IconEdit,
   IconEye,
   IconLoader2,
-  IconMail,
   IconPrinter,
   IconShare,
   IconTrash,
@@ -67,7 +65,11 @@ interface RapportToolbarProps {
 // Constants
 // ============================================================================
 
-const STATUS_OPTIONS: { value: ReportStatus; label: string; description: string }[] = [
+const STATUS_OPTIONS: {
+  value: ReportStatus;
+  label: string;
+  description: string;
+}[] = [
   { value: "draft", label: "Utkast", description: "Arbete pågår" },
   { value: "review", label: "Granskning", description: "Redo för granskning" },
   { value: "approved", label: "Godkänd", description: "Redo för export" },
@@ -124,7 +126,7 @@ export function RapportToolbar({
       <div
         className={cn(
           "flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3",
-          className
+          className,
         )}
       >
         {/* Left side - Status & Autosave */}
@@ -135,7 +137,7 @@ export function RapportToolbar({
               <SelectTrigger
                 className={cn(
                   "h-8 w-auto gap-2 rounded-full border px-3 text-xs font-medium",
-                  STATUS_STYLES[report.status]
+                  STATUS_STYLES[report.status],
                 )}
               >
                 <SelectValue />
@@ -329,7 +331,7 @@ function AutosaveIndicator({ status }: AutosaveIndicatorProps) {
     <div
       className={cn(
         "flex items-center gap-1.5 text-xs font-medium",
-        config.className
+        config.className,
       )}
     >
       {config.icon}

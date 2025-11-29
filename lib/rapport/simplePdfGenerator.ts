@@ -1,19 +1,15 @@
 /**
  * Simple PDF Generator
- * 
+ *
  * Förenklad PDF-generator för det nya mallsystemet.
  * Endast 2 sektionstyper: text och images.
  */
 
+import { getTradeColors } from "@/lib/constants/colors";
 import type {
   SimpleReportTemplate,
   SimpleSectionInstance,
-  TextSectionContent,
-  ImagesSectionContent,
-  AnnotatedImage,
-  ReportTrade,
 } from "@/lib/types/rapport";
-import { getTradeColors } from "@/lib/constants/colors";
 
 // ============================================================================
 // Types
@@ -61,7 +57,7 @@ export interface SimplePdfOptions {
 function renderTextSection(
   section: SimpleSectionInstance,
   index: number,
-  colors: { primary: string; secondary: string }
+  colors: { primary: string; secondary: string },
 ): string {
   const content = section.textContent;
   if (!content) {
@@ -152,7 +148,7 @@ function renderTextSection(
 function renderImagesSection(
   section: SimpleSectionInstance,
   index: number,
-  colors: { primary: string; secondary: string }
+  colors: { primary: string; secondary: string },
 ): string {
   const content = section.imagesContent;
   const images = content?.images || [];
@@ -198,7 +194,9 @@ function renderImagesSection(
     `;
   }
 
-  const imagesHtml = images.map((img, imgIndex) => `
+  const imagesHtml = images
+    .map(
+      (img, imgIndex) => `
     <div class="image-item" style="break-inside: avoid;">
       <img 
         src="${img.url}" 
@@ -210,24 +208,34 @@ function renderImagesSection(
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         "
       />
-      ${img.caption ? `
+      ${
+        img.caption
+          ? `
         <p style="
           margin-top: 8px;
           font-size: 12px;
           color: #64748b;
           text-align: center;
         ">${img.caption}</p>
-      ` : ""}
-      ${img.annotations && img.annotations.length > 0 ? `
+      `
+          : ""
+      }
+      ${
+        img.annotations && img.annotations.length > 0
+          ? `
         <p style="
           margin-top: 4px;
           font-size: 11px;
           color: #94a3b8;
           text-align: center;
         ">${img.annotations.length} annotering(ar)</p>
-      ` : ""}
+      `
+          : ""
+      }
     </div>
-  `).join("");
+  `,
+    )
+    .join("");
 
   // Bestäm antal kolumner baserat på antal bilder
   const columns = images.length === 1 ? 1 : images.length === 2 ? 2 : 3;
@@ -295,7 +303,10 @@ export function generateSimplePdfHtml(options: SimplePdfOptions): string {
   } = options;
 
   const tradeColors = getTradeColors(template.trade);
-  const colors = { primary: tradeColors.primary, secondary: tradeColors.secondary };
+  const colors = {
+    primary: tradeColors.primary,
+    secondary: tradeColors.secondary,
+  };
 
   // Rendera sektioner
   const sectionsHtml = sections
@@ -318,9 +329,11 @@ export function generateSimplePdfHtml(options: SimplePdfOptions): string {
     { label: "Datum", value: metadata.date },
     { label: "Besiktningsman", value: metadata.inspector },
     { label: "Rapportnummer", value: metadata.reportNumber },
-  ].filter(f => f.value);
+  ].filter((f) => f.value);
 
-  const metadataHtml = metadataFields.length > 0 ? `
+  const metadataHtml =
+    metadataFields.length > 0
+      ? `
     <div style="
       padding: 24px 40px;
       background: #f8fafc;
@@ -329,14 +342,19 @@ export function generateSimplePdfHtml(options: SimplePdfOptions): string {
       grid-template-columns: repeat(2, 1fr);
       gap: 16px;
     ">
-      ${metadataFields.map(f => `
+      ${metadataFields
+        .map(
+          (f) => `
         <div>
           <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">${f.label}</div>
           <div style="font-size: 14px; font-weight: 500; color: #1f2937; margin-top: 2px;">${f.value}</div>
         </div>
-      `).join("")}
+      `,
+        )
+        .join("")}
     </div>
-  ` : "";
+  `
+      : "";
 
   return `
     <!DOCTYPE html>
@@ -387,9 +405,12 @@ export function generateSimplePdfHtml(options: SimplePdfOptions): string {
         align-items: center;
       ">
         <div style="display: flex; align-items: center; gap: 16px;">
-          ${logoUrl ? `
+          ${
+            logoUrl
+              ? `
             <img src="${logoUrl}" alt="Logo" style="max-height: 48px; width: auto;" />
-          ` : `
+          `
+              : `
             <div style="
               width: 48px;
               height: 48px;
@@ -401,7 +422,8 @@ export function generateSimplePdfHtml(options: SimplePdfOptions): string {
               font-weight: 700;
               font-size: 20px;
             ">${company?.name?.[0] || "R"}</div>
-          `}
+          `
+          }
           <div>
             <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px;">RAPPORT</div>
             <div style="font-size: 18px; font-weight: 600;">${template.name}</div>
@@ -423,7 +445,9 @@ export function generateSimplePdfHtml(options: SimplePdfOptions): string {
         ">${title}</h1>
         ${subtitle ? `<p style="color: #64748b; font-size: 15px;">${subtitle}</p>` : ""}
         
-        ${coverImageUrl ? `
+        ${
+          coverImageUrl
+            ? `
           <div style="margin-top: 24px;">
             <img 
               src="${coverImageUrl}" 
@@ -437,7 +461,9 @@ export function generateSimplePdfHtml(options: SimplePdfOptions): string {
               "
             />
           </div>
-        ` : ""}
+        `
+            : ""
+        }
       </div>
 
       <!-- Metadata -->

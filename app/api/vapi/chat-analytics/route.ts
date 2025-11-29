@@ -5,12 +5,16 @@ import { getOrganizationVapiConfig } from "@/lib/server/vapi-org-config";
 export async function GET(req: NextRequest) {
   try {
     console.log("📊 Chat Analytics API called");
-    
+
     // Get Vapi config from user's organization (server-side only)
-    const { vapi, config, organizationId, error } = await getOrganizationVapiConfig();
+    const { vapi, config, organizationId, error } =
+      await getOrganizationVapiConfig();
 
     if (error || !vapi) {
-      console.log("❌ Chat Analytics: No Vapi config", { error, organizationId });
+      console.log("❌ Chat Analytics: No Vapi config", {
+        error,
+        organizationId,
+      });
       return NextResponse.json(
         {
           error: error || "AI integration not configured for your organization",
@@ -19,24 +23,27 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    console.log("✅ Chat Analytics: Vapi config loaded for org", organizationId);
+    console.log(
+      "✅ Chat Analytics: Vapi config loaded for org",
+      organizationId,
+    );
 
     const { searchParams } = new URL(req.url);
     let startDate = searchParams.get("startDate") || undefined;
     let endDate = searchParams.get("endDate") || undefined;
     const requestedAssistant = searchParams.get("assistantId");
-    
+
     // Only set assistantId if we have a valid value (not null, undefined, or empty string)
-    let assistantId: string | undefined = undefined;
+    let assistantId: string | undefined;
     if (requestedAssistant === "__all__") {
       assistantId = undefined; // Fetch all assistants
-    } else if (requestedAssistant && requestedAssistant.trim()) {
+    } else if (requestedAssistant?.trim()) {
       assistantId = requestedAssistant; // Use requested assistant
-    } else if (config?.default_chat_assistant_id && config.default_chat_assistant_id.trim()) {
+    } else if (config?.default_chat_assistant_id?.trim()) {
       assistantId = config.default_chat_assistant_id; // Use default if available
     }
     // Otherwise leave assistantId as undefined (fetch all chats)
-    
+
     const limit = searchParams.get("limit")
       ? Number(searchParams.get("limit"))
       : 100; // Default to 100 to get more data
@@ -64,22 +71,28 @@ export async function GET(req: NextRequest) {
       assistantId,
       limit,
     });
-    
-    console.log(`📊 Chat Analytics: Got ${allSessions.length} sessions from Vapi`);
-    
+
+    console.log(
+      `📊 Chat Analytics: Got ${allSessions.length} sessions from Vapi`,
+    );
+
     // Filter sessions by date range on server side
     const sessions = allSessions.filter((session) => {
       if (!startDate || !endDate) return true;
       try {
         const sessionDate = new Date(session.startTime);
-        return sessionDate >= new Date(startDate) && sessionDate <= new Date(endDate);
+        return (
+          sessionDate >= new Date(startDate) && sessionDate <= new Date(endDate)
+        );
       } catch {
         return true; // Include sessions with invalid dates
       }
     });
-    
-    console.log(`📊 Chat Analytics: ${sessions.length} sessions after date filter`);
-    
+
+    console.log(
+      `📊 Chat Analytics: ${sessions.length} sessions after date filter`,
+    );
+
     const metrics = processChatSessions(sessions);
 
     console.log("📊 Chat Analytics: Response ready", {

@@ -1,14 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  AlertCircle,
-  Bot,
-  CheckCircle,
-  Loader2,
-  Send,
-  User,
-} from "lucide-react";
+import { Bot, CheckCircle, Loader2, Send, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";

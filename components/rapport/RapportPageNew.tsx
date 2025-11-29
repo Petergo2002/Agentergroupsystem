@@ -1,17 +1,16 @@
 "use client";
 
 import { IconPlus } from "@tabler/icons-react";
-import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRapportData } from "@/lib/rapport/useRapportData";
-import { rapportApi } from "@/lib/rapport/rapportApi";
-import { RapportListPanel } from "./RapportListPanel";
-import { RapportDetailPanel } from "./RapportDetailPanel";
-import { RapportSettingsSimple } from "./rapport-settings-simple";
 import { CreateReportWizard } from "./CreateReportWizard";
+import { RapportDetailPanel } from "./RapportDetailPanel";
+import { RapportListPanel } from "./RapportListPanel";
+import { RapportSettingsSimple } from "./rapport-settings-simple";
 
 // ============================================================================
 // Types
@@ -22,9 +21,21 @@ interface RapportPageNewProps {
 }
 
 const TABS = [
-  { key: "new", label: "Ny rapport", description: "Skapa ny eller fortsätt redigera utkast" },
-  { key: "saved", label: "Arkiv", description: "Sparade & exporterade rapporter" },
-  { key: "settings", label: "Inställningar", description: "Mallar & PDF-styling" },
+  {
+    key: "new",
+    label: "Ny rapport",
+    description: "Skapa ny eller fortsätt redigera utkast",
+  },
+  {
+    key: "saved",
+    label: "Arkiv",
+    description: "Sparade & exporterade rapporter",
+  },
+  {
+    key: "settings",
+    label: "Inställningar",
+    description: "Mallar & PDF-styling",
+  },
 ] as const;
 
 // ============================================================================
@@ -61,26 +72,34 @@ export function RapportPageNew({ initialTab = "new" }: RapportPageNewProps) {
   } = useRapportData();
 
   // Get reports based on active tab
-  const displayReports = activeTab === "saved" ? archivedReports : draftReports;
+  const _displayReports =
+    activeTab === "saved" ? archivedReports : draftReports;
 
   // Filter selectedReport to only show if it belongs to current tab
   const filteredSelectedReport = useMemo(() => {
     if (!selectedReport) return null;
-    
+
     if (activeTab === "saved") {
       // Only show if report is in archived list
-      return archivedReports.some(r => r.id === selectedReport.id) ? selectedReport : null;
+      return archivedReports.some((r) => r.id === selectedReport.id)
+        ? selectedReport
+        : null;
     } else {
       // Only show if report is in draft list
-      return draftReports.some(r => r.id === selectedReport.id) ? selectedReport : null;
+      return draftReports.some((r) => r.id === selectedReport.id)
+        ? selectedReport
+        : null;
     }
   }, [selectedReport, activeTab, archivedReports, draftReports]);
 
   // Handle tab change - clear selection when switching tabs
-  const handleTabChange = useCallback((newTab: string) => {
-    setActiveTab(newTab);
-    selectReport(null); // Clear selection when switching tabs
-  }, [selectReport]);
+  const handleTabChange = useCallback(
+    (newTab: string) => {
+      setActiveTab(newTab);
+      selectReport(null); // Clear selection when switching tabs
+    },
+    [selectReport],
+  );
 
   // Handle status change
   const handleStatusChange = useCallback(
@@ -88,12 +107,14 @@ export function RapportPageNew({ initialTab = "new" }: RapportPageNewProps) {
       if (!selectedReport) return;
       try {
         await updateReport(selectedReport.id, { status });
-        toast.success(`Status ändrad till ${status === "draft" ? "Utkast" : status === "review" ? "Granskning" : "Godkänd"}`);
-      } catch (error) {
+        toast.success(
+          `Status ändrad till ${status === "draft" ? "Utkast" : status === "review" ? "Granskning" : "Godkänd"}`,
+        );
+      } catch (_error) {
         // Error handled in hook
       }
     },
-    [selectedReport, updateReport]
+    [selectedReport, updateReport],
   );
 
   // Handle save
@@ -102,7 +123,7 @@ export function RapportPageNew({ initialTab = "new" }: RapportPageNewProps) {
     try {
       await updateReport(selectedReport.id, {});
       toast.success("Rapport sparad");
-    } catch (error) {
+    } catch (_error) {
       // Error handled in hook
     }
   }, [selectedReport, updateReport]);
@@ -119,7 +140,7 @@ export function RapportPageNew({ initialTab = "new" }: RapportPageNewProps) {
     try {
       await exportReport(selectedReport);
       router.push("/rapport?tab=saved");
-    } catch (error) {
+    } catch (_error) {
       // Error handled in hook
     }
   }, [selectedReport, exportReport, router]);
@@ -131,7 +152,7 @@ export function RapportPageNew({ initialTab = "new" }: RapportPageNewProps) {
       const duplicated = await duplicateReport(selectedReport.id);
       setActiveTab("new");
       selectReport(duplicated.id);
-    } catch (error) {
+    } catch (_error) {
       // Error handled in hook
     }
   }, [selectedReport, duplicateReport, selectReport]);
@@ -139,10 +160,13 @@ export function RapportPageNew({ initialTab = "new" }: RapportPageNewProps) {
   // Handle delete
   const handleDelete = useCallback(async () => {
     if (!selectedReport) return;
-    if (!confirm(`Är du säker på att du vill ta bort "${selectedReport.title}"?`)) return;
+    if (
+      !confirm(`Är du säker på att du vill ta bort "${selectedReport.title}"?`)
+    )
+      return;
     try {
       await deleteReport(selectedReport.id);
-    } catch (error) {
+    } catch (_error) {
       // Error handled in hook
     }
   }, [selectedReport, deleteReport]);
@@ -153,9 +177,12 @@ export function RapportPageNew({ initialTab = "new" }: RapportPageNewProps) {
   }, []);
 
   // Handle wizard created
-  const handleWizardCreated = useCallback((reportId: string) => {
-    router.push(`/rapport/${reportId}/edit`);
-  }, [router]);
+  const handleWizardCreated = useCallback(
+    (reportId: string) => {
+      router.push(`/rapport/${reportId}/edit`);
+    },
+    [router],
+  );
 
   // Get subtitle based on active tab
   const subtitle = TABS.find((tab) => tab.key === activeTab)?.description ?? "";
@@ -285,7 +312,10 @@ export function RapportPageNew({ initialTab = "new" }: RapportPageNewProps) {
         </TabsContent>
 
         {/* Settings Tab */}
-        <TabsContent value="settings" className="flex-1 min-h-0 m-0 overflow-auto">
+        <TabsContent
+          value="settings"
+          className="flex-1 min-h-0 m-0 overflow-auto"
+        >
           <RapportSettingsSimple />
         </TabsContent>
       </Tabs>

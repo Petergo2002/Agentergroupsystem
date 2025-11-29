@@ -1,4 +1,7 @@
 #!/usr/bin/env tsx
+// @ts-nocheck
+// This script requires @modelcontextprotocol/sdk which is not installed in the main project
+// Run with: npx tsx scripts/mcp-supabase.ts
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";

@@ -2,35 +2,24 @@
 
 /**
  * Rapport Settings Simple
- * 
+ *
  * Förenklad inställningssida för användare.
  * Visar mallar från Report Studio (synkade via Supabase).
  */
 
+import {
+  IconBolt,
+  IconDroplet,
+  IconFileText,
+  IconHammer,
+  IconLoader2,
+  IconPhoto,
+  IconPlus,
+  IconRefresh,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,54 +30,85 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  IconPlus,
-  IconTrash,
-  IconPencil,
-  IconFileText,
-  IconPhoto,
-  IconLoader2,
-  IconRefresh,
-  IconDroplet,
-  IconHammer,
-  IconBolt,
-} from "@tabler/icons-react";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   createReportSectionRecord,
   deleteReportSectionRecord,
   fetchReportSections,
   useReportSectionsStore,
 } from "@/lib/store";
+import type {
+  ReportSectionDefinition,
+  ReportSectionType,
+  SimpleReportTemplate,
+} from "@/lib/types/rapport";
 import { useSimpleReportStore } from "@/stores/simpleReportStore";
-import type { ReportSectionDefinition, ReportSectionType, SimpleReportTemplate } from "@/lib/types/rapport";
 
 // Förenklade sektionstyper - endast 2
 const SECTION_TYPES = [
-  { value: "text" as ReportSectionType, label: "Rubrik + Text", icon: IconFileText, description: "Rubrik med fritext" },
-  { value: "image_gallery" as ReportSectionType, label: "Bilder", icon: IconPhoto, description: "Bildgalleri med annoteringar" },
+  {
+    value: "text" as ReportSectionType,
+    label: "Rubrik + Text",
+    icon: IconFileText,
+    description: "Rubrik med fritext",
+  },
+  {
+    value: "image_gallery" as ReportSectionType,
+    label: "Bilder",
+    icon: IconPhoto,
+    description: "Bildgalleri med annoteringar",
+  },
 ];
 
 // Bransch-konfiguration
 const TRADE_CONFIG = {
-  bygg: { label: "Bygg", icon: IconHammer, color: "text-orange-600 bg-orange-100" },
-  läckage: { label: "Läckage", icon: IconDroplet, color: "text-blue-600 bg-blue-100" },
-  elektriker: { label: "Elektriker", icon: IconBolt, color: "text-yellow-600 bg-yellow-100" },
+  bygg: {
+    label: "Bygg",
+    icon: IconHammer,
+    color: "text-orange-600 bg-orange-100",
+  },
+  läckage: {
+    label: "Läckage",
+    icon: IconDroplet,
+    color: "text-blue-600 bg-blue-100",
+  },
+  elektriker: {
+    label: "Elektriker",
+    icon: IconBolt,
+    color: "text-yellow-600 bg-yellow-100",
+  },
 };
 
 export function RapportSettingsSimple() {
-  const { sections, setSections, loading, setLoading, initialized } = useReportSectionsStore();
-  const { 
-    templates, 
-    fetchTemplates, 
-    loading: templatesLoading, 
-    initialized: templatesInitialized 
+  const { sections, setSections, loading, setLoading, initialized } =
+    useReportSectionsStore();
+  const {
+    templates,
+    fetchTemplates,
+    initialized: templatesInitialized,
   } = useSimpleReportStore();
-  
+
   const [activeTab, setActiveTab] = useState("templates");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sectionToDelete, setSectionToDelete] = useState<string | null>(null);
+  // A2: UI-state är nu lokalt i komponenten
   const [saving, setSaving] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
 
   // Form state
   const [newSection, setNewSection] = useState({
@@ -97,10 +117,19 @@ export function RapportSettingsSimple() {
     type: "text" as ReportSectionType,
   });
 
-  // Load templates from Report Studio
+  // Load templates from Report Studio (A2: lokal loading-state)
   useEffect(() => {
-    fetchTemplates();
-  }, [fetchTemplates]);
+    if (templatesInitialized) return;
+    const loadTemplates = async () => {
+      setTemplatesLoading(true);
+      try {
+        await fetchTemplates();
+      } finally {
+        setTemplatesLoading(false);
+      }
+    };
+    loadTemplates();
+  }, [fetchTemplates, templatesInitialized]);
 
   // Load sections
   useEffect(() => {
@@ -119,13 +148,20 @@ export function RapportSettingsSimple() {
       }
     };
     load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [initialized, setSections, setLoading]);
 
-  // Refresh templates
-  const handleRefreshTemplates = () => {
+  // Refresh templates (A2: lokal loading-state)
+  const handleRefreshTemplates = async () => {
+    setTemplatesLoading(true);
     useSimpleReportStore.setState({ initialized: false });
-    fetchTemplates();
+    try {
+      await fetchTemplates();
+    } finally {
+      setTemplatesLoading(false);
+    }
   };
 
   // Create section
@@ -216,13 +252,15 @@ export function RapportSettingsSimple() {
                 Mallar skapas i Admin → Report Studio
               </p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleRefreshTemplates}
               disabled={templatesLoading}
             >
-              <IconRefresh className={`w-4 h-4 mr-2 ${templatesLoading ? "animate-spin" : ""}`} />
+              <IconRefresh
+                className={`w-4 h-4 mr-2 ${templatesLoading ? "animate-spin" : ""}`}
+              />
               Uppdatera
             </Button>
           </div>
@@ -231,7 +269,9 @@ export function RapportSettingsSimple() {
             <Card className="border-dashed">
               <CardContent className="py-12 text-center">
                 <IconFileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-2">Inga mallar tillgängliga</p>
+                <p className="text-muted-foreground mb-2">
+                  Inga mallar tillgängliga
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Kontakta administratören för att skapa mallar i Report Studio
                 </p>
@@ -265,8 +305,13 @@ export function RapportSettingsSimple() {
             <Card className="border-dashed">
               <CardContent className="py-12 text-center">
                 <IconFileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-4">Inga sektioner ännu</p>
-                <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
+                <p className="text-muted-foreground mb-4">
+                  Inga sektioner ännu
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => setCreateDialogOpen(true)}
+                >
                   Skapa din första sektion
                 </Button>
               </CardContent>
@@ -292,9 +337,18 @@ export function RapportSettingsSimple() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
           <ul className="list-disc list-inside space-y-1">
-            <li>Mallar skapas av administratörer i Report Studio och synkas automatiskt hit</li>
-            <li>Varje mall innehåller fördefinierade sektioner som fylls i när du skapar en rapport</li>
-            <li>Grundinformation (kund, adress, etc.) fylls i automatiskt i första sektionen</li>
+            <li>
+              Mallar skapas av administratörer i Report Studio och synkas
+              automatiskt hit
+            </li>
+            <li>
+              Varje mall innehåller fördefinierade sektioner som fylls i när du
+              skapar en rapport
+            </li>
+            <li>
+              Grundinformation (kund, adress, etc.) fylls i automatiskt i första
+              sektionen
+            </li>
           </ul>
         </CardContent>
       </Card>
@@ -323,12 +377,18 @@ export function RapportSettingsSimple() {
                         ? "border-primary bg-primary/5"
                         : "hover:border-muted-foreground/50"
                     }`}
-                    onClick={() => setNewSection({ ...newSection, type: type.value })}
+                    onClick={() =>
+                      setNewSection({ ...newSection, type: type.value })
+                    }
                   >
                     <CardContent className="p-4 text-center">
-                      <Icon className={`w-8 h-8 mx-auto mb-2 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                      <Icon
+                        className={`w-8 h-8 mx-auto mb-2 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
+                      />
                       <p className="font-medium">{type.label}</p>
-                      <p className="text-xs text-muted-foreground">{type.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {type.description}
+                      </p>
                     </CardContent>
                   </Card>
                 );
@@ -340,7 +400,9 @@ export function RapportSettingsSimple() {
               <Label>Titel *</Label>
               <Input
                 value={newSection.title}
-                onChange={(e) => setNewSection({ ...newSection, title: e.target.value })}
+                onChange={(e) =>
+                  setNewSection({ ...newSection, title: e.target.value })
+                }
                 placeholder="T.ex. Inledning, Dokumentation..."
                 className="mt-1"
               />
@@ -351,7 +413,9 @@ export function RapportSettingsSimple() {
               <Label>Beskrivning (valfritt)</Label>
               <Textarea
                 value={newSection.description}
-                onChange={(e) => setNewSection({ ...newSection, description: e.target.value })}
+                onChange={(e) =>
+                  setNewSection({ ...newSection, description: e.target.value })
+                }
                 placeholder="Hjälptext för användaren..."
                 className="mt-1 resize-none"
                 rows={2}
@@ -360,10 +424,16 @@ export function RapportSettingsSimple() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setCreateDialogOpen(false)}
+            >
               Avbryt
             </Button>
-            <Button onClick={handleCreateSection} disabled={saving || !newSection.title.trim()}>
+            <Button
+              onClick={handleCreateSection}
+              disabled={saving || !newSection.title.trim()}
+            >
               {saving && <IconLoader2 className="w-4 h-4 mr-2 animate-spin" />}
               Skapa
             </Button>
@@ -377,12 +447,16 @@ export function RapportSettingsSimple() {
           <AlertDialogHeader>
             <AlertDialogTitle>Ta bort sektion?</AlertDialogTitle>
             <AlertDialogDescription>
-              Denna åtgärd kan inte ångras. Sektionen kommer att tas bort permanent.
+              Denna åtgärd kan inte ångras. Sektionen kommer att tas bort
+              permanent.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Avbryt</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteSection} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={handleDeleteSection}
+              className="bg-destructive text-destructive-foreground"
+            >
               Ta bort
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -402,15 +476,22 @@ interface SectionCardProps {
 }
 
 function SectionCard({ section, onDelete }: SectionCardProps) {
-  const isText = section.type === "text" || section.type === "heading" || section.type === "summary";
+  const isText =
+    section.type === "text" ||
+    section.type === "heading" ||
+    section.type === "summary";
   const Icon = isText ? IconFileText : IconPhoto;
 
   return (
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
-          <div className={`p-2 rounded-lg ${isText ? "bg-blue-100" : "bg-purple-100"}`}>
-            <Icon className={`w-5 h-5 ${isText ? "text-blue-600" : "text-purple-600"}`} />
+          <div
+            className={`p-2 rounded-lg ${isText ? "bg-blue-100" : "bg-purple-100"}`}
+          >
+            <Icon
+              className={`w-5 h-5 ${isText ? "text-blue-600" : "text-purple-600"}`}
+            />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -420,7 +501,9 @@ function SectionCard({ section, onDelete }: SectionCardProps) {
               </Badge>
             </div>
             {section.description && (
-              <p className="text-sm text-muted-foreground truncate">{section.description}</p>
+              <p className="text-sm text-muted-foreground truncate">
+                {section.description}
+              </p>
             )}
           </div>
           <Button
@@ -446,11 +529,17 @@ interface TemplateCardProps {
 }
 
 function TemplateCard({ template }: TemplateCardProps) {
-  const tradeConfig = TRADE_CONFIG[template.trade as keyof typeof TRADE_CONFIG] || TRADE_CONFIG.bygg;
+  const tradeConfig =
+    TRADE_CONFIG[template.trade as keyof typeof TRADE_CONFIG] ||
+    TRADE_CONFIG.bygg;
   const TradeIcon = tradeConfig.icon;
-  
-  const textSections = template.sections.filter(s => s.type === "text").length;
-  const imageSections = template.sections.filter(s => s.type === "images").length;
+
+  const textSections = template.sections.filter(
+    (s) => s.type === "text",
+  ).length;
+  const imageSections = template.sections.filter(
+    (s) => s.type === "images",
+  ).length;
 
   return (
     <Card>
@@ -467,7 +556,9 @@ function TemplateCard({ template }: TemplateCardProps) {
               </Badge>
             </div>
             {template.description && (
-              <p className="text-sm text-muted-foreground mb-2">{template.description}</p>
+              <p className="text-sm text-muted-foreground mb-2">
+                {template.description}
+              </p>
             )}
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
@@ -481,15 +572,15 @@ function TemplateCard({ template }: TemplateCardProps) {
             </div>
           </div>
         </div>
-        
+
         {/* Sektionslista */}
         <div className="mt-3 pt-3 border-t">
           <p className="text-xs text-muted-foreground mb-2">Sektioner:</p>
           <div className="flex flex-wrap gap-1">
             {template.sections.slice(0, 6).map((section, index) => (
-              <Badge 
-                key={section.id} 
-                variant="secondary" 
+              <Badge
+                key={section.id}
+                variant="secondary"
                 className="text-xs font-normal"
               >
                 {index + 1}. {section.title}

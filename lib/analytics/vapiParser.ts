@@ -53,21 +53,24 @@ export function processCallLogs(logs: VapiCallLog[]): CallMetrics {
     }
 
     // Get timestamp - Vapi uses createdAt or startedAt
-    const timestamp = log.startTime || log.createdAt || log.startedAt || log.created_at;
-    
+    const timestamp =
+      log.startTime || log.createdAt || log.startedAt || log.created_at;
+
     if (timestamp) {
       try {
         const date = new Date(timestamp);
-        if (!isNaN(date.getTime())) {
+        if (!Number.isNaN(date.getTime())) {
           // Group by hour
           const hour = date.getHours();
-          metrics.callVolumeByHour[hour] = (metrics.callVolumeByHour[hour] || 0) + 1;
+          metrics.callVolumeByHour[hour] =
+            (metrics.callVolumeByHour[hour] || 0) + 1;
 
           // Group by day
           const day = date.toLocaleDateString("sv-SE");
-          metrics.callVolumeByDay[day] = (metrics.callVolumeByDay[day] || 0) + 1;
+          metrics.callVolumeByDay[day] =
+            (metrics.callVolumeByDay[day] || 0) + 1;
         }
-      } catch (e) {
+      } catch (_e) {
         console.warn(`Invalid timestamp for call ${log.id}:`, timestamp);
       }
     }

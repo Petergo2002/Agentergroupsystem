@@ -3,15 +3,15 @@
  */
 
 export type PDFSectionType =
-  | 'header'
-  | 'intro'
-  | 'background'
-  | 'methods'
-  | 'conclusion'
-  | 'gann'
-  | 'gallery'
-  | 'leakAreas'
-  | 'footer';
+  | "header"
+  | "intro"
+  | "background"
+  | "methods"
+  | "conclusion"
+  | "gann"
+  | "gallery"
+  | "leakAreas"
+  | "footer";
 
 export interface PDFSection {
   id: string;
@@ -41,7 +41,7 @@ export interface PDFStyling {
     h3Size: number;
     bodySize: number;
     lineHeight: number;
-    fontFamily: 'Helvetica' | 'Times-Roman' | 'Courier';
+    fontFamily: "Helvetica" | "Times-Roman" | "Courier";
   };
   spacing: {
     margin: { top: number; bottom: number; left: number; right: number };
@@ -63,10 +63,10 @@ export interface PDFStructure {
 // Default styling
 export const DEFAULT_PDF_STYLING: PDFStyling = {
   colors: {
-    primary: '#22c55e',
-    accent: '#0f172a',
-    text: '#1f2937',
-    background: '#ffffff',
+    primary: "#22c55e",
+    accent: "#0f172a",
+    text: "#1f2937",
+    background: "#ffffff",
   },
   typography: {
     h1Size: 28,
@@ -74,7 +74,7 @@ export const DEFAULT_PDF_STYLING: PDFStyling = {
     h3Size: 14,
     bodySize: 11,
     lineHeight: 1.8,
-    fontFamily: 'Helvetica',
+    fontFamily: "Helvetica",
   },
   spacing: {
     margin: { top: 40, bottom: 40, left: 40, right: 40 },
@@ -84,122 +84,125 @@ export const DEFAULT_PDF_STYLING: PDFStyling = {
 };
 
 // Default sections
-export const DEFAULT_PDF_SECTIONS: Omit<PDFSection, 'id' | 'order'>[] = [
+export const DEFAULT_PDF_SECTIONS: Omit<PDFSection, "id" | "order">[] = [
   {
-    type: 'header',
-    title: 'Header',
+    type: "header",
+    title: "Header",
     visible: true,
     config: { showOnlyIfData: false },
   },
   {
-    type: 'intro',
-    title: 'Inledning',
+    type: "intro",
+    title: "Inledning",
     visible: true,
     config: { showOnlyIfData: true },
   },
   {
-    type: 'background',
-    title: 'Bakgrund',
+    type: "background",
+    title: "Bakgrund",
     visible: true,
     config: { showOnlyIfData: false },
   },
   {
-    type: 'methods',
-    title: 'Mätmetoder',
+    type: "methods",
+    title: "Mätmetoder",
     visible: true,
     config: { showOnlyIfData: true },
   },
   {
-    type: 'gann',
-    title: 'GANN-tabell',
+    type: "gann",
+    title: "GANN-tabell",
     visible: true,
     config: { showOnlyIfData: true, pageBreakBefore: false },
   },
   {
-    type: 'gallery',
-    title: 'Bildgalleri',
+    type: "gallery",
+    title: "Bildgalleri",
     visible: true,
     config: { showOnlyIfData: true },
   },
   {
-    type: 'leakAreas',
-    title: 'Läckageområden',
+    type: "leakAreas",
+    title: "Läckageområden",
     visible: true,
     config: { showOnlyIfData: true },
   },
   {
-    type: 'conclusion',
-    title: 'Slutsats',
+    type: "conclusion",
+    title: "Slutsats",
     visible: true,
     config: { showOnlyIfData: true },
   },
   {
-    type: 'footer',
-    title: 'Footer',
+    type: "footer",
+    title: "Footer",
     visible: true,
     config: { showOnlyIfData: false },
   },
 ];
 
 // Section metadata
-export const PDF_SECTION_METADATA: Record<PDFSectionType, {
-  label: string;
-  description: string;
-  icon: string;
-  defaultVisible: boolean;
-}> = {
+export const PDF_SECTION_METADATA: Record<
+  PDFSectionType,
+  {
+    label: string;
+    description: string;
+    icon: string;
+    defaultVisible: boolean;
+  }
+> = {
   header: {
-    label: 'Header',
-    description: 'Logo, titel och metadata',
-    icon: '📄',
+    label: "Header",
+    description: "Logo, titel och metadata",
+    icon: "📄",
     defaultVisible: true,
   },
   intro: {
-    label: 'Inledning',
-    description: 'Introduktion till rapporten',
-    icon: '📝',
+    label: "Inledning",
+    description: "Introduktion till rapporten",
+    icon: "📝",
     defaultVisible: true,
   },
   background: {
-    label: 'Bakgrund',
-    description: 'Bakgrundsinformation',
-    icon: '📋',
+    label: "Bakgrund",
+    description: "Bakgrundsinformation",
+    icon: "📋",
     defaultVisible: true,
   },
   methods: {
-    label: 'Mätmetoder',
-    description: 'Beskrivning av mätmetoder',
-    icon: '🔬',
+    label: "Mätmetoder",
+    description: "Beskrivning av mätmetoder",
+    icon: "🔬",
     defaultVisible: true,
   },
   gann: {
-    label: 'GANN-tabell',
-    description: 'Fuktmätning enligt GANN',
-    icon: '📊',
+    label: "GANN-tabell",
+    description: "Fuktmätning enligt GANN",
+    icon: "📊",
     defaultVisible: true,
   },
   gallery: {
-    label: 'Bildgalleri',
-    description: 'Samling av bilder',
-    icon: '🖼️',
+    label: "Bildgalleri",
+    description: "Samling av bilder",
+    icon: "🖼️",
     defaultVisible: true,
   },
   leakAreas: {
-    label: 'Läckageområden',
-    description: 'Detaljerad information om läckageområden',
-    icon: '💧',
+    label: "Läckageområden",
+    description: "Detaljerad information om läckageområden",
+    icon: "💧",
     defaultVisible: true,
   },
   conclusion: {
-    label: 'Slutsats',
-    description: 'Sammanfattning och slutsatser',
-    icon: '✅',
+    label: "Slutsats",
+    description: "Sammanfattning och slutsatser",
+    icon: "✅",
     defaultVisible: true,
   },
   footer: {
-    label: 'Footer',
-    description: 'Sidfot med kontaktinformation',
-    icon: '📌',
+    label: "Footer",
+    description: "Sidfot med kontaktinformation",
+    icon: "📌",
     defaultVisible: true,
   },
 };

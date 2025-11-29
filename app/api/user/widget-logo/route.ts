@@ -25,7 +25,10 @@ export async function POST(req: Request) {
       .single();
 
     if (!userProfile?.organization_id) {
-      return NextResponse.json({ error: "No organization found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "No organization found" },
+        { status: 404 },
+      );
     }
 
     const formData = await req.formData();
@@ -36,11 +39,17 @@ export async function POST(req: Request) {
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+    ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         { error: "Invalid file type. Allowed: JPEG, PNG, GIF, WebP, SVG" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,7 +57,7 @@ export async function POST(req: Request) {
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
         { error: "File too large. Maximum size: 5MB" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,14 +77,14 @@ export async function POST(req: Request) {
       console.error("Error uploading logo:", uploadError);
       return NextResponse.json(
         { error: "Failed to upload logo" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from("widget-logos")
-      .getPublicUrl(fileName);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("widget-logos").getPublicUrl(fileName);
 
     return NextResponse.json({
       logoUrl: publicUrl,
@@ -85,7 +94,7 @@ export async function POST(req: Request) {
     console.error("Error in widget logo upload:", error);
     return NextResponse.json(
       { error: "Failed to upload logo" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -108,7 +117,10 @@ export async function DELETE(req: Request) {
     const { fileName } = await req.json();
 
     if (!fileName) {
-      return NextResponse.json({ error: "No fileName provided" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No fileName provided" },
+        { status: 400 },
+      );
     }
 
     // Delete from storage
@@ -120,7 +132,7 @@ export async function DELETE(req: Request) {
       console.error("Error deleting logo:", deleteError);
       return NextResponse.json(
         { error: "Failed to delete logo" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -129,7 +141,7 @@ export async function DELETE(req: Request) {
     console.error("Error in widget logo delete:", error);
     return NextResponse.json(
       { error: "Failed to delete logo" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

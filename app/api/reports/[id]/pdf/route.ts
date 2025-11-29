@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
  * och renderar enkel HTML som kan skrivas ut till PDF i browsern.
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -35,14 +35,14 @@ export async function GET(
         },
       );
     }
-    
+
     // Enkel HTML för PDF
     const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Rapport - ${report.title || 'Untitled'}</title>
+  <title>Rapport - ${report.title || "Untitled"}</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -62,46 +62,62 @@ export async function GET(
   </style>
 </head>
 <body>
-  <h1>${report.title || 'Rapport'}</h1>
+  <h1>${report.title || "Rapport"}</h1>
   
   <div class="metadata">
-    <p><strong>Rapportnummer:</strong> ${report.report_number || '-'}</p>
-    <p><strong>Datum:</strong> ${report.date || '-'}</p>
-    <p><strong>Kund:</strong> ${report.company_name || report.customer_name || '-'}</p>
-    <p><strong>Plats:</strong> ${report.location || '-'}</p>
-    <p><strong>Utredare:</strong> ${report.inspector_name || '-'}</p>
+    <p><strong>Rapportnummer:</strong> ${report.report_number || "-"}</p>
+    <p><strong>Datum:</strong> ${report.date || "-"}</p>
+    <p><strong>Kund:</strong> ${report.company_name || report.customer_name || "-"}</p>
+    <p><strong>Plats:</strong> ${report.location || "-"}</p>
+    <p><strong>Utredare:</strong> ${report.inspector_name || "-"}</p>
   </div>
 
-  ${report.introduction ? `
+  ${
+    report.introduction
+      ? `
   <div class="section">
     <h2>Inledning</h2>
     <p>${report.introduction}</p>
   </div>
-  ` : ''}
+  `
+      : ""
+  }
 
-  ${report.background ? `
+  ${
+    report.background
+      ? `
   <div class="section">
     <h2>Bakgrund</h2>
     <p>${report.background}</p>
   </div>
-  ` : ''}
+  `
+      : ""
+  }
 
-  ${report.methods ? `
+  ${
+    report.methods
+      ? `
   <div class="section">
     <h2>Mätmetoder</h2>
     <p>${report.methods}</p>
   </div>
-  ` : ''}
+  `
+      : ""
+  }
 
-  ${report.conclusion ? `
+  ${
+    report.conclusion
+      ? `
   <div class="section">
     <h2>Slutsats</h2>
     <p>${report.conclusion}</p>
   </div>
-  ` : ''}
+  `
+      : ""
+  }
 
   <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
-    <p>Genererad: ${new Date().toLocaleDateString('sv-SE')}</p>
+    <p>Genererad: ${new Date().toLocaleDateString("sv-SE")}</p>
   </div>
 </body>
 </html>

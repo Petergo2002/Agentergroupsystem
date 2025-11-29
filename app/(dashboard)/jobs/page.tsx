@@ -24,7 +24,9 @@ export default function JobsPage() {
   const [statusFilter, setStatusFilter] = useState<
     "all" | "scheduled" | "in_progress" | "done"
   >("all");
-  const [dateFilter, setDateFilter] = useState<"all" | "today" | "next7">("all");
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "next7">(
+    "all",
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   const hasActiveFilter =
@@ -89,10 +91,7 @@ export default function JobsPage() {
 
   return (
     <>
-      <SiteHeader
-        title="Jobb"
-        showAddButton={false}
-      />
+      <SiteHeader title="Jobb" showAddButton={false} />
       <div className="space-y-6 p-6">
         <Card>
           <CardHeader className="space-y-3">

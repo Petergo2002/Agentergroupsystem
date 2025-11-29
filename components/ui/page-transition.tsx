@@ -9,9 +9,5 @@ interface PageTransitionProps {
 // Simplified transition - CSS-only for better performance
 // Framer Motion adds overhead; use CSS transitions instead
 export function PageTransition({ children }: PageTransitionProps) {
-  return (
-    <div className="animate-in fade-in duration-150">
-      {children}
-    </div>
-  );
+  return <div className="animate-in fade-in duration-150">{children}</div>;
 }

@@ -20,8 +20,8 @@ export async function OPTIONS() {
  * Public endpoint - no auth required
  */
 export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ publicId: string }> }
+  _req: Request,
+  { params }: { params: Promise<{ publicId: string }> },
 ) {
   try {
     const { publicId } = await params;
@@ -38,7 +38,7 @@ export async function GET(
     if (widgetError || !widgetConfig || !widgetConfig.enabled) {
       return NextResponse.json(
         { error: "Widget not found or disabled" },
-        { status: 404, headers: CORS_HEADERS }
+        { status: 404, headers: CORS_HEADERS },
       );
     }
 
@@ -46,7 +46,7 @@ export async function GET(
     if (widgetConfig.widget_mode !== "voice") {
       return NextResponse.json(
         { error: "Not a voice widget" },
-        { status: 400, headers: CORS_HEADERS }
+        { status: 400, headers: CORS_HEADERS },
       );
     }
 
@@ -60,7 +60,7 @@ export async function GET(
     if (orgError || !org || !org.vapi_public_api_key) {
       return NextResponse.json(
         { error: "Vapi not configured for this widget" },
-        { status: 404, headers: CORS_HEADERS }
+        { status: 404, headers: CORS_HEADERS },
       );
     }
 
@@ -70,13 +70,13 @@ export async function GET(
         publicKey: org.vapi_public_api_key,
         baseUrl: org.vapi_base_url || "https://api.vapi.ai",
       },
-      { headers: CORS_HEADERS }
+      { headers: CORS_HEADERS },
     );
   } catch (error: any) {
     console.error("Error fetching widget Vapi config:", error);
     return NextResponse.json(
       { error: "Failed to fetch Vapi config" },
-      { status: 500, headers: CORS_HEADERS }
+      { status: 500, headers: CORS_HEADERS },
     );
   }
 }

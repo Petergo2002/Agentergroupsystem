@@ -1,5 +1,5 @@
+import crypto from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
 import type { ValidatedApiKey } from "./types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

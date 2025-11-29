@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { Vapi } from "@/lib/analytics/vapi";
-import { logger } from "@/lib/logger";
 
 export async function GET(request: Request) {
   try {

@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { DesignerBlock } from '@/components/rapport/pdf/designer/DesignerDocument';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { DesignerBlock } from "@/components/rapport/pdf/designer/DesignerDocument";
 
 interface DocumentDesignerStore {
   blocks: DesignerBlock[];
@@ -13,8 +13,17 @@ interface DocumentDesignerStore {
 }
 
 const defaultBlocks: DesignerBlock[] = [
-  { id: crypto.randomUUID(), type: 'heading', level: 1, text: 'Besiktningsrapport' },
-  { id: crypto.randomUUID(), type: 'paragraph', text: 'Detta är en redigerbar mall. Lägg till rubriker, text, bilder och sidbrytningar.' },
+  {
+    id: crypto.randomUUID(),
+    type: "heading",
+    level: 1,
+    text: "Besiktningsrapport",
+  },
+  {
+    id: crypto.randomUUID(),
+    type: "paragraph",
+    text: "Detta är en redigerbar mall. Lägg till rubriker, text, bilder och sidbrytningar.",
+  },
 ];
 
 export const useDocumentDesignerStore = create<DocumentDesignerStore>()(
@@ -24,7 +33,9 @@ export const useDocumentDesignerStore = create<DocumentDesignerStore>()(
       addBlock: (block) => set({ blocks: [...get().blocks, block] }),
       updateBlock: (id, updates) => {
         set({
-          blocks: get().blocks.map((b) => (b.id === id ? { ...b, ...(updates as any) } : b)),
+          blocks: get().blocks.map((b) =>
+            b.id === id ? ({ ...b, ...updates } as DesignerBlock) : b,
+          ),
         });
       },
       reorderBlock: (fromIndex, toIndex) => {
@@ -34,10 +45,11 @@ export const useDocumentDesignerStore = create<DocumentDesignerStore>()(
         list.splice(toIndex, 0, moved);
         set({ blocks: list });
       },
-      deleteBlock: (id) => set({ blocks: get().blocks.filter((b) => b.id !== id) }),
+      deleteBlock: (id) =>
+        set({ blocks: get().blocks.filter((b) => b.id !== id) }),
       setBlocks: (blocks) => set({ blocks }),
       reset: () => set({ blocks: defaultBlocks }),
     }),
-    { name: 'document-designer-store' }
-  )
+    { name: "document-designer-store" },
+  ),
 );

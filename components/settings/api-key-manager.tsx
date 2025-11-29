@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Eye, EyeOff, Key, Plus, Trash2 } from "lucide-react";
+import { Copy, Key, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export function ApiKeyManager() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newKeyDescription, setNewKeyDescription] = useState("");
-  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [_revealedKey, _setRevealedKey] = useState<string | null>(null);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
 
   const loadApiKeys = useCallback(async () => {

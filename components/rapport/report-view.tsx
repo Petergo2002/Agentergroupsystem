@@ -9,7 +9,11 @@ interface ReportViewProps {
   readOnly?: boolean;
 }
 
-export function ReportView({ report, sectionDefinitions = [], readOnly = false }: ReportViewProps) {
+export function ReportView({
+  report,
+  sectionDefinitions = [],
+  readOnly = false,
+}: ReportViewProps) {
   const getSectionDefinition = (sectionId: string) => {
     return sectionDefinitions.find((def) => def.id === sectionId);
   };
@@ -56,7 +60,7 @@ export function ReportView({ report, sectionDefinitions = [], readOnly = false }
               <h2 className="text-xl font-semibold text-gray-900">
                 {section.title}
               </h2>
-              
+
               {section.hint && (
                 <p className="text-sm text-gray-500 italic">{section.hint}</p>
               )}
@@ -140,10 +144,7 @@ export function ReportView({ report, sectionDefinitions = [], readOnly = false }
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Bilagor</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {report.assets.map((asset) => (
-              <div
-                key={asset.id}
-                className="rounded-lg border overflow-hidden"
-              >
+              <div key={asset.id} className="rounded-lg border overflow-hidden">
                 <img
                   src={asset.url}
                   alt={asset.label}

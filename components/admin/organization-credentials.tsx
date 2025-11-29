@@ -34,7 +34,7 @@ export function OrganizationCredentials({
         setTimeout(() => setCopiedEmail(false), 2000);
       }
       toast.success(`${type} kopierad!`);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Kunde inte kopiera");
     }
   };

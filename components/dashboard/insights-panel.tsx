@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
-  Calendar,
   Lightbulb,
   Star,
   Target,

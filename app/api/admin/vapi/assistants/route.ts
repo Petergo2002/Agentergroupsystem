@@ -1,8 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { Vapi } from "@/lib/analytics/vapi";
+import {
+  adminRateLimit,
+  checkRateLimitForRequest,
+  getRateLimitHeaders,
+} from "@/lib/rate-limit";
 import { createServerClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { Vapi } from "@/lib/analytics/vapi";
-import { adminRateLimit, checkRateLimitForRequest, getRateLimitHeaders } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,16 +23,16 @@ export async function GET(req: NextRequest) {
     // Rate limiting
     const rateLimitResult = await checkRateLimitForRequest(
       `admin:${user.id}`,
-      adminRateLimit
+      adminRateLimit,
     );
-    
+
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: "Too many requests" },
-        { 
+        {
           status: 429,
-          headers: getRateLimitHeaders(rateLimitResult)
-        }
+          headers: getRateLimitHeaders(rateLimitResult),
+        },
       );
     }
 
@@ -44,21 +48,21 @@ export async function GET(req: NextRequest) {
 
     // Get Vapi key from header (for custom key lookup)
     const customApiKey = req.headers.get("X-VAPI-API-KEY");
-    
+
     // We no longer need a global VAPI_API_KEY since each organization has their own
     // If a custom key is provided via header, use it to fetch assistants for that org
     let assistants: any[] = [];
-    
+
     if (customApiKey) {
       const vapiBaseUrl = process.env.VAPI_BASE_URL || "https://api.vapi.ai";
       const vapiOrgId = process.env.VAPI_ORG_ID;
-      
+
       const vapi = new Vapi({
         apiKey: customApiKey,
         baseUrl: vapiBaseUrl,
         orgId: vapiOrgId || undefined,
       });
-      
+
       try {
         assistants = await vapi.getAssistants();
       } catch (error) {
@@ -132,12 +136,20 @@ export async function GET(req: NextRequest) {
         updatedAt: assistant.updatedAt,
       })),
       organizations: registeredOrganizations.map(
-        ({ owner, organization_members, vapi_api_key, vapi_public_api_key, ...rest }) => ({
+        ({
+          owner,
+          organization_members,
+          vapi_api_key,
+          vapi_public_api_key,
+          ...rest
+        }) => ({
           ...rest,
           has_vapi_key: !!vapi_api_key,
           vapi_key_last4: vapi_api_key ? vapi_api_key.slice(-4) : null,
           has_vapi_public_key: !!vapi_public_api_key,
-          vapi_public_key_last4: vapi_public_api_key ? vapi_public_api_key.slice(-4) : null,
+          vapi_public_key_last4: vapi_public_api_key
+            ? vapi_public_api_key.slice(-4)
+            : null,
         }),
       ),
     });
